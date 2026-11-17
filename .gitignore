@@ -1,0 +1,5 @@
+# Outputs kept for later or for an audit (~/.claude/CLAUDE.md › Rules in every repo).
+/local/
+node_modules/
+dist/
+.DS_Store
