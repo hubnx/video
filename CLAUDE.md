@@ -11,5 +11,6 @@ public one; the repo goes public at launch under AGPL-3.0 (hubnx-apps `docs/deci
 
 | File | Contains |
 |---|---|
+| [docs/plan.md](docs/plan.md) | **The build plan**: the promise, the rivals compared, each release, the user's flow, the model switcher, the stack, the build order with proofs, shipping, keep-or-stop numbers, risks |
 | [docs/research/](docs/research/) | Competitors' workflows, features, prices and users' complaints; the AI models and online services; the engine's building blocks (2026-11-17) |
 | `local/` (not in git) | Outputs kept for later or for an audit, one folder per tool |
