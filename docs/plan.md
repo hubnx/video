@@ -1,6 +1,6 @@
 # Plan: the video editor (working name `video`)
 
-Draft 2026-11-17, for `video assistant`'s review, then the owner's OK. Who it's for, the jobs and the
+Draft 2026-11-17: reviewed by `video assistant` (gate 1, approved with changes, folded in); waiting on the owner's OK. Who it's for, the jobs and the
 gaps are the product manager's: [product.md](product.md) › *Who it's for* and *Gap register*. The
 research behind every choice: [research/](research/).
 
@@ -11,12 +11,15 @@ research behind every choice: [research/](research/).
 - **For:** people who talk to a camera on a computer (YouTubers, course makers, podcasters who film).
   Their four jobs: captions, cutting silences and "um"s, a clean voice, and 9:16 shorts from the same
   recording ([product.md](product.md) › *Who it's for*).
-- **First public release, about day 8:** open a video → captions → cut silences and fillers → trim
-  and split → export 4K, no watermark. **Day 9–14:** a release every day or two, in the order below.
+- **Release 1 (target day 8):** open a video → captions → cut silences and fillers → trim and split →
+  export 4K, no watermark. It goes public quietly once its checks pass; **the launch, with the posts,
+  comes at 1.1 (9:16 shorts), about two weeks from now**, because the demo that sells is "a 20-minute
+  talk → captions, cleaned up, a 9:16 short, free, in N minutes". **Day 9–14:** a release every day
+  or two, in the order below.
 - **Cost:** $0.50 a month (the `video.hubnx.com` address, approved 2026-11-17). Everything else runs
   on free services.
-- **The owner's part:** OK this plan (about 15 minutes); at launch, the posts from your own accounts,
-  which `video` drafts. Nothing to test.
+- **The owner's part:** OK this plan (about 15 minutes); a 2-minute email alias; at the launch, the
+  posts from your own accounts, which `video` drafts. Nothing to test.
 
 ## The promise (the rules every release keeps)
 
@@ -59,12 +62,12 @@ Each release goes out to everyone (no private beta) and updates itself.
 
 | Release | What the user gets | Gap |
 |---|---|---|
-| **1 (about day 8)** | Drop in a video. The transcript and captions appear (a few good styles, word by word; names fixed in a word list; SRT out). Silences and "um"s proposed on the transcript and the timeline: accept all in one click, undo any one in one click, never mid-word. Trim, split and delete on one timeline, unlimited undo. Export 720p, 1080p or 4K, captions burned in or as a file. Voice clean-up as one switch if it fits (a 10 MiB model) | G1, G2, G5, G16 |
-| 1.1 | **9:16 shorts:** reframe a landscape recording with the speaker kept in frame (face tracking on the computer), caption styles for shorts | G4 |
+| **1 (target day 8; public quietly)** | Drop in a video. The transcript and captions appear (a few good styles, word by word; names fixed in a word list; SRT out). Silences and "um"s proposed on the transcript and the timeline: accept all in one click, undo any one in one click, never mid-word (fillers are named in the app and posts only once measured at 80%+, below). Trim and split while captions are still being made, then delete, unlimited undo. Export 720p, 1080p or 4K, captions burned in or as a file, with a *YouTube* preset. Voice clean-up as one switch if it fits (a 10 MiB model), with even loudness (FFmpeg's loudnorm, to YouTube's level) | G1, G2, G5, G16 |
+| **1.1 (the launch)** | **9:16 shorts:** reframe a landscape recording with the speaker kept in frame (face tracking on the computer), caption styles for shorts, a *Shorts / TikTok / Reels* export preset. A candidate, `video assistant`'s call: a slight alternating zoom on each cut, so cleaned-up talks don't jump | G4 |
 | 1.2 | Voice clean-up (if not in 1); **background removal** behind a person | — |
 | 1.3 | **More tracks and titles:** pictures, clips and text over the video; lower thirds and title templates | G13 |
 | 1.4 | **Music** (the user's own, with Songbrew linked for music without copyright claims), and **transitions** | — |
-| 1.5 | **Online models:** connect OpenRouter (sign in, no key to paste) or a fal key; generate a clip from text or a picture into the timeline; online captions where better. The cost is shown before each run | G10 |
+| 1.5 | **Online models:** connect OpenRouter (sign in, no key to paste): its video service lists 35 models, among them Veo 3.1, Kling 3.0, Seedance, Hailuo, Wan and Runway (`/api/v1/videos/models`, checked 2026-11-17). A fal key adds Kling 4.0, LTX-2.5, Luma, background removal and upscaling; Deepgram or ElevenLabs keys add online captions. Generate a clip from text or a picture into the timeline. The cost is shown before each run. The list is checked again when 1.5 is built: Sora's and Veo's API closures show it moves fast | G10 |
 
 If days run short, transitions and music go first, before anything above them. **Fast export
 after cuts** (re-encode only around the cuts, so a 30-minute talk exports in seconds; G8) joins
@@ -75,9 +78,10 @@ phone app (G12).
 ## How the user goes from download to first video
 
 1. Download from `video.hubnx.com` (Mac: Apple chip or Intel; Windows; Linux) and open it.
-2. *Drop a video here.* The video plays at once; "Making captions… about 1 minute" shows real
-   progress. The first time, the app downloads the speech model and says its size first (about
-   0.5 GB).
+2. *Drop a video here.* The video plays at once; "Making captions… about N minutes" shows real
+   progress, N being the time measured for a 20-minute video on an 8 GB computer, not a guess. The
+   user can already trim and split meanwhile, so the minutes to first export don't wait on the
+   model. The first time, the app downloads the speech model and says its size first (about 0.5 GB).
 3. The transcript sits beside the video, captions on it. *Clean up: 23 silences, 9 "um"s* is one
    button; each proposed cut is marked on the transcript and the timeline, ready to keep or undo.
 4. *Export* → size (4K is the default when the video is 4K) → *Save*. The file opens in the
@@ -133,15 +137,15 @@ and Modal's free credit for an NVIDIA card; never a paid machine.
 
 | Day | Step | Proof |
 |---|---|---|
-| 1 | Shell from Songbrew; FFmpeg fetched with pinned checksums; probe of 4K encode and decode on all three systems. **Filler check:** how many "um"s each speech model keeps, on free-licensed talking-head clips marked by hand | The package opens on all three; FFmpeg runs inside it; the probe and the filler counts saved in `local/` |
-| 2 | Import (rotation, varying frame rate, colour, sound), background jobs, edit copies, thumbnails, waveforms | Each generated test clip's facts match how it was made; proxies have the right frame count |
+| 1 | Shell from Songbrew, every word shown kept in one table from the start (as Songbrew's `words.ts`), so translating later is one file; FFmpeg fetched with pinned checksums; probe of 4K encode and decode on all three systems. **Filler check**, on free-licensed talking-head clips with every "um" marked by hand, three detectors: (a) each speech model as it is; (b) Whisper given a prompt full of "um"s, a known trick for keeping them; (c) speech with no word: stretches where the voice detector hears speech but the transcript has none, proposed as *possible "um"* | The package opens on all three; FFmpeg runs inside it; the probe and the share of marked "um"s each detector and the best combination find saved in `local/` and written in *Risks* |
+| 2 | **The public name** (a free USPTO knockout search), since the app's ID, signing name, site and repo hang on it. Import (rotation, varying frame rate, colour, sound), background jobs, edit copies, thumbnails, waveforms | The name's search recorded; each generated test clip's facts match how it was made; proxies have the right frame count |
 | 3 | Preview: one video and its sound, seeking, the sound clock | Random seeks land on the exact frame; a flash and a beep stay within one frame |
 | 4 | Transcript and captions through the switcher: model download, word times, the transcript panel, caption styles, SRT out | Captions of a known script score under a set word-error rate; word times within a set margin |
 | 5 | Cleanup: silences and fillers proposed, reviewed, applied, each undoable; trim, split, delete; undo | No cut inside a word; undo after any edit sequence restores the project exactly |
-| 6 | Project file, autosave, recovery journal; voice clean-up switch if it fits | A forced quit mid-edit, then restart, brings back the exact project |
-| 7 | Export: 720p, 1080p, 4K; captions burned in or as a file; fast export after cuts if cheap | File facts, frame numbers, sound in sync, export equals preview; 4K export time recorded per machine |
-| 8 | Installers (Mac Apple chip and Intel, Windows, Linux), the site with downloads, about, privacy, terms and feedback; the public name; **release 1** | A scripted fresh install on GitHub's Mac, Windows and Linux machines reaches a first export, or no release |
-| 9 | 9:16 reframe and shorts styles → **1.1** | The speaker's face stays inside the frame on test clips |
+| 6 | Project file, autosave, recovery journal; voice clean-up switch and even loudness if it fits. The site drafted | A forced quit mid-edit, then restart, brings back the exact project |
+| 7 | Export: 720p, 1080p, 4K, the *YouTube* preset; captions burned in or as a file; fast export after cuts if cheap. The site's pages finished | File facts, frame numbers, sound in sync, export equals preview; 4K export time recorded per machine |
+| 8 | Installers (Mac Apple chip and Intel, Windows, Linux) and the launch checklist below; **release 1**, public quietly | A scripted fresh install of the **build's own files** (never the public download links, which would inflate the count) on GitHub's Mac, Windows and Linux machines reaches a first export, or no release |
+| 9 | 9:16 reframe, shorts styles and preset → **1.1, the launch** (the posts) | The speaker's face stays inside the frame on test clips; the demo's minutes measured |
 | 10 | Background removal (and voice clean-up if not in 1) → **1.2** | The cut-out's edge against a reference matte, measured |
 | 11–12 | More tracks, pictures and text over the video, titles and lower thirds → **1.3** | Screenshots at every size, both themes, pass the clarity check |
 | 13 | Music and transitions → **1.4** | Golden frames match their references |
@@ -154,15 +158,37 @@ tablet and desktop widths in both themes.
 
 ## Where it ships
 
-- **Downloads:** GitHub Releases (free once the repo is public, at release 1), linked from
-  `video.hubnx.com`; the site on S3 and CloudFront in `hubnx-apps`, within AWS's free allowance, as
-  Songbrew's.
-- **Windows** shows SmartScreen's warning on the direct download until a Store listing, as Songbrew
-  did; a signing certificate costs money, so not without a yes. **The Microsoft Store and the Mac App
-  Store** come after release 1, weighed on their own (the Mac store's sandbox and FFmpeg).
+- **Release and launch are separate.** Release 1 goes public quietly once its checks pass (no
+  private beta). The launch posts wait for 1.1, whose demo shows all four jobs.
+- **Downloads** come from the site, `video.hubnx.com/download/`, as Songbrew's do (S3 and CloudFront
+  in `hubnx-apps`, within AWS's free allowance), and the installed app updates itself from there.
+  They're counted Songbrew's way (`music/site/scripts/count-downloads.ts`), from the site's access
+  log: only complete first-install files (`.dmg`, `Setup.exe`, AppImage, `.deb`) fetched by a
+  browser count. An installed copy's update downloads, partial ranges, update files, our own checks,
+  crawlers, scripts and link scanners are left out. One way, one place: the counter moves into
+  hubnx-apps `shared/` with `music`'s agreement rather than living in two copies.
+- **Windows** shows SmartScreen's warning on the direct download until a Store listing; it scares
+  exactly our users. So the download page shows the *More info → Run anyway* step with a picture,
+  and **the Microsoft Store comes first after release 1**: it removes the warning at no cost, as it
+  did for Songbrew. A signing certificate costs money, so not without a yes. The Mac App Store is
+  weighed after (its sandbox and FFmpeg).
 - **The repo** goes public at release 1, AGPL-3.0, with a contributor agreement as Songbrew's.
-- **The name:** chosen by day 8 after a free USPTO knockout search. Filing a trademark ($350, by
+- **The name:** chosen on day 2 after a free USPTO knockout search. Filing a trademark ($350, by
   the owner) is optional and later.
+
+**Launch checklist, day 8** (hubnx-apps `CLAUDE.md` › Phase 2):
+- [ ] The registry row updated
+- [ ] Repo `hubnx/video` public; `video.hubnx.com` with its zone ($0.50 a month, approved)
+- [ ] Privacy, terms and `/about/` pages; the "by Hub Nexus" maker line; *More from Hub Nexus*; the
+  feedback form; outbound and file links in a new tab, set once at build time (`docs/brand.md`)
+- [ ] Support address `video@hubnx.com` (the owner's step: an alias)
+- [ ] Privacy-first visitor counts (visitors → downloads), as typing's: the CDN's request log
+  counted into numbers alone
+- [ ] Search Console: the site's sitemap on the `hubnx.com` domain property
+- [ ] The AWS budget: the account-wide `hubnx-apps-all-apps-monthly` covers it
+- [ ] hubnx's Assistant confirms its feedback route accepts `video`'s feedback and check-in (asked
+  before day 8), and adds `video` to `hubnx.com/apps` at the launch
+- [ ] No Stripe product: nothing is sold
 
 ## Why desktop first, and the phone
 
@@ -175,9 +201,9 @@ is kept, a phone app is the first thing weighed then.
 
 Proposed by `video assistant` (2026-11-17).
 
-- **Go** if all three: 1,000+ GitHub stars; 3,000+ complete installer downloads (GitHub's counts,
-  less our own checks: Songbrew's first count was crawlers); and among 30+ people who send the opt-in
-  day-7 check-in, half or more exported 3+ videos.
+- **Go** if all three: 1,000+ GitHub stars; 3,000+ complete first-install downloads, counted as in
+  *Where it ships* (Songbrew's first count was all crawlers and our own checks); and among 30+ people
+  who send the opt-in day-7 check-in, half or more exported 3+ videos.
 - **Stop** if under a quarter of each: fix the offer once, then stop. Fewer than 30 check-ins reads
   *unknown*, not a pass.
 - **The check-in:** opt-in, in the app, showing exactly what it sends (videos exported, minutes to
@@ -188,7 +214,7 @@ Proposed by `video assistant` (2026-11-17).
 
 | Risk | What we do |
 |---|---|
-| Speech models drop "um"s (Whisper-type models tend to; the one model built to keep them is non-commercial) | Day 1 measures it. If fillers are found too rarely, release 1 still cuts silences and offers the fillers it finds; online captions on the user's key as the stronger option in 1.5 |
+| Speech models drop "um"s (Whisper-type models tend to; the one model built to keep them is non-commercial) | Day 1 measures three detectors (*Build order*). **The rule:** if the best combination finds 80%+ of the marked "um"s, the app and its posts say "cuts silences and ums"; below that, release 1 still proposes the ones it finds, the promise is captions and silences, and fillers aren't named until a release measures 80%+. Every cut is reviewed first, so false alarms cost little. Online captions on the user's key are the stronger option in 1.5. **Measured:** not yet (day 1) |
 | Slow on 8 GB laptops (most models publish no CPU timings) | Measured on GitHub's machines before any promise; smaller models picked for smaller computers |
 | Two weeks is an estimate (Songbrew: 2 weeks from plan to 0.1.35, still before launch) | The release order puts the four jobs first, so whatever ships is useful |
 | A rival closes the gap (FilmCraft's easy mode, Shotcut's silences, OpenCut's rewrite) | `video assistant`'s daily scan; our edge is the four jobs done end to end and minutes to first export |
@@ -198,5 +224,9 @@ Proposed by `video assistant` (2026-11-17).
 ## The owner's steps
 
 1. **OK this plan**, or say what to change.
-2. **At release 1**: post the drafts from your own accounts (Reddit, Product Hunt, YouTube). Reddit
-   bans posts through other accounts, so only you can.
+2. **Before day 8, about 2 minutes:** add the alias `video@hubnx.com` (admin.google.com →
+   *Directory* › *Users* → your name → *Alternate email addresses* → add `video` → *Save*). The
+   privacy and terms pages name it.
+3. **At the launch (1.1, about two weeks from now):** post the drafts from your own accounts
+   (Reddit, Product Hunt, YouTube). Reddit bans posts through other accounts, so only you can.
+   Release 1, a few days earlier, needs nothing from you.
