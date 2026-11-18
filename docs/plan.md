@@ -156,6 +156,12 @@ project, the recovery test, and model speeds measured on GitHub's machines and M
 promises a time. Screens pass the clarity check ([../../docs/brand.md](../../docs/brand.md)) at phone,
 tablet and desktop widths in both themes.
 
+**Check-ins with `video assistant`** (agreed 2026-11-17): day 1's filler numbers; day 2's name
+shortlist; screenshots at phone, tablet and desktop width in both themes when each screen first
+works, before polish (day 4 transcript and caption styles, day 5 cleanup review, day 7 export dialog
+and presets, day 8 download page with the SmartScreen picture); release 1 passes its gate 3 review
+before it goes out.
+
 ## Where it ships
 
 - **Release and launch are separate.** Release 1 goes public quietly once its checks pass (no
