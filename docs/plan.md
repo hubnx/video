@@ -53,7 +53,10 @@ Detail and sources: [research/easy-editors.md](research/easy-editors.md),
 - **Shotcut** is the real open rival: free captions on the computer, 15 releases in 2026. It won't
   do silence cutting, more speech models or easy 9:16.
 - **FilmCraft** (pure Rust, Apache-2.0, 18,489 stars in seven weeks) is professional and
-  Premiere-style; an easy mode would close our gaps fast.
+  Premiere-style; an easy mode would close our gaps fast. It already makes captions from
+  transcripts, and pull request #5027 (opened 2026-11-18, not merged) adds *Remove Silence…*: a menu
+  dialog that applies every cut at once, silences only. Having the feature is no longer our edge;
+  how it feels is (`video assistant`'s scan, 2026-11-19).
 - **OpenCut** (98,759 stars) has shipped nothing since April.
 
 ## What each release has
@@ -151,7 +154,7 @@ and Modal's free credit for an NVIDIA card; never a paid machine.
 | 2 | **The public name** (a free USPTO knockout search), since the app's ID, signing name, site and repo hang on it. Import (rotation, varying frame rate, colour, sound), background jobs, edit copies, thumbnails, waveforms | The name's search recorded; each generated test clip's facts match how it was made; proxies have the right frame count |
 | 3 | Preview: one video and its sound, seeking, the sound clock | Random seeks land on the exact frame; a flash and a beep stay within one frame |
 | 4 | Transcript and captions through the switcher: model download, word times, the transcript panel, caption styles, SRT out | Captions of a known script score under a set word-error rate; word times within a set margin |
-| 5 | Cleanup: silences and fillers proposed, reviewed, applied, each undoable; trim, split, delete; undo | No cut inside a word; undo after any edit sequence restores the project exactly |
+| 5 | Cleanup: silences and fillers proposed, reviewed, applied, each undoable; trim, split, delete; undo. The screen shows at a glance what a menu dialog can't: the cuts already proposed when the video lands, marked on the transcript, each kept or undone on its own | No cut inside a word; undo after any edit sequence restores the project exactly; gate 3 compares our flow with FilmCraft's *Remove Silence…* click by click |
 | 6 | Project file, autosave, recovery journal; voice clean-up switch and even loudness if it fits. The site drafted | A forced quit mid-edit, then restart, brings back the exact project |
 | 7 | Export: 720p, 1080p, 4K, the *YouTube* preset; captions burned in or as a file; fast export after cuts if cheap. The site's pages finished | File facts, frame numbers, sound in sync, export equals preview; 4K export time recorded per machine |
 | 8 | Installers (Mac Apple chip and Intel, Windows, Linux) and the launch checklist below; **release 1**, public quietly | A scripted fresh install of the **build's own files** (never the public download links, which would inflate the count) on GitHub's Mac, Windows and Linux machines reaches a first export, or no release |
