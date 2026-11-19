@@ -164,7 +164,9 @@ and Modal's free credit for an NVIDIA card; never a paid machine.
 **On every release:** the fresh-install-to-export check on all three systems, the 60-minute 4K
 project, the recovery test, and model speeds measured on GitHub's machines and Modal before the app
 promises a time. Screens pass the clarity check ([../../docs/brand.md](../../docs/brand.md)) at phone,
-tablet and desktop widths in both themes.
+tablet and desktop widths in both themes. Words people read (launch posts, support replies, the
+check-in, the SmartScreen help, first-run messages) follow `~/.claude/CLAUDE.md` › *Outreach and SEO*
+› "Every email and message to a person reads like a friendly person wrote it" (owner, 2026-11-19).
 
 **Check-ins with `video assistant`** (agreed 2026-11-17): day 1's filler numbers; day 2's name
 shortlist; screenshots at phone, tablet and desktop width in both themes when each screen first
