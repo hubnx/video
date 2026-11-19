@@ -104,11 +104,21 @@ Detail: [research/models-and-online.md](research/models-and-online.md).
 - **Left out on purpose:** non-commercial models (CrisperWhisper, NLLB-200, RMBG-2.0, F5-TTS,
   XTTS-v2, MatAnyone), because many creators earn from their videos; region-locked ones (HunyuanVideo
   1.5, MiniMax-H3's weights). No face-swapping and no copying other people's voices.
-- **Online, on the user's own account:** OpenRouter first (sign in), then fal (key). The key lives in
-  the operating system's keychain and goes only to the provider, never to us. Generating video on the
-  computer only works on NVIDIA cards with 24 GB, so everyone else generates online. Sora's API
-  closed on 2026-09-24 and Veo left the Gemini API on 2026-10-22; both are checked again when 1.5 is
-  built.
+- **Bring your own model** (the owner, 2026-11-18): no AI we host, no free AI credits or trial, no
+  Claude sign-in. Online AI stays off until the person connects an account; AI on the computer runs
+  only when they start a tool.
+- **Online, on the user's own account:** OpenRouter first (one click, OAuth sign-in), then fal,
+  Deepgram and ElevenLabs, each through a guided key screen that links straight to that provider's
+  key page. Models are picked from a list with our pick marked, never typed, the way Hub Nexus Write's
+  switcher works, so the apps behave alike. The key lives in the operating system's keychain and goes
+  only to the provider, never to us. Generating video on the computer only works on NVIDIA cards with
+  24 GB, so everyone else generates online. Sora's API closed on 2026-09-24 and Veo left the Gemini
+  API on 2026-10-22; both are checked again when 1.5 is built.
+- **A language model, when one is needed** (*best moments*, once it has its brief): the same list as
+  Write's. Models already on the computer are found by themselves (Ollama, LM Studio), then
+  OpenRouter, then a guided key for OpenAI, Anthropic or Google. Claude means the person's API key or
+  OpenRouter, because Anthropic doesn't allow "Sign in with Claude" in other companies' apps, and
+  "Sign in with ChatGPT" is a waitlist for partners (both checked by hubnx, 2026-11-18).
 
 ## How it's built
 
