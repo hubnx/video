@@ -233,8 +233,11 @@ before it goes out.
 - [ ] The AWS budget: `video-monthly` in the site's own stack, filtered on `Project=video` (free;
   decisions, 2026-11-19), once the owner has activated the `Project` tag; the account-wide alarm is
   the backstop
-- [ ] hubnx's Assistant confirms its feedback route accepts `video`'s feedback and check-in (asked
-  before day 8), and adds `video` to `hubnx.com/apps` at the launch
+- [ ] The feedback form (app and site) through hubnx-apps' shared parts (`shared/web-parts/feedback-report.ts`,
+  which holds hubnx.com's `/api/feedback` contract): hubnx registered `video` for both, the site at
+  exactly `https://video.hubnx.com` (hubnx's Assistant, 2026-11-20)
+- [ ] For `hubnx.com/apps` at 1.1: the app's icon as an SVG on the site; `video assistant` sends
+  hubnx the link, the icon's address, one English line, where it runs and that it's free
 - [ ] No Stripe product: nothing is sold
 
 ## Why desktop first, and the phone
@@ -254,8 +257,9 @@ Proposed by `video assistant` (2026-11-17).
 - **Stop** if under a quarter of each: fix the offer once, then stop. Fewer than 30 check-ins reads
   *unknown*, not a pass.
 - **The check-in:** opt-in, in the app, showing exactly what it sends (videos exported, minutes to
-  first export, setup failures); it goes to hubnx.com's feedback route, as the other apps' feedback
-  does, so no new service.
+  first export, setup failures). Not through the feedback route, which emails the owner per message:
+  hubnx is deciding a stored kind counted in a daily digest (2026-11-20). Until its fields come, the
+  screen and its *what it sends* view are built, and the sending sits behind one function.
 
 ## Risks
 
