@@ -207,7 +207,9 @@ before it goes out.
   beside the name, which wears `hubnx` already); *More from Hub Nexus*; the feedback form; outbound
   and file links in a new tab, set once at build time (`docs/brand.md`)
 - [ ] Open-source licenses: `/licenses/` on the site and *Help* › *Open-source licenses* in the app,
-  both made at build time from the shipped code's own files (`docs/brand.md`): Electron's and
+  both made at build time by hubnx-apps' shared builder (`shared/web-parts/licenses.ts`, as
+  globe's), from the shipped code's own files, the app's main process and renderer both, with
+  extras listed from the model list (`docs/brand.md`): Electron's and
   Chromium's notices, FFmpeg's GPLv3 text with its source offer, ONNX Runtime and each local model's
   licence, and our AGPL-3.0
 - [ ] Support address `video@hubnx.com` (the owner's step: an alias)
