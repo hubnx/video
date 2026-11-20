@@ -203,7 +203,8 @@ before it goes out.
   and **the Microsoft Store comes first after release 1**: it removes the warning at no cost, as it
   did for Songbrew. A signing certificate costs money, so not without a yes. The Mac App Store is
   weighed after (its sandbox and FFmpeg).
-- **The repo** goes public at release 1, AGPL-3.0, with a contributor agreement as Songbrew's.
+- **The repo** goes public at release 1, AGPL-3.0, with the shared contributor agreement from
+  `hubnx/.github` (*Apps HQ* builds it before day 8; root roadmap › *Open decisions* 11), not a copy.
 - **The name is *hubnx Video*** (decided 2026-11-19, after the owner's rule of `hubnx` plus the app's
   address word): in the window title, installer, signing name, site and posts, and the app ID
   `com.hubnx.video` (as Songbrew's `com.hubnx.music`). `hubnx` is always lowercase, so a sentence
@@ -214,6 +215,8 @@ before it goes out.
 **Launch checklist, day 8** (hubnx-apps `CLAUDE.md` › Phase 2):
 - [ ] The registry row updated
 - [ ] Repo `hubnx/video` public; `video.hubnx.com` with its zone ($0.50 a month, approved)
+- [ ] The contributor agreement check: the repo calls `hubnx/.github`'s reusable workflow, never a
+  copied one
 - [ ] Privacy, terms and `/about/` pages; the footer's *About Hub Nexus* (no "by Hub Nexus" line
   beside the name, which wears `hubnx` already); *More from Hub Nexus*; the feedback form; outbound
   and file links in a new tab, set once at build time (`docs/brand.md`)
