@@ -1,4 +1,4 @@
-# Plan: the video editor (working name `video`)
+# Plan: hubnx Video (`video`)
 
 Draft 2026-11-17: reviewed by `video assistant` (gate 1, approved with changes, folded in); waiting on the owner's OK. Who it's for, the jobs and the
 gaps are the product manager's: [product.md](product.md) › *Who it's for* and *Gap register*. The
@@ -151,7 +151,7 @@ and Modal's free credit for an NVIDIA card; never a paid machine.
 | Day | Step | Proof |
 |---|---|---|
 | 1 | Shell from Songbrew, every word shown kept in one table from the start (as Songbrew's `words.ts`), so translating later is one file; FFmpeg fetched with pinned checksums; probe of 4K encode and decode on all three systems. **Filler check**, on free-licensed talking-head clips with every "um" marked by hand, three detectors: (a) each speech model as it is; (b) Whisper given a prompt full of "um"s, a known trick for keeping them; (c) speech with no word: stretches where the voice detector hears speech but the transcript has none, proposed as *possible "um"* | The package opens on all three; FFmpeg runs inside it; the probe and the share of marked "um"s each detector and the best combination find saved in `local/` and written in *Risks* |
-| 2 | **The public name** (a free USPTO knockout search), since the app's ID, signing name, site and repo hang on it. Import (rotation, varying frame rate, colour, sound), background jobs, edit copies, thumbnails, waveforms | The name's search recorded; each generated test clip's facts match how it was made; proxies have the right frame count |
+| 2 | Import (rotation, varying frame rate, colour, sound), background jobs, edit copies, thumbnails, waveforms | Each generated test clip's facts match how it was made; proxies have the right frame count |
 | 3 | Preview: one video and its sound, seeking, the sound clock | Random seeks land on the exact frame; a flash and a beep stay within one frame |
 | 4 | Transcript and captions through the switcher: model download, word times, the transcript panel, caption styles, SRT out | Captions of a known script score under a set word-error rate; word times within a set margin |
 | 5 | Cleanup: silences and fillers proposed, reviewed, applied, each undoable; trim, split, delete; undo. The screen shows at a glance what a menu dialog can't: the cuts already proposed when the video lands, marked on the transcript, each kept or undone on its own | No cut inside a word; undo after any edit sequence restores the project exactly; gate 3 compares our flow with FilmCraft's *Remove Silence…* click by click |
@@ -171,8 +171,7 @@ tablet and desktop widths in both themes. Words people read (launch posts, suppo
 check-in, the SmartScreen help, first-run messages) follow `~/.claude/CLAUDE.md` › *Outreach and SEO*
 › "Every email and message to a person reads like a friendly person wrote it" (owner, 2026-11-19).
 
-**Check-ins with `video assistant`** (agreed 2026-11-17): day 1's filler numbers; day 2's name
-shortlist; screenshots at phone, tablet and desktop width in both themes when each screen first
+**Check-ins with `video assistant`** (agreed 2026-11-17): day 1's filler numbers; screenshots at phone, tablet and desktop width in both themes when each screen first
 works, before polish (day 4 transcript and caption styles, day 5 cleanup review, day 7 export dialog
 and presets, day 8 download page with the SmartScreen picture); release 1 passes its gate 3 review
 before it goes out.
@@ -194,8 +193,12 @@ before it goes out.
   did for Songbrew. A signing certificate costs money, so not without a yes. The Mac App Store is
   weighed after (its sandbox and FFmpeg).
 - **The repo** goes public at release 1, AGPL-3.0, with a contributor agreement as Songbrew's.
-- **The name:** chosen on day 2 after a free USPTO knockout search. Filing a trademark ($350, by
-  the owner) is optional and later.
+- **The name is *hubnx Video*** (decided 2026-11-19, after the owner's rule of `hubnx` plus the app's
+  address word): in the window title, installer, signing name, site and posts, and the app ID
+  `com.hubnx.video` (as Songbrew's `com.hubnx.music`). `hubnx` is always lowercase, so a sentence
+  never starts with it. The trademark question is the `hubnx` brand's, not this app's. Search finds
+  the job, so page titles and first lines lead with it: *hubnx Video: a free CapCut alternative with
+  captions and silence cutting*.
 
 **Launch checklist, day 8** (hubnx-apps `CLAUDE.md` › Phase 2):
 - [ ] The registry row updated
