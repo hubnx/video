@@ -179,6 +179,11 @@ promises a time. Screens pass the clarity check ([../../docs/brand.md](../../doc
 tablet and desktop widths in both themes. Words people read (launch posts, support replies, the
 check-in, the SmartScreen help, first-run messages) follow `~/.claude/CLAUDE.md` › *Outreach and SEO*
 › "Every email and message to a person reads like a friendly person wrote it" (owner, 2026-11-19).
+Each launch post is drafted after reading that community's current self-promotion rules and
+megathreads; the rule and the format sit beside the draft, checked against the owner's account in
+hubnx-apps registry › *Community accounts* (r/macapps rule 6, for example: a main-feed post needs
+200+ karma and a 60-day-old account, else a comment in the month's *App Pile* thread; hubnx Write's
+post was removed for it, 2026-11-20).
 
 **Check-ins with `video assistant`** (agreed 2026-11-17): day 1's filler numbers; screenshots at phone, tablet and desktop width in both themes when each screen first
 works, before polish (day 4 transcript and caption styles, day 5 cleanup review, day 7 export dialog
