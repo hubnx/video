@@ -8,6 +8,11 @@ research behind every choice: [research/](research/).
 
 - **What:** a free, open-source video editor for Mac, Windows and Linux, as easy as CapCut, with AI
   built in: free models on the computer, and online models on the user's own account.
+- **What we lead with** (2026-11-20, after Meta Edits came to the Mac with free 4K and captions):
+  the talking-head clean-up nobody free does end to end (silences and "um"s proposed and checked, a
+  clean voice, 9:16 that follows the speaker), on every computer, private. "Free 4K, no watermark,
+  no account" is the promise underneath, not the headline ([product.md](product.md) › *Who it's
+  for*).
 - **For:** people who talk to a camera on a computer (YouTubers, course makers, podcasters who film).
   Their four jobs: captions, cutting silences and "um"s, a clean voice, and 9:16 shorts from the same
   recording ([product.md](product.md) › *Who it's for*).
@@ -26,7 +31,7 @@ research behind every choice: [research/](research/).
 | Rule | What it means in the app | Why |
 |---|---|---|
 | Free for real | 4K, 60 fps, every format, no watermark, no account. **Nothing free today ever becomes paid.** Paid credits, if they come, only for clips generated online; never for export or AI that runs on the computer | 755 of 2,554 low App Store reviews are about paywalls; 207 about features made worse or paid after an update (G14) |
-| Private | Works fully offline. Nothing leaves the computer unless the user picks an online model, and the app says so at that moment. The only report is an opt-in check-in that shows what it sends | CapCut's terms license users' videos to ByteDance; Clipchamp needs the internet and OneDrive (G7) |
+| Private | Works fully offline. Nothing leaves the computer unless the user picks an online model, and the app says so at that moment. The only report is an opt-in check-in that shows what it sends. "No account, nothing uploaded" is said at first run and on the download page | CapCut's terms license users' videos to ByteDance; Clipchamp needs the internet and OneDrive (G7); Meta Edits is Meta's |
 | AI as tools | Every AI step is a tool the user starts, sees and can undo. Proposed cuts are shown before they apply. Nothing generated is pushed | 292 low reviews complain about AI; Captions' auto-cut "cut words instead" (G1, G15) |
 | Never lose work | Autosave that can't corrupt a project, a recovery journal written about a second after each edit, releases tested on a 60-minute 4K project | Crashes are the second-biggest complaint (618), lost projects 70 (G9) |
 | Starts first time | One signed installer per system; no Python, Docker or setup steps; AI models download inside the app, their size shown first | Kdenlive's captions need Python and 3.4 GB of add-ons; OpenShot 4.0 didn't start on macOS (G3) |
@@ -37,19 +42,23 @@ Detail and sources: [research/easy-editors.md](research/easy-editors.md),
 [research/free-and-open-editors.md](research/free-and-open-editors.md),
 [research/ai-editors.md](research/ai-editors.md).
 
-| | **Ours** | CapCut | Clipchamp | iMovie | Resolve (free) | Shotcut | Kdenlive | Descript |
-|---|---|---|---|---|---|---|---|---|
-| 4K export, no watermark | **Free** | Pro ($19.99/mo) | Paid | Free (Mac, 30 fps) | Free (to UHD 60) | Free | Free | Plans from $16/mo |
-| Captions from speech | **Free, on the computer** | Pro | Free, Microsoft's cloud | None | Studio ($295) | Free, on the computer | Add-on: Python + 3.4 GB | Paid, metered by minutes |
-| Silences and "um"s cut, checked first | **Free** | Pro (*unverified*) | Not found | None | Not found | None ("out of scope") | None (asked since 2019) | Paid (credits) |
-| Voice clean-up | **Free** | Pro | Free | Free | Studio | Free (RNNoise) | Effects (*unverified*) | Paid (AI credits) |
-| 9:16 that follows the speaker | **Free (week 2)** | Paid (*unverified*) | None | None | Studio | A filter, by hand | None | — |
-| Offline, no account | **Yes** | Account needed | Internet and Microsoft account | Yes | Sign-up form | Yes | Yes | Account |
-| Mac, Windows, Linux | **All three** | Mac, Windows | Windows, web | Mac | All three | All three | All three | Mac, Windows |
-| Easy for a CapCut user | **The goal: minutes to first export** | Yes | Yes | Yes | Hard | Harder | Harder | Yes |
-| AI models to choose, local and online | **Yes** | No | No | No | No | No | No | Online only |
+| | **Ours** | CapCut | Meta Edits | Clipchamp | iMovie | Resolve (free) | Shotcut | Kdenlive | Descript |
+|---|---|---|---|---|---|---|---|---|---|
+| 4K export, no watermark | **Free** | Pro ($19.99/mo) | Free (Mac) | Paid | Free (Mac, 30 fps) | Free (to UHD 60) | Free | Free | Plans from $16/mo |
+| Captions from speech | **Free, on the computer** | Pro | Free, unlimited | Free, Microsoft's cloud | None | Studio ($295) | Free, on the computer | Add-on: Python + 3.4 GB | Paid, metered by minutes |
+| Silences and "um"s cut, checked first | **Free** | Pro (*unverified*) | Not stated | Not found | None | Not found | None ("out of scope") | None (asked since 2019) | Paid (credits) |
+| Voice clean-up | **Free** | Pro | Not stated | Free | Free | Studio | Free (RNNoise) | Effects (*unverified*) | Paid (AI credits) |
+| 9:16 that follows the speaker | **Free (week 2)** | Paid (*unverified*) | Vertical format; following not stated | None | None | Studio | A filter, by hand | None | — |
+| Offline, no account | **Yes** | Account needed | Not stated; signing in carries styles over | Internet and Microsoft account | Yes | Sign-up form | Yes | Yes | Account |
+| Mac, Windows, Linux | **All three** | Mac, Windows | Mac (Apple chips, *unverified*); phones | Windows, web | Mac | All three | All three | All three | Mac, Windows |
+| Easy for a CapCut user | **The goal: minutes to first export** | Yes | Yes (*unverified* on Mac) | Yes | Yes | Hard | Harder | Harder | Yes |
+| AI models to choose, local and online | **Yes** | No | No; MCP for AI agents | No | No | No | No | No | Online only |
 
 **The rivals to watch** (scoreboard: [product.md](product.md) › *Scoreboard*):
+- **Meta Edits** came to the Mac on 2026-11-05 (Social Media Today, BetaNews, AlternativeTo): free
+  4K with no watermark and unlimited captions, 50M phone users. Nothing says it cuts silences or
+  "um"s, cleans the voice or follows the speaker in 9:16, and it has no Windows or Linux. Windows
+  CapCut users paying for Pro are the biggest pool it doesn't reach.
 - **Shotcut** is the real open rival: free captions on the computer, 15 releases in 2026. It won't
   do silence cutting, more speech models or easy 9:16.
 - **FilmCraft** (pure Rust, Apache-2.0, 18,489 stars in seven weeks) is professional and
@@ -75,8 +84,8 @@ Each release goes out to everyone (no private beta) and updates itself.
 If days run short, transitions and music go first, before anything above them. **Fast export
 after cuts** (re-encode only around the cuts, so a 30-minute talk exports in seconds; G8) joins
 release 1 if it's cheap on day 7, otherwise 1.1. **Later, each its own brief:** picking the best
-moments for shorts (needs a language model per video), driving the app from AI agents (G11), a
-phone app (G12).
+moments for shorts (needs a language model per video), driving the app from AI agents (G11; Meta Edits, Shotcut and FilmCraft
+have it or plan it, weighed at the first monthly retro on 2026-12-07), a phone app (G12).
 
 ## How the user goes from download to first video
 
@@ -154,7 +163,7 @@ and Modal's free credit for an NVIDIA card; never a paid machine.
 | 2 | Import (rotation, varying frame rate, colour, sound), background jobs, edit copies, thumbnails, waveforms | Each generated test clip's facts match how it was made; proxies have the right frame count |
 | 3 | Preview: one video and its sound, seeking, the sound clock | Random seeks land on the exact frame; a flash and a beep stay within one frame |
 | 4 | Transcript and captions through the switcher: model download, word times, the transcript panel, caption styles, SRT out | Captions of a known script score under a set word-error rate; word times within a set margin |
-| 5 | Cleanup: silences and fillers proposed, reviewed, applied, each undoable; trim, split, delete; undo. The screen shows at a glance what a menu dialog can't: the cuts already proposed when the video lands, marked on the transcript, each kept or undone on its own | No cut inside a word; undo after any edit sequence restores the project exactly; gate 3 compares our flow with FilmCraft's *Remove Silence…* click by click |
+| 5 | Cleanup: silences and fillers proposed, reviewed, applied, each undoable; trim, split, delete; undo. The screen shows at a glance what a menu dialog can't: the cuts already proposed when the video lands, marked on the transcript, each kept or undone on its own | No cut inside a word; undo after any edit sequence restores the project exactly; gate 3 compares our flow click by click with FilmCraft's *Remove Silence…* and Meta Edits' |
 | 6 | Project file, autosave, recovery journal; voice clean-up switch and even loudness if it fits. The site drafted | A forced quit mid-edit, then restart, brings back the exact project |
 | 7 | Export: 720p, 1080p, 4K, the *YouTube* preset; captions burned in or as a file; fast export after cuts if cheap. The site's pages finished | File facts, frame numbers, sound in sync, export equals preview; 4K export time recorded per machine |
 | 8 | Installers (Mac Apple chip and Intel, Windows, Linux) and the launch checklist below; **release 1**, public quietly | A scripted fresh install of the **build's own files** (never the public download links, which would inflate the count) on GitHub's Mac, Windows and Linux machines reaches a first export, or no release; a model added to the model list shows up on both licence pages with no hand edit |
@@ -187,8 +196,10 @@ before it goes out.
   browser count. An installed copy's update downloads, partial ranges, update files, our own checks,
   crawlers, scripts and link scanners are left out. One way, one place: the counter moves into
   hubnx-apps `shared/` with `music`'s agreement rather than living in two copies.
-- **Windows** shows SmartScreen's warning on the direct download until a Store listing; it scares
-  exactly our users. So the download page shows the *More info → Run anyway* step with a picture,
+- **Windows is the biggest open door** (2026-11-20): Meta Edits doesn't reach it, and Windows
+  CapCut users pay for Pro. Day 8's checks treat it as first-class, and the launch posts speak to
+  Windows users too. It shows SmartScreen's warning on the direct download until a Store listing;
+  that scares exactly our users. So the download page shows the *More info → Run anyway* step with a picture,
   and **the Microsoft Store comes first after release 1**: it removes the warning at no cost, as it
   did for Songbrew. A signing certificate costs money, so not without a yes. The Mac App Store is
   weighed after (its sandbox and FFmpeg).
