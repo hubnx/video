@@ -260,8 +260,12 @@ Proposed by `video assistant` (2026-11-17).
   *unknown*, not a pass.
 - **The check-in:** opt-in, in the app, showing exactly what it sends (videos exported, minutes to
   first export, setup failures). Not through the feedback route, which emails the owner per message:
-  hubnx is deciding a stored kind counted in a daily digest (2026-11-20). Until its fields come, the
-  screen and its *what it sends* view are built, and the sending sits behind one function.
+  hubnx is deciding a stored kind counted in a daily digest (2026-11-20). Its likely shape: a
+  `checkin` kind with three whole numbers (videos exported, minutes to first export or none yet,
+  setup failures), no free text, name or address, one per install per day, kept only as daily totals
+  per app and version. Exports must be stored in ranges (0, 1–2, 3–9, 10+; asked 2026-11-20), since a
+  plain sum can't show "half exported 3+". Until the final names come, the screen and its *what it
+  sends* view are built, showing exactly those numbers, and the sending sits behind one function.
 
 ## Risks
 
