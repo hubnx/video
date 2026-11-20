@@ -189,13 +189,22 @@ before it goes out.
 
 - **Release and launch are separate.** Release 1 goes public quietly once its checks pass (no
   private beta). The launch posts wait for 1.1, whose demo shows all four jobs.
-- **Downloads** come from the site, `video.hubnx.com/download/`, as Songbrew's do (S3 and CloudFront
-  in `hubnx-apps`, within AWS's free allowance), and the installed app updates itself from there.
-  They're counted Songbrew's way (`music/site/scripts/count-downloads.ts`), from the site's access
-  log: only complete first-install files (`.dmg`, `Setup.exe`, AppImage, `.deb`) fetched by a
-  browser count. An installed copy's update downloads, partial ranges, update files, our own checks,
-  crawlers, scripts and link scanners are left out. One way, one place: the counter moves into
-  the public `hubnx/web-parts` with `music`'s agreement rather than living in two copies.
+- **Downloads** come from the site's own bucket, `video.hubnx.com/download/`, with the version in
+  each file name, as Songbrew's do (S3 and CloudFront in `hubnx-apps`), and the installed app
+  updates itself from there. GitHub Releases carries the same files for the open-source crowd; its
+  per-file count, which includes every bot, is recorded beside ours as a second number (decided
+  2026-11-20: the keep-or-stop number rests on downloads the site serves).
+- **Counted** by the shared download counter (Songbrew's, moving into hubnx-apps' private `shared/`
+  with `music`'s yes, 2026-11-20), from the site's access log: only complete first-install files
+  (`.dmg`, `Setup.exe`, AppImage, `.deb`) fetched by a browser count. Update downloads, partial
+  ranges, our own checks, crawlers, scripts and link scanners are left out. It's an ops script that
+  reads a private log bucket, so it and this app's settings for it live in private hubnx-apps, never
+  in this public repo; `video assistant` runs it at least every 13 days. The site provides what it
+  reads, as `music/site/infra/site.yaml` does: CloudFront standard logs as JSON (timestamp, path,
+  status, bytes, browser name; no address field), a log bucket that deletes after 14 days, and
+  pages that load their own styles and scripts.
+- **Cost:** CloudFront's always-free 1 TB a month out holds to about 5,000 downloads a month; the
+  `video-monthly` budget warns before that, and anything past it goes to the owner first.
 - **Windows is the biggest open door** (2026-11-20): Meta Edits doesn't reach it, and Windows
   CapCut users pay for Pro. Day 8's checks treat it as first-class, and the launch posts speak to
   Windows users too. It shows SmartScreen's warning on the direct download until a Store listing;
