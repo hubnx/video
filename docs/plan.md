@@ -157,16 +157,25 @@ HandBrake do. Revisit before 100,000 downloads a year, or before any revenue.
 Each day ends with its proof. Tests run on this Mac, GitHub's free Mac, Windows and Linux machines,
 and Modal's free credit for an NVIDIA card; never a paid machine.
 
+**Checks never take the screen** (`~/.claude/CLAUDE.md` › *Rules in every repo*; hubnx-apps registry ›
+*Shared* › *Checks that never take the screen*). The app runs hidden or behind, and each check
+compares the frontmost app before and after without naming ours, so a rename can't make it pass
+silently: hubnx Agent's update checks "passed" measuring nothing once its name changed (2026-11-20),
+and this app was `video` before *hubnx Video*. Where a check must find our process, the name comes
+from the packaging's own constants (product name, `com.hubnx.video`), pinned by a test, and finding
+no matching process fails the check. Squirrel's relaunch after an update comes to the front, so the
+update check relaunches with `open -g -j`.
+
 | Day | Step | Proof |
 |---|---|---|
-| 1 | Shell from Songbrew, every word shown kept in one table from the start (as Songbrew's `words.ts`), so translating later is one file; FFmpeg fetched with pinned checksums; probe of 4K encode and decode on all three systems. **Filler check**, on free-licensed talking-head clips with every "um" marked by hand, three detectors: (a) each speech model as it is; (b) Whisper given a prompt full of "um"s, a known trick for keeping them; (c) speech with no word: stretches where the voice detector hears speech but the transcript has none, proposed as *possible "um"* | The package opens on all three; FFmpeg runs inside it; the probe and the share of marked "um"s each detector and the best combination find saved in `local/` and written in *Risks* |
+| 1 | Shell from Songbrew, every word shown kept in one table from the start (as Songbrew's `words.ts`), so translating later is one file; FFmpeg fetched with pinned checksums; probe of 4K encode and decode on all three systems. **Filler check**, on free-licensed talking-head clips with every "um" marked by hand, three detectors: (a) each speech model as it is; (b) Whisper given a prompt full of "um"s, a known trick for keeping them; (c) speech with no word: stretches where the voice detector hears speech but the transcript has none, proposed as *possible "um"* | The package opens on all three without taking the screen, the watcher failing if it finds no process; FFmpeg runs inside it; the probe and the share of marked "um"s each detector and the best combination find saved in `local/` and written in *Risks* |
 | 2 | Import (rotation, varying frame rate, colour, sound), background jobs, edit copies, thumbnails, waveforms | Each generated test clip's facts match how it was made; proxies have the right frame count |
 | 3 | Preview: one video and its sound, seeking, the sound clock | Random seeks land on the exact frame; a flash and a beep stay within one frame |
 | 4 | Transcript and captions through the switcher: model download, word times, the transcript panel, caption styles, SRT out | Captions of a known script score under a set word-error rate; word times within a set margin |
 | 5 | Cleanup: silences and fillers proposed, reviewed, applied, each undoable; trim, split, delete; undo. The screen shows at a glance what a menu dialog can't: the cuts already proposed when the video lands, marked on the transcript, each kept or undone on its own | No cut inside a word; undo after any edit sequence restores the project exactly; gate 3 compares our flow click by click with FilmCraft's *Remove Silence…* and Meta Edits' |
 | 6 | Project file, autosave, recovery journal; voice clean-up switch and even loudness if it fits. The site drafted | A forced quit mid-edit, then restart, brings back the exact project |
 | 7 | Export: 720p, 1080p, 4K, the *YouTube* preset; captions burned in or as a file; fast export after cuts if cheap. The site's pages finished | File facts, frame numbers, sound in sync, export equals preview; 4K export time recorded per machine |
-| 8 | Installers (Mac Apple chip and Intel, Windows, Linux) and the launch checklist below; **release 1**, public quietly | A scripted fresh install of the **build's own files** (never the public download links, which would inflate the count) on GitHub's Mac, Windows and Linux machines reaches a first export, or no release; a model added to the model list shows up on both licence pages with no hand edit |
+| 8 | Installers (Mac Apple chip and Intel, Windows, Linux) and the launch checklist below; **release 1**, public quietly | A scripted fresh install of the **build's own files** (never the public download links, which would inflate the count) on GitHub's Mac, Windows and Linux machines reaches a first export, or no release; the update installs and relaunches behind, never frontmost; a model added to the model list shows up on both licence pages with no hand edit |
 | 9 | 9:16 reframe, shorts styles and preset → **1.1, the launch** (the posts) | The speaker's face stays inside the frame on test clips; the demo's minutes measured |
 | 10 | Background removal (and voice clean-up if not in 1) → **1.2** | The cut-out's edge against a reference matte, measured |
 | 11–12 | More tracks, pictures and text over the video, titles and lower thirds → **1.3** | Screenshots at every size, both themes, pass the clarity check |
