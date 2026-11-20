@@ -157,7 +157,8 @@ and Modal's free credit for an NVIDIA card; never a paid machine.
 | 5 | Cleanup: silences and fillers proposed, reviewed, applied, each undoable; trim, split, delete; undo. The screen shows at a glance what a menu dialog can't: the cuts already proposed when the video lands, marked on the transcript, each kept or undone on its own | No cut inside a word; undo after any edit sequence restores the project exactly; gate 3 compares our flow with FilmCraft's *Remove Silence…* click by click |
 | 6 | Project file, autosave, recovery journal; voice clean-up switch and even loudness if it fits. The site drafted | A forced quit mid-edit, then restart, brings back the exact project |
 | 7 | Export: 720p, 1080p, 4K, the *YouTube* preset; captions burned in or as a file; fast export after cuts if cheap. The site's pages finished | File facts, frame numbers, sound in sync, export equals preview; 4K export time recorded per machine |
-| 8 | Installers (Mac Apple chip and Intel, Windows, Linux) and the launch checklist below; **release 1**, public quietly | A scripted fresh install of the **build's own files** (never the public download links, which would inflate the count) on GitHub's Mac, Windows and Linux machines reaches a first export, or no release |
+| 8 | Installers (Mac Apple chip and Intel, Windows, Linux) and the launch checklist below; **release 1**, public quietly | A scripted fresh install of the **build's own files** (never the public download links, which would inflate the count) on GitHub's Mac, Windows and Linux machines reaches a first export, or no release; a model added to the model list shows up on both licence
+  pages with no hand edit |
 | 9 | 9:16 reframe, shorts styles and preset → **1.1, the launch** (the posts) | The speaker's face stays inside the frame on test clips; the demo's minutes measured |
 | 10 | Background removal (and voice clean-up if not in 1) → **1.2** | The cut-out's edge against a reference matte, measured |
 | 11–12 | More tracks, pictures and text over the video, titles and lower thirds → **1.3** | Screenshots at every size, both themes, pass the clarity check |
@@ -203,13 +204,20 @@ before it goes out.
 **Launch checklist, day 8** (hubnx-apps `CLAUDE.md` › Phase 2):
 - [ ] The registry row updated
 - [ ] Repo `hubnx/video` public; `video.hubnx.com` with its zone ($0.50 a month, approved)
-- [ ] Privacy, terms and `/about/` pages; the "by Hub Nexus" maker line; *More from Hub Nexus*; the
-  feedback form; outbound and file links in a new tab, set once at build time (`docs/brand.md`)
+- [ ] Privacy, terms and `/about/` pages; the footer's *About Hub Nexus* (no "by Hub Nexus" line
+  beside the name, which wears `hubnx` already); *More from Hub Nexus*; the feedback form; outbound
+  and file links in a new tab, set once at build time (`docs/brand.md`)
+- [ ] Open-source licenses: `/licenses/` on the site and *Help* › *Open-source licenses* in the app,
+  both made at build time from the shipped code's own files (`docs/brand.md`): Electron's and
+  Chromium's notices, FFmpeg's GPLv3 text with its source offer, ONNX Runtime and each local model's
+  licence, and our AGPL-3.0
 - [ ] Support address `video@hubnx.com` (the owner's step: an alias)
 - [ ] Privacy-first visitor counts (visitors → downloads), as typing's: the CDN's request log
   counted into numbers alone
 - [ ] Search Console: the site's sitemap on the `hubnx.com` domain property
-- [ ] The AWS budget: the account-wide `hubnx-apps-all-apps-monthly` covers it
+- [ ] The AWS budget: `video-monthly` in the site's own stack, filtered on `Project=video` (free;
+  decisions, 2026-11-19), once the owner has activated the `Project` tag; the account-wide alarm is
+  the backstop
 - [ ] hubnx's Assistant confirms its feedback route accepts `video`'s feedback and check-in (asked
   before day 8), and adds `video` to `hubnx.com/apps` at the launch
 - [ ] No Stripe product: nothing is sold
