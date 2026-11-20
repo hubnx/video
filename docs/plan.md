@@ -158,9 +158,11 @@ Each day ends with its proof. Tests run on this Mac, GitHub's free Mac, Windows 
 and Modal's free credit for an NVIDIA card; never a paid machine.
 
 **Checks never take the screen** (`~/.claude/CLAUDE.md` › *Rules in every repo*; hubnx-apps registry ›
-*Shared* › *Checks that never take the screen*). The app runs hidden or behind, and each check
-compares the frontmost app before and after without naming ours, so a rename can't make it pass
-silently: hubnx Agent's update checks "passed" measuring nothing once its name changed (2026-11-20),
+*Shared* › *Checks that never take the screen*). The app runs hidden or behind, and a watcher
+samples the frontmost app all through each check (an NSWorkspace activation observer, or polling a
+few times a second) and fails on any change, without naming ours. Comparing only before and after
+misses an app that comes to the front and quits, as Squirrel's relaunch can. Not naming ours means a
+rename can't make it pass silently: hubnx Agent's update checks "passed" measuring nothing once its name changed (2026-11-20),
 and this app was `video` before *hubnx Video*. Where a check must find our process, the name comes
 from the packaging's own constants (product name, `com.hubnx.video`), pinned by a test, and finding
 no matching process fails the check. Squirrel's relaunch after an update comes to the front, so the
@@ -175,7 +177,7 @@ update check relaunches with `open -g -j`.
 | 5 | Cleanup: silences and fillers proposed, reviewed, applied, each undoable; trim, split, delete; undo. The screen shows at a glance what a menu dialog can't: the cuts already proposed when the video lands, marked on the transcript, each kept or undone on its own | No cut inside a word; undo after any edit sequence restores the project exactly; gate 3 compares our flow click by click with FilmCraft's *Remove Silence…* and Meta Edits' |
 | 6 | Project file, autosave, recovery journal; voice clean-up switch and even loudness if it fits. The site drafted | A forced quit mid-edit, then restart, brings back the exact project |
 | 7 | Export: 720p, 1080p, 4K, the *YouTube* preset; captions burned in or as a file; fast export after cuts if cheap. The site's pages finished | File facts, frame numbers, sound in sync, export equals preview; 4K export time recorded per machine |
-| 8 | Installers (Mac Apple chip and Intel, Windows, Linux) and the launch checklist below; **release 1**, public quietly | A scripted fresh install of the **build's own files** (never the public download links, which would inflate the count) on GitHub's Mac, Windows and Linux machines reaches a first export, or no release; the update installs and relaunches behind, never frontmost; a model added to the model list shows up on both licence pages with no hand edit |
+| 8 | Installers (Mac Apple chip and Intel, Windows, Linux) and the launch checklist below; **release 1**, public quietly | A scripted fresh install of the **build's own files** (never the public download links, which would inflate the count) on GitHub's Mac, Windows and Linux machines reaches a first export, or no release; the update installs and relaunches behind, the frontmost app unchanged at every sample through the run; a model added to the model list shows up on both licence pages with no hand edit |
 | 9 | 9:16 reframe, shorts styles and preset → **1.1, the launch** (the posts) | The speaker's face stays inside the frame on test clips; the demo's minutes measured |
 | 10 | Background removal (and voice clean-up if not in 1) → **1.2** | The cut-out's edge against a reference matte, measured |
 | 11–12 | More tracks, pictures and text over the video, titles and lower thirds → **1.3** | Screenshots at every size, both themes, pass the clarity check |
