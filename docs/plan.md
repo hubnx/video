@@ -267,14 +267,21 @@ Proposed by `video assistant` (2026-11-17).
   who send the opt-in day-7 check-in, half or more exported 3+ videos.
 - **Stop** if under a quarter of each: fix the offer once, then stop. Fewer than 30 check-ins reads
   *unknown*, not a pass.
-- **The check-in:** opt-in, in the app, showing exactly what it sends (videos exported, minutes to
-  first export, setup failures). Not through the feedback route, which emails the owner per message:
-  hubnx is deciding a stored kind counted in a daily digest (2026-11-20). Its likely shape: a
-  `checkin` kind with three whole numbers (videos exported, minutes to first export or none yet,
-  setup failures), no free text, name or address, one per install per day, kept only as daily totals
-  per app and version. Exports must be stored in ranges (0, 1–2, 3–9, 10+; asked 2026-11-20), since a
-  plain sum can't show "half exported 3+". Until the final names come, the screen and its *what it
-  sends* view are built, showing exactly those numbers, and the sending sits behind one function.
+- **The check-in** (approved by hubnx, 2026-11-20; the contract is hubnx `docs/roadmap.md` row 90):
+  `kind: "checkin"` on hubnx.com's `/api/feedback`, sending three whole numbers: videos exported,
+  minutes to first export (or none yet) and setup failures, with the version and the system. No
+  free text, name, address or install ID. Only daily totals are stored, in ranges (exports 0, 1–2,
+  3–9, 10+), which is what "half exported 3+" needs.
+  - **Asked once, in plain words, after the first successful export**: a quiet note in the
+    export-done view, never at first launch and never a dialog over their work. Off until they say
+    yes; switchable in Settings.
+  - The app keeps first-launch time, exports and setup failures **on the computer only** from the
+    start, and sends them once, at day 7, only after a yes. A local flag keeps it to one per install,
+    since the server doesn't enforce that. The *what it sends* view shows exactly the three numbers.
+  - **The gap:** people who never reach a first export are never asked, so setup failures count
+    only those who later succeed. Two things cover the rest: the fresh-install gate on GitHub's
+    three systems before every release, and a *Send a problem report* button on every setup-error
+    screen (feedback kind `problem`, the log attached only if they agree).
 
 ## Risks
 
