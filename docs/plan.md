@@ -195,7 +195,7 @@ before it goes out.
   log: only complete first-install files (`.dmg`, `Setup.exe`, AppImage, `.deb`) fetched by a
   browser count. An installed copy's update downloads, partial ranges, update files, our own checks,
   crawlers, scripts and link scanners are left out. One way, one place: the counter moves into
-  hubnx-apps `shared/` with `music`'s agreement rather than living in two copies.
+  the public `hubnx/web-parts` with `music`'s agreement rather than living in two copies.
 - **Windows is the biggest open door** (2026-11-20): Meta Edits doesn't reach it, and Windows
   CapCut users pay for Pro. Day 8's checks treat it as first-class, and the launch posts speak to
   Windows users too. It shows SmartScreen's warning on the direct download until a Store listing;
@@ -215,17 +215,19 @@ before it goes out.
 **Launch checklist, day 8** (hubnx-apps `CLAUDE.md` › Phase 2):
 - [ ] The registry row updated
 - [ ] Repo `hubnx/video` public; `video.hubnx.com` with its zone ($0.50 a month, approved)
+- [ ] Shared parts from the public `hubnx/web-parts` repo pinned by commit, never a path into
+  hubnx-apps' private `shared/`, since this repo goes public (*Apps HQ* splits it out by day 8)
 - [ ] The contributor agreement check: the repo calls `hubnx/.github`'s reusable workflow, never a
   copied one
 - [ ] Privacy, terms and `/about/` pages; the footer's *About Hub Nexus* (no "by Hub Nexus" line
   beside the name, which wears `hubnx` already); *More from Hub Nexus*; the feedback form; outbound
   and file links in a new tab, set once at build time (`docs/brand.md`)
 - [ ] Open-source licenses: `/licenses/` on the site and *Help* › *Open-source licenses* in the app,
-  both made at build time by hubnx-apps' shared builder (`shared/web-parts/licenses.ts`, as
-  globe's), from the shipped code's own files, the app's main process and renderer both, with
-  extras listed from the model list (`docs/brand.md`): Electron's and
-  Chromium's notices, FFmpeg's GPLv3 text with its source offer, ONNX Runtime and each local model's
-  licence, and our AGPL-3.0
+  both made at build time by the shared builder and its Electron part (lifted from Songbrew's
+  `notices-collector.ts` and `app-notices.ts`: every build's packages, what electron-builder packs,
+  Electron's and Chromium's notices). Ours to add: FFmpeg's GPLv3 text with its source offer, ONNX
+  Runtime and each local model's licence listed from the model list, our AGPL-3.0, and a written
+  decision for any copyleft package (`docs/brand.md`)
 - [ ] Support address `video@hubnx.com` (the owner's step: an alias)
 - [ ] Privacy-first visitor counts (visitors → downloads), as typing's: the CDN's request log
   counted into numbers alone
@@ -233,8 +235,8 @@ before it goes out.
 - [ ] The AWS budget: `video-monthly` in the site's own stack, filtered on `Project=video` (free;
   decisions, 2026-11-19), once the owner has activated the `Project` tag; the account-wide alarm is
   the backstop
-- [ ] The feedback form (app and site) through hubnx-apps' shared parts (`shared/web-parts/feedback-report.ts`,
-  which holds hubnx.com's `/api/feedback` contract): hubnx registered `video` for both, the site at
+- [ ] The feedback form (app and site) through the shared parts' `feedback-report.ts`, which holds
+  hubnx.com's `/api/feedback` contract: hubnx registered `video` for both, the site at
   exactly `https://video.hubnx.com` (hubnx's Assistant, 2026-11-20)
 - [ ] For `hubnx.com/apps` at 1.1: the app's icon as an SVG on the site; `video assistant` sends
   hubnx the link, the icon's address, one English line, where it runs and that it's free
