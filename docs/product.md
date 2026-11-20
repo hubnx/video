@@ -2,8 +2,9 @@
 
 The product manager's file: the rhythm, where users' reviews come from, the scoreboard of rivals and
 the gap register. `video` builds (how to build, `CLAUDE.md`, `plan.md`, `research/*`); `video
-assistant` is the product manager: researches, decides what isn't money, writes it here, challenges
-each step of the build, and tells the owner in plain words.
+assistant` is the product manager and, since 2026-11-20, the app's contact for the owner and other
+chats (`video` reaches others through it): researches, decides what isn't money, writes it here,
+challenges each step of the build, keeps the owner's steps, and tells the owner in plain words.
 
 ## The owner's brief (2026-11-17)
 
