@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- hubnx Video's icon (../../docs/brand.md › Icons): the red-orange tile, rounded by 23% of its width, and a white
+       play triangle with a cut through it, for an editor that cuts. Shapes only, no text. -->
+  <rect width="64" height="64" rx="14.7" fill="#c2410c"/>
+  <path d="M22 16.5 L28.5 20.4 L28.5 43.6 L22 47.5 Z M33.5 23.4 L48 32 L33.5 40.6 Z" fill="#ffffff"/>
+</svg>

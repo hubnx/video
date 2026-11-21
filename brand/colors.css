@@ -1,0 +1,41 @@
+/* hubnx Video's colours, light and dark following the system: the one source for the app's window (app/src/styles.css)
+   and the website. The accent is the icon's tile (brand/icon.svg): a red-orange no other Hub Nexus app uses
+   (../../docs/brand.md › Icons: typing's teal, desk's amber, globe's navy, Surehand's green, music's indigo, meet's
+   magenta). White on it is 5.2:1, so it carries white text on buttons in both themes. */
+:root {
+  color-scheme: light dark;
+  --page: #ffffff;
+  --surface: #f7f7f8;
+  --surface-2: #eeeef0;
+  --text: #18181b;
+  --muted: #5d5d66;
+  --line: #e4e4e8;
+  --line-strong: #c9c9d0;
+  --button: #ffffff;
+  --hover: #ececef;
+  --accent: #c2410c;
+  --accent-hover: #a8380a;
+  --on-accent: #ffffff;
+  --accent-text: #b13c0b;
+  --focus: #f08a5d;
+  --danger: #b42318;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: #17171b;
+    --surface: #1f1f24;
+    --surface-2: #2a2a31;
+    --text: #ececf1;
+    --muted: #a1a1aa;
+    --line: #2e2e35;
+    --line-strong: #4a4a54;
+    --button: #26262c;
+    --hover: #2a2a31;
+    --accent: #c2410c;
+    --accent-hover: #d14a12;
+    --accent-text: #fb9a6c;
+    --focus: #fb9a6c;
+    --danger: #e5584c;
+  }
+}

@@ -1,0 +1,53 @@
+# What WebCodecs can encode and decode at 1080p and 4K, H.264 and HEVC, on GitHub's Mac (Apple chip), Windows and
+# Ubuntu (docs/plan.md › Build order, day 1). The owner's Intel Mac runs the same with `pnpm probe`. Started by hand
+# only: Mac minutes count ten times against the free plan's.
+name: WebCodecs probe
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, windows-latest, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: pnpm
+        run: corepack enable && corepack prepare pnpm@12.15.0 --activate
+
+      - name: The app's packages
+        working-directory: app
+        run: pnpm install --frozen-lockfile && pnpm exec node node_modules/electron/install.js
+
+      - name: The probe on a virtual screen (Ubuntu)
+        if: runner.os == 'Linux'
+        working-directory: app
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q xvfb
+          xvfb-run -a pnpm exec electron --no-sandbox scripts/webcodecs-probe/main.cjs | tee probe.txt
+
+      - name: The probe (Mac, Windows)
+        if: runner.os != 'Linux'
+        working-directory: app
+        shell: bash
+        run: pnpm exec electron scripts/webcodecs-probe/main.cjs | tee probe.txt
+
+      - name: What it found
+        working-directory: app
+        shell: bash
+        run: grep '^WEBCODECS ' probe.txt | cut -c11- > probe-${{ runner.os }}-${{ runner.arch }}.json && cat probe-*.json
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: probe-${{ runner.os }}-${{ runner.arch }}
+          path: app/probe-*.json
+          retention-days: 7
