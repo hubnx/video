@@ -185,8 +185,13 @@ update check relaunches with `open -g -j`.
 
 **On every release:** the fresh-install-to-export check on all three systems, the 60-minute 4K
 project, the recovery test, and model speeds measured on GitHub's machines and Modal before the app
-promises a time. Modal's November credit is spent, so until December's (about $5 asked of `music`'s
-share, 2026-11-20) the app promises only times measured on this Mac and GitHub's machines. Screens pass the clarity check ([../../docs/brand.md](../../docs/brand.md)) at phone,
+promises a time. Modal's November credit is spent, so release 1 promises only times measured on this Mac and
+GitHub's machines. **December's Modal share is $5** (given by `music`, 2026-11-20; hubnx-apps
+registry › *Modal*): runs from 12-04, after Songbrew's launch-blocking runs, or earlier if `music`
+says it's done. Before each run, check `modal billing summary` and estimate the run (an L4 is about
+$0.80 an hour); start it only if `music`'s $5 for its release gates stays afterwards, since hitting
+the limit disables the workspace mid-run for both apps until January. At $5 spent, stop. NVIDIA
+times join the first release after 12-04. Screens pass the clarity check ([../../docs/brand.md](../../docs/brand.md)) at phone,
 tablet and desktop widths in both themes. Words people read (launch posts, support replies, the
 check-in, the SmartScreen help, first-run messages) follow `~/.claude/CLAUDE.md` › *Outreach and SEO*
 › "Every email and message to a person reads like a friendly person wrote it" (owner, 2026-11-19).
