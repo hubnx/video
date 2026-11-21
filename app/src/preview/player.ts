@@ -11,6 +11,10 @@ import type { Frames } from "./frames.ts";
 /** Frames decoded ahead while playing: enough to ride over a slow one, few enough to hold little memory at 4K. */
 const AHEAD = 4;
 
+/** What's laid over each frame (the captions), given its moment in seconds and the size in pixels the picture fills;
+ * null for nothing. */
+export type Overlay = (seconds: number, size: { width: number; height: number }) => TexImageSource | null;
+
 export class Player {
   private readonly frames: Frames;
   private readonly clock: Clock;
@@ -20,6 +24,9 @@ export class Player {
   private seekGeneration = 0;
   private playGeneration = 0;
   private queue: VideoSample[] = [];
+  /** The frame on the canvas, kept so it can be drawn again under a changed overlay while paused. */
+  private shown: VideoSample | null = null;
+  private overlay: Overlay | null = null;
   /** The timestamp of the frame on the canvas: the checks compare it with the clock (scripts/check-preview.ts). */
   drawnTimestamp: number | null = null;
 
@@ -29,6 +36,12 @@ export class Player {
     this.compositor = compositor;
     this.duration = duration;
     this.changed = changed;
+  }
+
+  /** Sets what's laid over each frame, and draws the frame showing again under it. */
+  setOverlay(overlay: Overlay | null): void {
+    this.overlay = overlay;
+    if (this.shown && !this.clock.playing) this.draw(this.shown);
   }
 
   get time(): number {
@@ -51,10 +64,7 @@ export class Player {
       sample?.close();
       return;
     }
-    if (sample) {
-      this.draw(sample);
-      sample.close();
-    }
+    if (sample) this.show(sample);
     this.changed();
     if (wasPlaying) this.play();
   }
@@ -86,8 +96,17 @@ export class Player {
 
   close(): void {
     this.pause();
+    this.shown?.close();
+    this.shown = null;
     this.frames.close();
     this.clock.close();
+  }
+
+  /** Draws `sample` and keeps it as the frame showing, closing the one before. */
+  private show(sample: VideoSample): void {
+    this.draw(sample);
+    this.shown?.close();
+    this.shown = sample;
   }
 
   /** Draws the last decoded frame whose moment has come, closing those passed over. */
@@ -99,8 +118,7 @@ export class Player {
       due = this.queue.shift()!;
     }
     if (due) {
-      this.draw(due);
-      due.close();
+      this.show(due);
       this.changed();
     }
   }
@@ -126,6 +144,9 @@ export class Player {
     const frame = sample.toVideoFrame();
     try {
       this.compositor.draw(frame, sample.squarePixelWidth, sample.squarePixelHeight, (sample.rotation / 90) as QuarterTurns);
+      // The frame's middle: a word that starts while the frame shows is the word lit on it, paused or playing.
+      const over = this.overlay?.(sample.timestamp + sample.duration / 2, this.compositor.pictureSize);
+      if (over) this.compositor.drawOverlay(over);
       this.drawnTimestamp = sample.timestamp;
     } finally {
       frame.close();

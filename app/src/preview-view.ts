@@ -1,13 +1,16 @@
 /**
- * The preview: the video drawn on a canvas, play and pause, the time, and a bar to move through it. The bar gives way
- * to the timeline on day 5 (docs/plan.md › Build order). The canvas carries the drawn frame's time and the clock's as
- * data, which the preview check reads (scripts/check-preview.ts).
+ * The preview: the video drawn on a canvas with its captions, play and pause, the time, and a bar to move through it.
+ * The bar gives way to the timeline on day 5 (docs/plan.md › Build order). The canvas carries the drawn frame's time and
+ * the clock's as data, which the preview check reads (scripts/check-preview.ts).
  */
 import { element } from "./dom.ts";
+import { captionAt, drawCaption, type CaptionStyle } from "./preview/captions.ts";
 import { SoundClock, SteadyClock } from "./preview/clock.ts";
 import { Compositor } from "./preview/compositor.ts";
 import { Frames } from "./preview/frames.ts";
 import { Player } from "./preview/player.ts";
+import type { CaptionLine } from "./shared/transcript.ts";
+import { flicksOf } from "./shared/time.ts";
 import { words } from "./words.ts";
 
 /** "1:05" or "1:02:05". */
@@ -18,8 +21,17 @@ export function clockTime(seconds: number): string {
   return hours ? `${hours}:${two(minutes)}:${two(rest)}` : `${minutes}:${two(rest)}`;
 }
 
+export interface Preview {
+  element: HTMLElement;
+  seek(seconds: number): void;
+  /** The captions to draw, and their style; an empty list draws none. */
+  setCaptions(captions: readonly CaptionLine[], style: CaptionStyle): void;
+  /** Called with the clip's time at each frame drawn and each seek. */
+  onTime(listener: (seconds: number) => void): void;
+}
+
 /** The preview of the file at `address`, or null when this computer can't decode its picture. */
-export async function previewView(address: string, duration: number): Promise<HTMLElement | null> {
+export async function previewView(address: string, duration: number): Promise<Preview | null> {
   const frames = await Frames.open(address);
   if (!frames) return null;
   const clock = (await SoundClock.open(address)) ?? new SteadyClock();
@@ -29,6 +41,7 @@ export async function previewView(address: string, duration: number): Promise<HT
   const time = element("span", { className: "preview-time" });
   const bar = element("input", { type: "range", className: "preview-bar", min: "0", max: String(duration), step: "any", value: "0",
     attributes: { "aria-label": words.preview.position } });
+  const timeListeners: ((seconds: number) => void)[] = [];
 
   const update = () => {
     playButton.textContent = player.playing ? words.preview.pause : words.preview.play;
@@ -36,12 +49,29 @@ export async function previewView(address: string, duration: number): Promise<HT
     if (document.activeElement !== bar) bar.value = String(player.time);
     canvas.dataset.drawn = String(player.drawnTimestamp ?? "");
     canvas.dataset.clock = String(player.time);
+    for (const listener of timeListeners) listener(player.time);
   };
   const player = new Player(frames, clock, compositor, duration, update);
   playButton.addEventListener("click", () => (player.playing ? player.pause() : player.play()));
   bar.addEventListener("input", () => void player.seek(Number(bar.value)));
+
+  // The captions' own canvas, the picture's size, laid over each frame (compositor.ts › drawOverlay).
+  const overlay = new OffscreenCanvas(1, 1);
+  const overlayContext = overlay.getContext("2d")!;
+  const setCaptions = (captions: readonly CaptionLine[], style: CaptionStyle) => {
+    player.setOverlay(captions.length ? (seconds, size) => {
+      if (overlay.width !== size.width || overlay.height !== size.height) [overlay.width, overlay.height] = [size.width, size.height];
+      const now = flicksOf(seconds);
+      drawCaption(overlayContext, overlay.width, overlay.height, captionAt(captions, now), now, style);
+      return overlay;
+    } : null);
+  };
   await player.seek(0);
 
-  return element("div", { className: "preview" }, canvas,
-    element("div", { className: "preview-controls" }, playButton, bar, time));
+  return {
+    element: element("div", { className: "preview" }, canvas, element("div", { className: "preview-controls" }, playButton, bar, time)),
+    seek: (seconds) => void player.seek(seconds),
+    setCaptions,
+    onTime: (listener) => timeListeners.push(listener),
+  };
 }

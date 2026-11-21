@@ -5,6 +5,7 @@
  */
 import { APP_NAME, type OpenRefusal } from "./shared/app-api.ts";
 import type { JobKind } from "./shared/media.ts";
+import type { CaptionStyle } from "./preview/captions.ts";
 
 export const words = {
   appName: APP_NAME,
@@ -40,6 +41,25 @@ export const words = {
     },
     starting: "Starting",
     notStarted: "This video couldn't be prepared. Close the app and open it again.",
+    // The one line at the top: what's being got ready now (gate 2 on the preparing screen, 2026-11-21).
+    downloadingModel: "Getting the speech model ready (first time only)…",
+    hearing: "Writing captions…",
+    preparing: "Getting your video ready for smooth playback…",
+    details: "Details",
+    jobFailed: {
+      speech: "The sound couldn't be read, so captions can't be made for this video.",
+      proxy: "The video couldn't be prepared for smooth playback.",
+      editCopy: "A copy for export couldn't be made.",
+    } satisfies Record<JobKind, string>,
+    transcriptFailed: "Captions couldn't be made for this video.",
+  },
+  transcript: {
+    label: "Transcript",
+    waiting: "The words appear here as they're heard.",
+  },
+  captions: {
+    style: "Caption style",
+    styles: { subtitles: "Subtitles", wordByWord: "Word by word" } satisfies Record<CaptionStyle, string>,
   },
   preview: {
     label: "Preview",

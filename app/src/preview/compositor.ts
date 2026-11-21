@@ -35,6 +35,10 @@ export class Compositor {
   private readonly gl: WebGL2RenderingContext;
   private readonly scaleAt: WebGLUniformLocation | null;
   private readonly turnsAt: WebGLUniformLocation | null;
+  private readonly pictureTexture: WebGLTexture;
+  private readonly overlayTexture: WebGLTexture;
+  /** The last picture's share of the canvas: an overlay covers exactly the picture, not the black bars. */
+  private scale: [number, number] = [1, 1];
   readonly canvas: HTMLCanvasElement;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -60,11 +64,20 @@ export class Compositor {
     const position = gl.getAttribLocation(program, "position");
     gl.enableVertexAttribArray(position);
     gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-    gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const texture = () => {
+      const made = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, made);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      return made;
+    };
+    this.pictureTexture = texture();
+    this.overlayTexture = texture();
+    // Captions and anything else laid over the picture blend by their own transparency, premultiplied as a 2D canvas is.
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
     this.scaleAt = gl.getUniformLocation(program, "scale");
     this.turnsAt = gl.getUniformLocation(program, "quarterTurns");
   }
@@ -76,13 +89,31 @@ export class Compositor {
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.disable(gl.BLEND);
+    gl.bindTexture(gl.TEXTURE_2D, this.pictureTexture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, picture);
     const [uprightWidth, uprightHeight] = turns % 2 === 0 ? [width, height] : [height, width];
     const picturesShape = uprightWidth / uprightHeight;
     const canvasShape = this.canvas.width / this.canvas.height;
-    const scale = picturesShape > canvasShape ? [1, canvasShape / picturesShape] : [picturesShape / canvasShape, 1];
-    gl.uniform2f(this.scaleAt, scale[0]!, scale[1]!);
+    this.scale = picturesShape > canvasShape ? [1, canvasShape / picturesShape] : [picturesShape / canvasShape, 1];
+    gl.uniform2f(this.scaleAt, this.scale[0], this.scale[1]);
     gl.uniform1i(this.turnsAt, turns);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+
+  /** The size in canvas pixels the last picture fills: an overlay drawn at this size is sharp. */
+  get pictureSize(): { width: number; height: number } {
+    return { width: Math.round(this.canvas.width * this.scale[0]), height: Math.round(this.canvas.height * this.scale[1]) };
+  }
+
+  /** Lays `overlay` (upright, with transparency) over the picture just drawn. */
+  drawOverlay(overlay: TexImageSource): void {
+    const gl = this.gl;
+    gl.enable(gl.BLEND);
+    gl.bindTexture(gl.TEXTURE_2D, this.overlayTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, overlay);
+    gl.uniform2f(this.scaleAt, this.scale[0], this.scale[1]);
+    gl.uniform1i(this.turnsAt, 0);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 

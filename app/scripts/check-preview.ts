@@ -108,7 +108,9 @@ try {
       const shown = await readNumber(page, false);
       if (shown !== frame) {
         misses++;
-        failures.push(`seek to frame ${frame} showed frame ${shown}`);
+        // What the app says it drew, beside what the pixels show: tells a drawing race from a timing slip.
+        const drawn = await page.locator(".preview-canvas").getAttribute("data-drawn");
+        failures.push(`seek to frame ${frame} showed frame ${shown} (the app says it drew ${drawn} s, frame ${Math.floor(Number(drawn) * RATE + 1e-6)})`);
       }
     }
     console.log(`seeks: ${frames.length - misses} of ${frames.length} showed the exact frame`);

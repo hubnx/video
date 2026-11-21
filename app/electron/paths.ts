@@ -13,6 +13,7 @@ export interface Paths {
   settings: string;
   logs: string;
   clips: string; // what the app makes from each clip (clips.ts)
+  models: string; // the AI models, downloaded on first use (models.ts)
   ffmpeg: string; // the FFmpeg the app carries (scripts/fetch-ffmpeg.ts)
   ffprobe: string;
 }
@@ -33,7 +34,8 @@ export function resolvePaths(): Paths {
   const local = path.join(video, "local");
   const data = path.join(local, "app-data");
   app.setPath("userData", data);
-  return withData(data, path.join(local, "ffmpeg-for-app", targetOf(process.platform, process.arch)));
+  // The models stay outside the data folder the checks clear, so each check doesn't download 0.7 GB again.
+  return { ...withData(data, path.join(local, "ffmpeg-for-app", targetOf(process.platform, process.arch))), models: path.join(local, "models") };
 }
 
 function withData(data: string, programs: string): Paths {
@@ -42,6 +44,7 @@ function withData(data: string, programs: string): Paths {
     settings: path.join(data, "settings.json"),
     logs: path.join(data, "logs"),
     clips: path.join(data, "clips"),
+    models: path.join(data, "models"),
     ffmpeg: path.join(programs, programName(process.platform, "ffmpeg")),
     ffprobe: path.join(programs, programName(process.platform, "ffprobe")),
   };

@@ -3,6 +3,7 @@
  * gets back. The window never touches files or processes itself.
  */
 import type { Clip, JobProgress } from "./media.ts";
+import type { TranscriptProgress } from "./transcript.ts";
 
 /** The name a person sees, everywhere: hubnx plus the app's address word (../../../docs/brand.md › Naming). Always
  * lowercase "hubnx", so no sentence starts with it (docs/plan.md › Where it ships). */
@@ -47,6 +48,7 @@ export const CHANNELS = {
   planClip: "clip:plan",
   cancelClip: "clip:cancel",
   jobProgress: "clip:job-progress",
+  transcriptProgress: "clip:transcript-progress",
   logProblem: "app:log-problem",
 } as const;
 
@@ -72,6 +74,7 @@ export interface VideoApi {
   planClip(clipId: string, decodes: boolean): Promise<void>;
   cancelClip(clipId: string): Promise<void>;
   onJobProgress(listener: (progress: JobProgress) => void): () => void;
+  onTranscriptProgress(listener: (progress: TranscriptProgress) => void): () => void;
   /** Writes a problem the window met to the app's log, under a searchable event name. No file names or words of the
    * person's: an error's kind and first line only. */
   logProblem(event: string, error: unknown): void;

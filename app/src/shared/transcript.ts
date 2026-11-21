@@ -12,9 +12,17 @@ export interface Word {
 }
 
 export interface Transcript {
-  language: string; // ISO 639-1, as the model detected or was told
+  language: string; // ISO 639-1 when known; "" when the model doesn't say (Parakeet v3 doesn't)
   words: Word[];
 }
+
+/** How a clip's transcript is coming along, as the window hears it: the speech model downloading (its first use only),
+ * the words of each stretch as they're heard, then the whole transcript (at once, when it was made before). */
+export type TranscriptProgress =
+  | { clipId: string; state: "downloading"; done: number; total: number }
+  | { clipId: string; state: "hearing"; fraction: number; words: Word[] }
+  | { clipId: string; state: "done"; transcript: Transcript }
+  | { clipId: string; state: "failed"; error: string };
 
 /** One caption on screen: one or two lines of words, shown from its first word's start to its last word's end. */
 export interface CaptionLine {

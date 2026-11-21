@@ -2,14 +2,19 @@
  * The app's main process: one window, and the programs behind it.
  */
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme, protocol, shell } from "electron";
+import { existsSync } from "node:fs";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { APP_NAME, CHANNELS, WEBSITE_PAGES, type OpenResult, type WebsitePage } from "../src/shared/app-api.ts";
 import type { Clip, ClipFacts, JobKind } from "../src/shared/media.ts";
+import type { Transcript, TranscriptProgress } from "../src/shared/transcript.ts";
 import { errorName, logError, startAppLog } from "./app-log.ts";
 import { Clips } from "./clips.ts";
 import { findFfmpeg } from "./ffmpeg.ts";
 import { editCopyArguments, jobsFor, proxyArguments, speechArguments } from "./ffmpeg-jobs.ts";
 import { JobRunner, writingPath } from "./jobs.ts";
+import { downloadModels, modelsReady, PARAKEET_V3, SILERO_VAD } from "./models.ts";
+import { transcribe } from "./speech/speech.ts";
 import { mediaResponse } from "./media-response.ts";
 import { setMenu } from "./menu.ts";
 import { resolvePaths } from "./paths.ts";
@@ -57,7 +62,42 @@ async function start(): Promise<void> {
   let window: BrowserWindow | null = null;
   const clips = new Clips(paths.clips);
   const facts = new Map<string, ClipFacts>();
-  const jobs = new JobRunner(paths.ffmpeg, paths.logs, (progress) => window?.webContents.send(CHANNELS.jobProgress, progress));
+  const transcripts = new Map<string, AbortController>(); // the clips being transcribed, to stop them on quitting
+  const sendTranscript = (progress: TranscriptProgress) => window?.webContents.send(CHANNELS.transcriptProgress, progress);
+  // A clip's transcript, once its speech sound is made: the stored one if it was made before; otherwise the models
+  // (downloaded on first use) hear it in the transcriber, the words sent to the window as they come, then stored.
+  const transcribeClip = async (id: string) => {
+    if (transcripts.has(id)) return;
+    const controller = new AbortController();
+    transcripts.set(id, controller);
+    const stored = clips.stored(id, "transcript.json");
+    try {
+      if (existsSync(stored)) {
+        sendTranscript({ clipId: id, state: "done", transcript: JSON.parse(await readFile(stored, "utf8")) as Transcript });
+        return;
+      }
+      const models = [PARAKEET_V3, SILERO_VAD];
+      if (!modelsReady(paths.models, models)) {
+        await downloadModels(paths.models, models, (done, total) => sendTranscript({ clipId: id, state: "downloading", done, total }), controller.signal);
+      }
+      const program = path.join(app.getAppPath(), "dist", "electron", "transcribe.cjs");
+      const heard = await transcribe(program, clips.made(id, "speech"), paths.models,
+        (words, fraction) => sendTranscript({ clipId: id, state: "hearing", fraction, words }), controller.signal);
+      const transcript: Transcript = { language: "", words: heard.words };
+      await writeFile(clips.stored(id, "voice.json"), JSON.stringify(heard.voice));
+      await writeFile(stored, JSON.stringify(transcript));
+      sendTranscript({ clipId: id, state: "done", transcript });
+    } catch (error) {
+      logError("transcript_unmade", errorName(error), error instanceof Error ? error.message.slice(0, 200) : "");
+      sendTranscript({ clipId: id, state: "failed", error: error instanceof Error ? error.message.split(":")[0]! : "TRANSCRIBE_FAILED" });
+    } finally {
+      transcripts.delete(id);
+    }
+  };
+  const jobs = new JobRunner(paths.ffmpeg, paths.logs, (progress) => {
+    window?.webContents.send(CHANNELS.jobProgress, progress);
+    if (progress.kind === "speech" && progress.state === "done") void transcribeClip(progress.clipId);
+  });
 
   protocol.handle("media", async (request) => {
     // media://clip/<id>/<original|proxy|editCopy>: only the files of clips opened in this run.
@@ -165,6 +205,9 @@ async function start(): Promise<void> {
     shown.focus();
   });
   app.on("window-all-closed", () => app.quit());
-  // However the app quits (Cmd+Q skips window-all-closed), FFmpeg's running job goes with it.
-  app.on("will-quit", () => jobs.stopAll());
+  // However the app quits (Cmd+Q skips window-all-closed), FFmpeg's running job and the transcriber go with it.
+  app.on("will-quit", () => {
+    jobs.stopAll();
+    for (const controller of transcripts.values()) controller.abort();
+  });
 }

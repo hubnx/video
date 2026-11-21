@@ -12,7 +12,7 @@
     }
   },
   "scripts": {
-    "build": "vite build && vite build -c electron/vite.config.ts --mode main && vite build -c electron/vite.config.ts --mode preload",
+    "build": "vite build && vite build -c electron/vite.config.ts --mode main && vite build -c electron/vite.config.ts --mode preload && vite build -c electron/vite.config.ts --mode transcribe",
     "dev": "pnpm build && node scripts/start.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "immer": "11.2.9",
-    "mediabunny": "1.65.2"
+    "mediabunny": "1.65.2",
+    "sherpa-onnx-node": "2.0.1"
   }
 }

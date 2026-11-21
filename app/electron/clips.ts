@@ -40,6 +40,12 @@ export class Clips {
     return path.join(this.folder, id, MADE_FILE_NAMES[kind]);
   }
 
+  /** Where the app keeps what it learned of a clip: its transcript, and where the voice detector heard speech. */
+  stored(id: string, name: "transcript.json" | "voice.json"): string {
+    if (!/^[0-9a-f]{20}$/.test(id)) throw new Error(`not a clip id: ${id}`);
+    return path.join(this.folder, id, name);
+  }
+
   /** The file media:// serves for a clip, or null for a name it doesn't serve or a clip not opened in this run. */
   served(id: string, file: string): string | null {
     if (!this.originals.has(id)) return null;

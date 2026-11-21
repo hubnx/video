@@ -134,7 +134,8 @@ button:disabled {
   display: none;
 }
 
-/* An opened video: one centred column, the preview over a row for each job. */
+/* An opened video: the status line, then the preview and the transcript side by side on a wide window and one over
+   the other on a narrow one, each job's detail folded away under them. */
 .clip {
   margin: 0 auto;
 }
@@ -174,7 +175,87 @@ button:disabled {
 
 /* The preview: the picture at the video's own shape, as large as the column allows, the controls in one row under it. */
 .clip {
-  max-width: 960px;
+  max-width: 1400px;
+}
+
+.clip-status {
+  display: grid;
+  grid-template-columns: 1fr minmax(120px, 30%);
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+  color: var(--muted);
+}
+
+.clip-status progress {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.clip-body {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+  gap: var(--gap);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .clip-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.transcript {
+  max-height: 70vh;
+  overflow: auto;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.transcript-waiting {
+  color: var(--muted);
+}
+
+.transcript-line {
+  margin: 0 0 8px;
+  line-height: 1.6;
+}
+
+.word {
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.word:hover {
+  background: var(--hover);
+}
+
+.word.said {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.caption-styles {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.caption-styles [aria-checked="true"] {
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.clip-details {
+  margin-top: var(--gap);
+}
+
+.clip-details summary {
+  cursor: pointer;
+  color: var(--muted);
 }
 
 .preview-place:empty {
