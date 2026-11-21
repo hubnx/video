@@ -318,3 +318,5 @@ Proposed by `video assistant` (2026-11-17).
 3. **At the launch (1.1, about two weeks from now):** post the drafts from your own accounts
    (Reddit, Product Hunt, YouTube). Reddit bans posts through other accounts, so only you can.
    Release 1, a few days earlier, needs nothing from you.
+4. **The `Project` tag in AWS billing** (hubnx-apps roadmap › *The owner's steps* 9, shared by every
+   app): it turns on this app's own budget alarm. Until then the account-wide alarm covers it.
