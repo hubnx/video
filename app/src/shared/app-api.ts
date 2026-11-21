@@ -2,6 +2,7 @@
  * What the window may ask of the app (electron/preload.ts exposes exactly this as window.video), and the shapes it
  * gets back. The window never touches files or processes itself.
  */
+import type { Clip, JobProgress } from "./media.ts";
 
 /** The name a person sees, everywhere: hubnx plus the app's address word (../../../docs/brand.md › Naming). Always
  * lowercase "hubnx", so no sentence starts with it (docs/plan.md › Where it ships). */
@@ -41,10 +42,33 @@ export const CHANNELS = {
   appVersion: "app:version",
   ffmpeg: "ffmpeg:found",
   openWebsite: "app:open-website",
+  openVideo: "clip:open",
+  chooseVideo: "clip:choose",
+  planClip: "clip:plan",
+  cancelClip: "clip:cancel",
+  jobProgress: "clip:job-progress",
 } as const;
+
+/** Why a video didn't open, as a code the window turns into words (words.ts). */
+export type OpenRefusal = "not_a_video" | "unreadable";
+export type OpenResult = { clip: Clip } | { refused: OpenRefusal };
+
+/** media:// addresses: a clip's original, proxy or edit copy, by its id (electron/clips.ts serves only these). */
+export function mediaAddress(clipId: string, file: "original" | "proxy" | "editCopy"): string {
+  return `media://clip/${clipId}/${file}`;
+}
 
 export interface VideoApi {
   appVersion(): Promise<string>;
   ffmpeg(): Promise<FfmpegFound | null>;
   openWebsite(page: WebsitePage): Promise<void>;
+  /** The path of a file dropped on the window: Electron no longer puts it on File itself. */
+  pathOfDropped(file: File): string;
+  openVideo(path: string): Promise<OpenResult>;
+  /** The system's file dialog; null when the person closed it. */
+  chooseVideo(): Promise<OpenResult | null>;
+  /** Starts the clip's jobs, once the window knows whether it can decode the original (electron/ffmpeg-jobs.ts). */
+  planClip(clipId: string, decodes: boolean): Promise<void>;
+  cancelClip(clipId: string): Promise<void>;
+  onJobProgress(listener: (progress: JobProgress) => void): () => void;
 }

@@ -86,3 +86,85 @@ main {
   color: var(--muted);
   font-size: 0.875rem;
 }
+
+.drop-area.dragging {
+  border-color: var(--accent);
+  background: var(--hover);
+}
+
+.drop-area .primary {
+  margin-top: 16px;
+}
+
+button {
+  font: inherit;
+  padding: 8px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--button);
+  color: var(--text);
+  cursor: pointer;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+button.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+button.primary:hover {
+  background: var(--accent-hover);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.start-message:empty {
+  display: none;
+}
+
+/* An opened video while it's prepared: one centred column, a row for each job. */
+.clip {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.jobs {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.job {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.job-state {
+  color: var(--muted);
+}
+
+.job progress {
+  grid-column: 1 / -1;
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.clip-problem {
+  margin-top: 16px;
+  color: var(--danger);
+}

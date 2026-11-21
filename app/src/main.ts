@@ -1,18 +1,16 @@
-/** The window: its title bar's name and icon, and the start screen until a video is opened. */
+/** The window: its title bar's name and icon, the start screen, then the opened video. */
 import icon from "../../brand/icon.svg";
-import { element, required } from "./dom.ts";
+import { clipView } from "./clip-view.ts";
+import { required } from "./dom.ts";
+import { startView } from "./start-view.ts";
 import { words } from "./words.ts";
 
 document.title = words.appName;
 required<HTMLImageElement>("#app-icon").src = icon;
 required("#app-name").textContent = words.appName;
 
-required("#screen").replaceChildren(
-  element("section", { className: "start", attributes: { "aria-labelledby": "start-heading" } },
-    element("div", { className: "drop-area" },
-      element("h1", { id: "start-heading", textContent: words.start.heading }),
-      element("p", { className: "lead", textContent: words.start.lead }),
-    ),
-    element("p", { className: "privacy", textContent: words.start.privacy }),
-  ),
-);
+const screen = required("#screen");
+// A file dropped anywhere outside the drop area would otherwise be opened by Chromium as a page.
+for (const kind of ["dragover", "drop"] as const) document.addEventListener(kind, (event) => event.preventDefault());
+
+screen.replaceChildren(startView((clip) => screen.replaceChildren(clipView(clip))));

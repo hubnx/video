@@ -12,6 +12,7 @@ export function targetOf(platform: NodeJS.Platform, arch: string): Target {
   return target as Target;
 }
 
-export function ffmpegProgramName(platform: NodeJS.Platform): string {
-  return platform === "win32" ? "ffmpeg.exe" : "ffmpeg";
+/** FFmpeg's two programs as each system names them. */
+export function programName(platform: NodeJS.Platform, program: "ffmpeg" | "ffprobe"): string {
+  return platform === "win32" ? `${program}.exe` : program;
 }

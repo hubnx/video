@@ -2,5 +2,8 @@
   "about": "The FFmpeg builds the app carries, one per target, made by ffmpeg/build.sh and published on this repo's GitHub release named here; scripts/fetch-ffmpeg.ts accepts a build only with exactly this SHA-256. Rebuilding (a new FFmpeg, x264 or zimg pin) makes new files: publish them under a new release name and replace every pin here in the same commit.",
   "version": "9.0.2",
   "release": "ffmpeg-9.0.2-1",
-  "sha256": {}
+  "sha256": {
+    "mac-x64": "e9cfd7ba72034d7c22c18b5d9b452288c94dc8a0e395d6bbd03ed24bdd62475a",
+    "linux-x64": "e74b7d35971f514d32516ad1eff4a8d918c88bd9177d75bf63d61dafbfc717d1"
+  }
 }
