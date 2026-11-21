@@ -36,8 +36,10 @@ if (program.includes(".app/Contents/MacOS/")) {
   const identifier = execFileSync("plutil", ["-extract", "CFBundleIdentifier", "raw", path.join(program, "..", "..", "Info.plist")], { encoding: "utf8" }).trim();
   if (!OUR_APPS.includes(identifier)) throw new Error(`UNWATCHED_COPY: ${identifier} isn't one of ${OUR_APPS.join(", ")} (start.ts)`);
 }
-// Chromium refuses to run as root with its sandbox on, as some CI machines run everything.
-const launchArguments = process.platform === "linux" && process.getuid?.() === 0 ? ["--no-sandbox"] : [];
+// Chromium's sandbox can't start as root, nor from an unpacked build on GitHub's Ubuntu, whose AppArmor refuses it the
+// user namespaces it needs and whose chrome-sandbox isn't set up as the .deb installs it. A person's installed copy
+// keeps its sandbox.
+const launchArguments = process.platform === "linux" && (process.getuid?.() === 0 || process.env.CI) ? ["--no-sandbox"] : [];
 
 const app = await electron.launch({ executablePath: program, args: launchArguments, env: electronEnvironment() as Record<string, string>, timeout: 120_000 });
 let failure: string | null = null;

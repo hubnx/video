@@ -1,0 +1,73 @@
+# Packages the app on GitHub's Windows, Ubuntu and Mac (Apple chip) machines and opens each package, unseen, to check
+# it works from what it carries: the start screen shows, and the FFmpeg inside runs with the encoders the app needs
+# (app/scripts/check-package.ts; docs/plan.md › Build order, day 1 and 8). The Intel Mac's is checked on the owner's
+# Mac. Started by hand only: Windows minutes count twice and Mac minutes ten times against the free plan's.
+name: Package check
+
+on:
+  workflow_dispatch:
+    inputs:
+      mac:
+        description: Also check the Apple-chip Mac package (ten times the minutes)
+        type: boolean
+        default: false
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, target: win-x64, program: local/release/win-x64/win-unpacked/hubnx-video.exe }
+          - { os: ubuntu-24.04, target: linux-x64, program: local/release/linux-x64/linux-unpacked/hubnx-video }
+          - { os: macos-15, target: mac-arm64, program: "local/release/mac-arm64/mac-arm64/hubnx Video.app/Contents/MacOS/hubnx Video" }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - name: Only the Mac when asked
+        id: run
+        shell: bash
+        run: echo "go=${{ matrix.target != 'mac-arm64' || inputs.mac }}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+        if: steps.run.outputs.go == 'true'
+
+      - uses: actions/setup-node@v7
+        if: steps.run.outputs.go == 'true'
+        with:
+          node-version: 24
+
+      - name: pnpm
+        if: steps.run.outputs.go == 'true'
+        run: corepack enable && corepack prepare pnpm@12.15.0 --activate
+
+      - name: Build and package
+        if: steps.run.outputs.go == 'true'
+        working-directory: app
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }} # reads this repo's FFmpeg release while it's private
+        run: |
+          pnpm install --frozen-lockfile && pnpm exec node node_modules/electron/install.js
+          pnpm build
+          pnpm package ${{ matrix.target }}
+
+      - name: Open it (Ubuntu, on a virtual screen)
+        if: steps.run.outputs.go == 'true' && runner.os == 'Linux'
+        working-directory: app
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q xvfb
+          xvfb-run -a --server-args="-screen 0 1920x1080x24" pnpm check-package --program "../${{ matrix.program }}"
+
+      - name: Open it (Windows, Mac)
+        if: steps.run.outputs.go == 'true' && runner.os != 'Linux'
+        working-directory: app
+        shell: bash
+        run: pnpm check-package --program "../${{ matrix.program }}"
+
+      - uses: actions/upload-artifact@v7
+        if: always() && steps.run.outputs.go == 'true'
+        with:
+          name: package-check-${{ matrix.target }}
+          path: local/screens/
+          retention-days: 7

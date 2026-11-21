@@ -53,7 +53,8 @@ build="$work/build/$target"
 prefix="$build/prefix"
 rm -rf "$build" # each run replaces its own folder: old and new objects never mix
 mkdir -p "$build" "$prefix"
-jobs="$(getconf _NPROCESSORS_ONLN)"
+# All cores on a build machine; FFMPEG_JOBS=8 on the owner's Mac, which every chat shares (~/.claude/CLAUDE.md › One Mac).
+jobs="${FFMPEG_JOBS:-$(getconf _NPROCESSORS_ONLN)}"
 
 case "$target" in
   mac-arm64|mac-x64)
