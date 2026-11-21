@@ -306,6 +306,10 @@ Proposed by `video assistant` (2026-11-17).
   - **Asked once, in plain words, after the first successful export**: a quiet note in the
     export-done view, never at first launch and never a dialog over their work. Off until they say
     yes; switchable in Settings.
+  - **Live since 2026-11-21.** Each refusal is logged as `checkin.refused` with its code (`checkin-app`,
+    `-name`, `-version`, `-os`, `-field`), never silently; a 429 (`checkin-busy`) retries once, the next
+    day. Development copies send to `?dryRun=1`; CI uses a stand-in. The *what it sends* view uses the
+    same words as `video.hubnx.com/about/privacy`.
   - The app keeps first-launch time, exports and setup failures **on the computer only** from the
     start, and sends them once, at day 7, only after a yes. A local flag keeps it to one per install,
     since the server doesn't enforce that. The *what it sends* view shows exactly the three numbers.
