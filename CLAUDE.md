@@ -26,6 +26,8 @@ heavy runs go through `taskpolicy -b`, after `uptime` shows a 1-minute load unde
 | Tests · type check | `pnpm test` · `pnpm typecheck` |
 | Day 2's import check: eight kinds of clip made by a full FFmpeg (Homebrew's here), read and prepared as the app does | `TEST_FFMPEG=/usr/local/bin/ffmpeg pnpm exec node scripts/check-import.ts` |
 | Day 3's preview check: exact frames on 40 random seeks, the picture within a frame of the sound, a sideways phone clip upright | `pnpm build && TEST_FFMPEG=/usr/local/bin/ffmpeg pnpm exec node scripts/check-preview.ts` |
+| Day 4's transcript check: a minute of AMI talk heard (the models downloaded once into `local/models/`), its transcript filling in, captions on the picture; screenshots `local/screens/4-transcript-*` | `pnpm build && pnpm exec node scripts/check-transcript.ts` |
+| **Guards, run on any change to the speech engine, the voice detector or the cut code, their numbers logged in `docs/plan.md` › Risks** (local only: the AMI audio never goes in git): the silence cuts against AMI's words, and the filler detectors | `pnpm exec node scripts/check-silences.ts`; the filler check's scripts in `local/filler-check/scripts/` (`results.md` says how) |
 | Screenshots of every screen, four window sizes, light and dark, into `local/screens/` | `pnpm build && pnpm exec node scripts/screens.ts` |
 | WebCodecs' encoders and decoders at 1080p and 4K, here (`local/probe/`); GitHub's three with `gh workflow run probe.yml` | `pnpm probe` |
 | The 4K HEVC proxy and edit-copy times (`local/edit-copy-timing/`); GitHub's Windows and Ubuntu with `gh workflow run edit-copy-timing.yml` | `pnpm exec node scripts/time-edit-copy.ts ../local/edit-copy-timing/hevc-4k-10min.mov 60` |
@@ -55,6 +57,8 @@ Dependencies point one way: window → preload → main process → FFmpeg.
 - **GitHub's artifact storage for hubnx fills up**: workflows read results from logs and upload to releases.
 - **Never hide a build's output** (`> /dev/null`): a failed build leaves the last good one, and checks pass on old code.
 - **Backticks inside a shader's comment end its template string**: the build fails, and the old code keeps running.
+- **Electron refuses a native add-on's own memory** ("External buffers are not allowed"): sherpa-onnx's `readWave` and
+  `Vad.front(true)` hand it over, so the transcriber reads the WAV itself and asks for copies (`front(false)`).
 
 ## Documentation
 
