@@ -204,6 +204,16 @@ before it goes out.
 
 - **Release and launch are separate.** Release 1 goes public quietly once its checks pass (no
   private beta). The launch posts wait for 1.1, whose demo shows all four jobs.
+- **Where and when the launch posts go** (decided 2026-11-20 with `music` and `agent`, since every
+  post comes from the owner's one account; detail in [product.md](product.md)). Nothing in Songbrew's
+  launch week, 12-08 to 12-14.
+  - **At 1.1, where the first user is:** a YouTube demo, r/NewTubers, r/podcasting, r/VideoEditing,
+    r/linux and a Windows-friendly community, each drafted to its current rules.
+  - **r/macapps:** December's *App Pile* thread, first come (Write used the account's 30-day
+    main-feed slot on 11-20); if another app takes December, January.
+  - **Product Hunt: the week of 2027-01-25**, two weeks clear of Songbrew's (12-08) and Agent's
+    (week of 2027-01-11), with several releases and real reviews to show by then.
+  - **r/LocalLLaMA: skipped.** It's Songbrew's place, and not where our first user is.
 - **Downloads** come from the site's own bucket, `video.hubnx.com/download/`, with the version in
   each file name, as Songbrew's do (S3 and CloudFront in `hubnx-apps`), and the installed app
   updates itself from there. GitHub Releases carries the same files for the open-source crowd; its
@@ -307,7 +317,7 @@ Proposed by `video assistant` (2026-11-17).
 | Two weeks is an estimate (Songbrew: 2 weeks from plan to 0.1.35, still before launch) | The release order puts the four jobs first, so whatever ships is useful |
 | A rival closes the gap (FilmCraft's easy mode, Shotcut's silences, OpenCut's rewrite) | `video assistant`'s daily scan; our edge is the four jobs done end to end and minutes to first export |
 | Patents on H.264 and AAC | The systems' own encoders; revisit before 100,000 downloads a year or any revenue |
-| Promotion takes the owner's time, already spent on desk and Songbrew | Drafts ready to post; launch where the first user is (YouTube creators, r/NewTubers, r/podcasting, GitHub, Product Hunt, AlternativeTo as "CapCut alternative") |
+| Promotion takes the owner's time, already spent on desk and Songbrew | Drafts ready to post; launch where the first user is (*Where and when the launch posts go*), plus GitHub and AlternativeTo as "CapCut alternative" |
 
 ## The owner's steps
 
