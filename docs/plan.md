@@ -17,8 +17,8 @@ The screen the owner OKs; everything below is the reference behind it.
   launch week (12-08 to 12-14), so the two never share a week.
 - **Cost:** $0.50 a month (the `video.hubnx.com` address, approved 2026-11-17). Everything else is
   free services.
-- **The owner's steps:** (1) OK this screen; (2) before day 8, add the email alias `video@hubnx.com`
-  (2 minutes); (3) at 1.1, post the drafts `video` writes from your own accounts; (4) the `Project`
+- **The owner's steps:** (1) OK this screen; (2) ~~add the email alias `video@hubnx.com`~~ done
+  2026-11-20; (3) at 1.1, post the drafts `video` writes from your own accounts; (4) the `Project`
   tag in AWS billing, already on the shared list, which turns on this app's budget alarm. Nothing to
   test.
 - **The three numbers, 8 weeks after release 1:** 1,000+ GitHub stars; 3,000+ complete downloads
@@ -328,7 +328,7 @@ Proposed by `video assistant` (2026-11-17).
 ## The owner's steps
 
 1. **OK this plan**, or say what to change.
-2. **Before day 8, about 2 minutes:** add the alias `video@hubnx.com` (admin.google.com →
+2. **Done 2026-11-20** (the spelling being confirmed: the owner wrote "videoa"): add the alias `video@hubnx.com` (admin.google.com →
    *Directory* › *Users* → your name → *Alternate email addresses* → add `video` → *Save*). The
    privacy and terms pages name it.
 3. **At the launch (1.1, about two weeks from now):** post the drafts from your own accounts
