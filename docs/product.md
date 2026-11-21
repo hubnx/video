@@ -76,6 +76,7 @@ Agreed with `video`, 2026-11-20. Each retro replaces this one; what lasts moves 
 | Open-source rivals' GitHub (OpenCut, Kdenlive, Shotcut, OpenShot, LosslessCut) | `gh`, read only: issues, discussions, releases | Their users are developers |
 | Hacker News | Algolia's public search API | Developers |
 | Ours, once public | GitHub issues and stars, downloads, Search Console, the feedback form | Only people who choose to say |
+| Ours: the opt-in check-in | No weekly digest: ask hubnx assistant for its one-off export at week 4 (about 2026-12-27) and week 8 (about 2027-01-24, the keep-or-stop check); it sends every range per day since release 1, kept in `local/checkins/` | Only people who say yes after a first export; daily totals, nothing per person |
 
 ## Scoreboard
 
