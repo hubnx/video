@@ -185,7 +185,8 @@ update check relaunches with `open -g -j`.
 
 **On every release:** the fresh-install-to-export check on all three systems, the 60-minute 4K
 project, the recovery test, and model speeds measured on GitHub's machines and Modal before the app
-promises a time. Screens pass the clarity check ([../../docs/brand.md](../../docs/brand.md)) at phone,
+promises a time. Modal's November credit is spent, so until December's (about $5 asked of `music`'s
+share, 2026-11-20) the app promises only times measured on this Mac and GitHub's machines. Screens pass the clarity check ([../../docs/brand.md](../../docs/brand.md)) at phone,
 tablet and desktop widths in both themes. Words people read (launch posts, support replies, the
 check-in, the SmartScreen help, first-run messages) follow `~/.claude/CLAUDE.md` › *Outreach and SEO*
 › "Every email and message to a person reads like a friendly person wrote it" (owner, 2026-11-19).
