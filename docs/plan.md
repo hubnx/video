@@ -6,25 +6,24 @@ research behind every choice: [research/](research/).
 
 ## In one minute
 
-- **What:** a free, open-source video editor for Mac, Windows and Linux, as easy as CapCut, with AI
-  built in: free models on the computer, and online models on the user's own account.
-- **What we lead with** (2026-11-20, after Meta Edits came to the Mac with free 4K and captions):
-  the talking-head clean-up nobody free does end to end (silences and "um"s proposed and checked, a
-  clean voice, 9:16 that follows the speaker), on every computer, private. "Free 4K, no watermark,
-  no account" is the promise underneath, not the headline ([product.md](product.md) › *Who it's
-  for*).
-- **For:** people who talk to a camera on a computer (YouTubers, course makers, podcasters who film).
-  Their four jobs: captions, cutting silences and "um"s, a clean voice, and 9:16 shorts from the same
-  recording ([product.md](product.md) › *Who it's for*).
-- **Release 1 (target day 8):** open a video → captions → cut silences and fillers → trim and split →
-  export 4K, no watermark. It goes public quietly once its checks pass; **the launch, with the posts,
-  comes at 1.1 (9:16 shorts), about two weeks from now**, because the demo that sells is "a 20-minute
-  talk → captions, cleaned up, a 9:16 short, free, in N minutes". **Day 9–14:** a release every day
-  or two, in the order below.
-- **Cost:** $0.50 a month (the `video.hubnx.com` address, approved 2026-11-17). Everything else runs
-  on free services.
-- **The owner's part:** OK this plan (about 15 minutes); a 2-minute email alias; at the launch, the
-  posts from your own accounts, which `video` drafts. Nothing to test.
+The screen the owner OKs; everything below is the reference behind it.
+
+- **What:** *hubnx Video*, a free, open-source video editor for Mac, Windows and Linux, as easy as
+  CapCut. It leads with the clean-up for people who talk to a camera: silences and "um"s proposed
+  and checked, a clean voice, and 9:16 shorts that follow the speaker. Every export free (4K, no
+  watermark, no account), private, and AI on the person's own computer or their own online account.
+- **When:** release 1 about 8 days after the OK, out quietly; the launch with the posts at 1.1, about
+  two weeks after the OK. If the OK comes after about 11-24, the posts wait until after Songbrew's
+  launch week (12-08 to 12-14), so the two never share a week.
+- **Cost:** $0.50 a month (the `video.hubnx.com` address, approved 2026-11-17). Everything else is
+  free services.
+- **The owner's steps:** (1) OK this screen; (2) before day 8, add the email alias `video@hubnx.com`
+  (2 minutes); (3) at 1.1, post the drafts `video` writes from your own accounts; (4) the `Project`
+  tag in AWS billing, already on the shared list, which turns on this app's budget alarm. Nothing to
+  test.
+- **The three numbers, 8 weeks after release 1:** 1,000+ GitHub stars; 3,000+ complete downloads
+  from the site; half or more of 30+ people who opt in to the day-7 check-in exported 3+ videos.
+  All three: keep going. Under a quarter of each: fix the offer once, then stop.
 
 ## The promise (the rules every release keeps)
 
