@@ -70,7 +70,8 @@ case "$target" in
     ;;
   linux-x64)
     export CC=gcc CXX=g++
-    cross=(); system=(); x264_host=(); exe=""
+    cross=(); x264_host=(); exe=""
+    system=(--extra-libs=-lm) # zimg's C++ needs libm when linked statically into a C program
     ;;
   win-x64)
     export CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++
@@ -96,12 +97,18 @@ zimg_host=(); [ "${#x264_host[@]}" -gt 0 ] && zimg_host=("${x264_host[0]}")
 
 echo "== ffmpeg"
 tar -xJf "$sources/ffmpeg-$FFMPEG_VERSION.tar.xz" -C "$build"
-configure=(--prefix="$prefix" --pkg-config-flags=--static --enable-static --disable-shared
+# --pkg-config: the plain one, which honours PKG_CONFIG_LIBDIR; a cross-compile would otherwise run Ubuntu's
+# x86_64-w64-mingw32-pkg-config, which looks only in mingw's own folder and never finds what we built.
+configure=(--prefix="$prefix" --pkg-config=pkg-config --pkg-config-flags=--static --enable-static --disable-shared
   --enable-gpl --enable-version3 --enable-libx264 --enable-libzimg
   --disable-autodetect --disable-ffplay --disable-doc --disable-network --disable-debug
   --extra-cflags="-I$prefix/include" --extra-ldflags="-L$prefix/lib"
   "${cross[@]}" "${system[@]}")
-(cd "$build/ffmpeg-$FFMPEG_VERSION" && ./configure --cc="$CC" --cxx="$CXX" "${configure[@]}" && make -j"$jobs" && make install)
+if ! (cd "$build/ffmpeg-$FFMPEG_VERSION" && ./configure --cc="$CC" --cxx="$CXX" "${configure[@]}"); then
+  tail -40 "$build/ffmpeg-$FFMPEG_VERSION/ffbuild/config.log" >&2 # why configure refused, where no one can open the file
+  exit 1
+fi
+(cd "$build/ffmpeg-$FFMPEG_VERSION" && make -j"$jobs" && make install)
 
 echo "== pack"
 pack="$build/pack"

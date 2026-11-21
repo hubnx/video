@@ -1,11 +1,15 @@
 # Builds the FFmpeg the app carries for Linux and Windows (Windows cross-compiled with mingw-w64), from the pinned
 # sources in ffmpeg/build.sh, on GitHub's Ubuntu. The Mac builds are made on the owner's Intel Mac, both kinds, for
-# free. Each archive's SHA-256 is printed; the builds go up as the run's artifact, then onto the release named in
-# ffmpeg/builds.json, whose pins are updated in the same commit. Started by hand only.
+# free. Each archive's SHA-256 is printed, and the archive goes onto the release named in ffmpeg/builds.json (made
+# first by hand, with the sources), whose pins are then updated in one commit. Straight to the release, not the run's
+# artifacts: the organisation's artifact storage fills up (2026-11-21). Started by hand only.
 name: FFmpeg builds
 
 on:
   workflow_dispatch:
+
+permissions:
+  contents: write # uploads to the FFmpeg release
 
 jobs:
   build:
@@ -24,8 +28,7 @@ jobs:
       - name: Build
         run: bash ffmpeg/build.sh ${{ matrix.target }} out
 
-      - uses: actions/upload-artifact@v7
-        with:
-          name: ffmpeg-${{ matrix.target }}
-          path: out/*.tar.xz
-          retention-days: 7
+      - name: Onto the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$(jq -r .release ffmpeg/builds.json)" out/*.tar.xz --clobber

@@ -1,6 +1,7 @@
 # What WebCodecs can encode and decode at 1080p and 4K, H.264 and HEVC, on GitHub's Mac (Apple chip), Windows and
 # Ubuntu (docs/plan.md › Build order, day 1). The owner's Intel Mac runs the same with `pnpm probe`. Started by hand
-# only: Mac minutes count ten times against the free plan's.
+# only: Mac minutes count ten times against the free plan's. The results are read from the run's log (*What it
+# found*), not saved as artifacts: the organisation's artifact storage fills up (2026-11-21).
 name: WebCodecs probe
 
 on:
@@ -45,9 +46,3 @@ jobs:
         working-directory: app
         shell: bash
         run: grep '^WEBCODECS ' probe.txt | cut -c11- > probe-${{ runner.os }}-${{ runner.arch }}.json && cat probe-*.json
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: probe-${{ runner.os }}-${{ runner.arch }}
-          path: app/probe-*.json
-          retention-days: 7

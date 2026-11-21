@@ -65,8 +65,10 @@ jobs:
         shell: bash
         run: pnpm check-package --program "../${{ matrix.program }}"
 
+      # The screenshot, when the organisation's artifact storage has room (it fills up): never the check's verdict.
       - uses: actions/upload-artifact@v7
         if: always() && steps.run.outputs.go == 'true'
+        continue-on-error: true
         with:
           name: package-check-${{ matrix.target }}
           path: local/screens/
