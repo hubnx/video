@@ -5,14 +5,8 @@
  * Pure: the tests check every edit without a window.
  */
 import type { Stretch } from "../shared/cuts.ts";
+import type { Segment } from "../shared/project.ts";
 import type { Flicks } from "../shared/time.ts";
-
-/** A stretch of a clip on the timeline: from `from` to `to` in the clip's own time. */
-export interface Segment {
-  clipId: string;
-  from: Flicks;
-  to: Flicks;
-}
 
 export interface Edit {
   segments: Segment[];
