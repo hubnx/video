@@ -1,0 +1,23 @@
+# The contributor license agreement, shared by every HubNX repository (github.com/hubnx/.github).
+# pull_request_target runs with this repository's secrets: never add a step here that checks out or runs a pull
+# request's code. This file stays the one `uses:` line below.
+name: CLA
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  statuses: write
+
+jobs:
+  cla:
+    uses: hubnx/.github/.github/workflows/cla.yml@a447c1f4c37f7be317927a1824acd19584b32eb6
+    with:
+      contact: video@hubnx.com
+    secrets:
+      CLA_SIGNATURES_KEY: ${{ secrets.CLA_SIGNATURES_KEY }}

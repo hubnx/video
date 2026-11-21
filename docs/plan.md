@@ -262,8 +262,10 @@ before it goes out.
 - [ ] Repo `hubnx/video` public; `video.hubnx.com` with its zone ($0.50 a month, approved)
 - [ ] Shared parts from the public `hubnx/web-parts` repo pinned by commit, never a path into
   hubnx-apps' private `shared/`, since this repo goes public (*Apps HQ* splits it out by day 8)
-- [ ] The contributor agreement check: the repo calls `hubnx/.github`'s reusable workflow, never a
-  copied one
+- [x] The contributor agreement check: the repo calls `hubnx/.github`'s reusable workflow, never a
+  copied one (wired 2026-11-21, its key set by `cla/add-repo.sh`)
+- [ ] At going public: a ruleset on `main` making the **CLA** status required for merging (GitHub enforces
+  rulesets on a private repo only on paid plans)
 - [ ] Privacy, terms and `/about/` pages; the footer's *About Hub Nexus* (no "by Hub Nexus" line
   beside the name, which wears `hubnx` already); *More from Hub Nexus*; the feedback form; outbound
   and file links in a new tab, set once at build time (`docs/brand.md`)
