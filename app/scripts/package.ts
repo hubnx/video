@@ -17,7 +17,7 @@ import { Arch, build, Platform } from "electron-builder";
 import { TARGETS, type Target } from "../electron/targets.ts";
 import { APP_ID, APP_NAME, WEBSITE_PAGES } from "../src/shared/app-api.ts";
 import { fetchFfmpeg } from "./fetch-ffmpeg.ts";
-import { INSTALLED_NAME, LINUX_DEB, RELEASE_FILES } from "./release-files.ts";
+import { INSTALLED_NAME, LINUX_DEB, RELEASE_FILES, RELEASE_URL } from "./release-files.ts";
 import { appFolder } from "./start.ts";
 
 const local = path.resolve(appFolder, "..", "local");
@@ -94,6 +94,9 @@ export async function packageApp(target: Target, options: PackageOptions): Promi
         depends: ["libgtk-3-0", "libnotify4", "libnss3", "libxss1", "libxtst6", "xdg-utils", "libatspi2.0-0", "libuuid1",
           "libsecret-1-0", "libasound2t64 | libasound2", "libgbm1"],
       },
+      // Where installed copies will look for a newer version (electron-updater's feed beside the downloads). Needed now
+      // too: without it, electron-builder's update-info step crashes on Linux (GitHub's package check, 2026-11-21).
+      publish: { provider: "generic", url: RELEASE_URL },
     },
   });
   // electron-builder notarizes the app inside; the disk image people download is notarized too, and Apple's ticket
