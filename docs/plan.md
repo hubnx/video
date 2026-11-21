@@ -170,7 +170,7 @@ update check relaunches with `open -g -j`.
 | Day | Step | Proof |
 |---|---|---|
 | 1 | Shell from Songbrew, every word shown kept in one table from the start (as Songbrew's `words.ts`), so translating later is one file; FFmpeg fetched with pinned checksums; probe of 4K encode and decode on all three systems. **Filler check**, on free-licensed talking-head clips with every "um" marked by hand, three detectors: (a) each speech model as it is; (b) Whisper given a prompt full of "um"s, a known trick for keeping them; (c) speech with no word: stretches where the voice detector hears speech but the transcript has none, proposed as *possible "um"* | The package opens on all three without taking the screen, the watcher failing if it finds no process; FFmpeg runs inside it; the probe and the share of marked "um"s each detector and the best combination find saved in `local/` and written in *Risks* |
-| 2 | Import (rotation, varying frame rate, colour, sound), background jobs, edit copies, thumbnails, waveforms | Each generated test clip's facts match how it was made; proxies have the right frame count |
+| 2 | Import (rotation, varying frame rate, colour, sound), background jobs, edit copies, thumbnails, waveforms. Where the computer can't decode a video (HEVC with no hardware decoder: GitHub's Windows and Linux, day 1's probe), captions start from the sound at once while *Preparing your video for smooth playback… about N min* shows real progress | Each generated test clip's facts match how it was made; proxies have the right frame count; the edit-copy time of a 10-minute 4K HEVC clip measured on GitHub's Windows and Linux and this Intel Mac, for that N |
 | 3 | Preview: one video and its sound, seeking, the sound clock | Random seeks land on the exact frame; a flash and a beep stay within one frame |
 | 4 | Transcript and captions through the switcher: model download, word times, the transcript panel, caption styles, SRT out | Captions of a known script score under a set word-error rate; word times within a set margin |
 | 5 | Cleanup: silences and fillers proposed, reviewed, applied, each undoable; trim, split, delete; undo. The screen shows at a glance what a menu dialog can't: the cuts already proposed when the video lands, marked on the transcript, each kept or undone on its own | No cut inside a word; undo after any edit sequence restores the project exactly; gate 3 compares our flow click by click with FilmCraft's *Remove Silence…* and Meta Edits' |
@@ -229,8 +229,13 @@ before it goes out.
   with `music`'s yes, 2026-11-20), from the site's access log: only complete first-install files
   (`.dmg`, `Setup.exe`, AppImage, `.deb`) fetched by a browser count. Update downloads, partial
   ranges, our own checks, crawlers, scripts and link scanners are left out. It's an ops script that
-  reads a private log bucket, so it and this app's settings for it live in private hubnx-apps, never
-  in this public repo; `video assistant` runs it at least every 13 days. The site provides what it
+  reads a private log bucket, so it and this app's settings for it never go in this public repo:
+  they live in the private **`hubnx/video-ops`**, cloned at `video/ops/` and git-ignored here, with
+  the site's stack (one stack in us-east-1, for CloudFront's certificate), its deploy and live check
+  (agent `hubnx-video-live-check`), and `ops/site/infra/count-downloads.ts`, set from hubnx-apps'
+  `local/downloads-proof/video-use.md`; the installer patterns are pinned by a test with release 1's
+  real file names, since a name matching none is never counted (decided 2026-11-21, as music's
+  split). `video assistant` runs it from 12-06, at least every 13 days. The site provides what it
   reads, as `music/site/infra/site.yaml` does: CloudFront standard logs as JSON (timestamp, path,
   status, bytes, browser name; no address field), a log bucket that deletes after 14 days, and
   pages that load their own styles and scripts.
