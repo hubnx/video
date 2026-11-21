@@ -70,9 +70,10 @@ main {
   text-align: center;
 }
 
+/* Taller on a big window: a larger target is easier to hit while dragging a file. */
 .drop-area {
   width: 100%;
-  padding: 64px 24px;
+  padding: clamp(48px, 14vh, 140px) 24px;
   border: 2px dashed var(--line-strong);
   border-radius: var(--radius);
   background: var(--surface);

@@ -10,7 +10,9 @@ export const words = {
   appName: APP_NAME,
   start: {
     heading: "Drop a video here",
-    lead: "Captions, silences and the voice, cleaned up for you to check.",
+    // Says only what ships and is measured: "and the voice" joins when voice clean-up does (gate 2, 2026-11-21), and
+    // "ums" only once the filler check reaches 80% (docs/plan.md › Risks).
+    lead: "Captions and silences, cleaned up for you to check.",
     choose: "Choose a video",
     // Said at first run, where someone coming from an online editor notices it (docs/plan.md › The promise › Private).
     privacy: "Nothing is uploaded. No account. Your videos stay on this computer.",
