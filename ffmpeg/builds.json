@@ -5,6 +5,7 @@
   "sha256": {
     "linux-x64": "e74b7d35971f514d32516ad1eff4a8d918c88bd9177d75bf63d61dafbfc717d1",
     "mac-arm64": "dfb39e5d25ebd4f9f7548d892df18432e7369097a1b7b98b9070ce80c124f3fd",
-    "mac-x64": "e9cfd7ba72034d7c22c18b5d9b452288c94dc8a0e395d6bbd03ed24bdd62475a"
+    "mac-x64": "e9cfd7ba72034d7c22c18b5d9b452288c94dc8a0e395d6bbd03ed24bdd62475a",
+    "win-x64": "bdc5be9b4746d8e5773fe2abe1fddb7c7ff6d65cc9f5620b248dbba6e9f86f8a"
   }
 }
