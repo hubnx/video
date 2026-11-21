@@ -17,9 +17,9 @@ The screen the owner OKs; everything below is the reference behind it.
   launch week (12-08 to 12-14), so the two never share a week.
 - **Cost:** $0.50 a month (the `video.hubnx.com` address, approved 2026-11-17). Everything else is
   free services.
-- **The owner's steps:** (1) OK this screen; (2) ~~add the email alias `video@hubnx.com`~~ done
-  2026-11-20; (3) at 1.1, post the drafts `video` writes from your own accounts; (4) the `Project`
-  tag in AWS billing, already on the shared list, which turns on this app's budget alarm. Nothing to
+- **The owner's steps:** (1) ~~OK this screen~~ done 2026-11-21; (2) ~~add the email alias `video@hubnx.com`~~ done
+  2026-11-20; (3) at 1.1, post the drafts `video` writes from your own accounts; (4) ~~the `Project`
+  tag in AWS billing~~ already active since 2026-09-15, nothing to do. Nothing to
   test.
 - **The three numbers, 8 weeks after release 1:** 1,000+ GitHub stars; 3,000+ complete downloads
   from the site; half or more of 30+ people who opt in to the day-7 check-in exported 3+ videos.
@@ -272,9 +272,9 @@ before it goes out.
 - [ ] Privacy-first visitor counts (visitors → downloads), as typing's: the CDN's request log
   counted into numbers alone
 - [ ] Search Console: the site's sitemap on the `hubnx.com` domain property
-- [ ] The AWS budget: `video-monthly` in the site's own stack, filtered on `Project=video` (free;
-  decisions, 2026-11-19), once the owner has activated the `Project` tag; the account-wide alarm is
-  the backstop
+- [ ] The AWS budget: `video-monthly`, about $2 a month, in the site's own stack, filtered on
+  `user:Project$video` and emailing apps@hubnx.com (free; decisions, 2026-11-19; as `music-monthly`). Every
+  resource tagged `Project=video` and `Portfolio=hubnx-apps`; the account-wide alarm is the backstop
 - [ ] The feedback form (app and site) through the shared parts' `feedback-report.ts`, which holds
   hubnx.com's `/api/feedback` contract: hubnx registered `video` for both, the site at
   exactly `https://video.hubnx.com` (hubnx's Assistant, 2026-11-20)
@@ -334,5 +334,5 @@ Proposed by `video assistant` (2026-11-17).
 3. **At the launch (1.1, about two weeks from now):** post the drafts from your own accounts
    (Reddit, Product Hunt, YouTube). Reddit bans posts through other accounts, so only you can.
    Release 1, a few days earlier, needs nothing from you.
-4. **The `Project` tag in AWS billing** (hubnx-apps roadmap › *The owner's steps* 9, shared by every
-   app): it turns on this app's own budget alarm. Until then the account-wide alarm covers it.
+4. ~~**The `Project` tag in AWS billing**~~ nothing to do: it has been active since 2026-09-15 (`video assistant`,
+   2026-11-21).
