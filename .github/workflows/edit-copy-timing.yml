@@ -1,0 +1,43 @@
+# How long the app prepares a minute of 4K HEVC on GitHub's Windows and Ubuntu, which can't decode HEVC in the window
+# (no graphics card): the proxy and the edit copy, SDR and HDR, through the app's own runner and arguments
+# (app/scripts/time-edit-copy.ts). Times the first-run note's "about N min". The owner's Intel Mac runs the same with
+# `pnpm exec node scripts/time-edit-copy.ts`. Results are read from the run's log. Started by hand only.
+name: Edit-copy timing
+
+on:
+  workflow_dispatch:
+
+jobs:
+  time:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, target: win-x64 }
+          - { os: ubuntu-24.04, target: linux-x64 }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: pnpm
+        run: corepack enable && corepack prepare pnpm@12.15.0 --activate
+
+      - name: The packages, FFmpeg and the clip
+        working-directory: app
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm ffmpeg ${{ matrix.target }}
+          gh release download test-media-1 -R ${{ github.repository }} -p hevc-4k-1min.mov -D ../local/edit-copy-timing
+
+      - name: Time it
+        working-directory: app
+        shell: bash
+        run: node scripts/time-edit-copy.ts ../local/edit-copy-timing/hevc-4k-1min.mov

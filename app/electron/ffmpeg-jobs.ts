@@ -60,8 +60,14 @@ export function editCopyArguments(input: string, output: string, facts: ClipFact
  * clockwise rotation (probe.ts) is applied here once and never twice. */
 export function pictureFilters(video: VideoFacts, size: { shortSide: number | null }): string {
   const filters: string[] = [];
-  // HLG and PQ to BT.709 with zimg (zscale), then Hable's curve: what Shotcut and Kdenlive do for phone HDR.
-  if (video.dynamic !== "sdr") filters.push("zscale=t=linear:npl=100", "format=gbrpf32le", "zscale=p=bt709", "tonemap=hable:desat=0", "zscale=t=bt709:m=bt709:r=tv");
+  // HLG and PQ to BT.709 with zimg (zscale), then Hable's curve: what Shotcut and Kdenlive do for phone HDR. The input's
+  // colours, and the linear step's own, are all named rather than left to the file's tags: zscale finds "no path between
+  // colorspaces" when they're missing or say BT.709, and FFmpeg 9.0 already left one out of its summary (the edit-copy
+  // timing and the import check, 2026-11-21).
+  if (video.dynamic !== "sdr") {
+    const transfer = video.dynamic === "hlg" ? "arib-std-b67" : "smpte2084";
+    filters.push(`zscale=tin=${transfer}:pin=bt2020:min=bt2020nc:rin=tv:t=linear:p=bt2020:m=bt2020nc:npl=100`, "format=gbrpf32le", "zscale=p=bt709", "tonemap=hable:desat=0", "zscale=t=bt709:m=bt709:r=tv");
+  }
   if (video.rotation === 90) filters.push("transpose=clock");
   if (video.rotation === 180) filters.push("hflip", "vflip");
   if (video.rotation === 270) filters.push("transpose=cclock");

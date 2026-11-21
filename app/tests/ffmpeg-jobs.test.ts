@@ -55,8 +55,9 @@ describe("turning and sizing the picture", () => {
     expect(proxyArguments("in", "out.mp4", clip({ width: 640, height: 360 }))).toContain("scale=-2:360,format=yuv420p");
   });
 
-  it("tone-maps HDR to BT.709 before anything else", () => {
-    expect(pictureFilters({ ...hd, dynamic: "hlg" }, { shortSide: null })).toMatch(/^zscale=t=linear:npl=100,.*tonemap=hable.*,format=yuv420p$/);
+  it("tone-maps HDR to BT.709 before anything else, naming the input's colours rather than trusting the file's tags", () => {
+    expect(pictureFilters({ ...hd, dynamic: "hlg" }, { shortSide: null })).toMatch(/^zscale=tin=arib-std-b67:pin=bt2020:min=bt2020nc:rin=tv:t=linear:p=bt2020:m=bt2020nc:npl=100,.*tonemap=hable.*,format=yuv420p$/);
+    expect(pictureFilters({ ...hd, dynamic: "pq" }, { shortSide: null })).toMatch(/^zscale=tin=smpte2084:/);
   });
 
   it("makes every proxy frame a keyframe at a constant rate, with 48 kHz sound", () => {
