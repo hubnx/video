@@ -47,6 +47,7 @@ export const CHANNELS = {
   planClip: "clip:plan",
   cancelClip: "clip:cancel",
   jobProgress: "clip:job-progress",
+  logProblem: "app:log-problem",
 } as const;
 
 /** Why a video didn't open, as a code the window turns into words (words.ts). */
@@ -71,4 +72,7 @@ export interface VideoApi {
   planClip(clipId: string, decodes: boolean): Promise<void>;
   cancelClip(clipId: string): Promise<void>;
   onJobProgress(listener: (progress: JobProgress) => void): () => void;
+  /** Writes a problem the window met to the app's log, under a searchable event name. No file names or words of the
+   * person's: an error's kind and first line only. */
+  logProblem(event: string, error: unknown): void;
 }

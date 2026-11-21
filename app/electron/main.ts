@@ -114,7 +114,10 @@ async function start(): Promise<void> {
     if (typeof id === "string") jobs.cancel(id);
   });
 
-  ipcMain.handle(CHANNELS.appVersion, () => app.getVersion());
+  ipcMain.handle(CHANNELS.logProblem, (_event, event: unknown, detail: unknown) => {
+    if (typeof event === "string" && /^[a-z_]{1,60}$/.test(event)) logError(`window_${event}`, String(detail).slice(0, 300));
+  });
+    ipcMain.handle(CHANNELS.appVersion, () => app.getVersion());
   ipcMain.handle(CHANNELS.ffmpeg, () => findFfmpeg(paths.ffmpeg));
   ipcMain.handle(CHANNELS.openWebsite, (_event, page: WebsitePage) => {
     if (!Object.hasOwn(WEBSITE_PAGES, page)) throw new Error(`not one of the app's pages: ${String(page)}`);

@@ -134,9 +134,8 @@ button:disabled {
   display: none;
 }
 
-/* An opened video while it's prepared: one centred column, a row for each job. */
+/* An opened video: one centred column, the preview over a row for each job. */
 .clip {
-  max-width: 720px;
   margin: 0 auto;
 }
 
@@ -171,4 +170,47 @@ button:disabled {
 .clip-problem {
   margin-top: 16px;
   color: var(--danger);
+}
+
+/* The preview: the picture at the video's own shape, as large as the column allows, the controls in one row under it. */
+.clip {
+  max-width: 960px;
+}
+
+.preview-place:empty {
+  display: none;
+}
+
+.preview {
+  margin-top: 16px;
+}
+
+.preview-canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+  background: #000;
+}
+
+.preview-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.preview-bar {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.preview-time {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.play {
+  min-width: 80px;
 }

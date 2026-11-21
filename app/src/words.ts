@@ -41,6 +41,12 @@ export const words = {
     starting: "Starting",
     notStarted: "This video couldn't be prepared. Close the app and open it again.",
   },
+  preview: {
+    label: "Preview",
+    position: "Position in the video",
+    play: "Play",
+    pause: "Pause",
+  },
 } as const;
 
 export function refusalWords(refusal: OpenRefusal): string {
