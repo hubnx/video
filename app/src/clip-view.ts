@@ -53,7 +53,7 @@ async function plan(clip: Clip): Promise<void> {
 function stateWords(progress: JobProgress): string {
   switch (progress.state) {
     case "waiting": return words.clip.waiting;
-    case "running": return progress.secondsLeft === null ? words.clip.starting : words.clip.minutesLeft(Math.max(1, Math.round(progress.secondsLeft / 60)));
+    case "running": return progress.secondsLeft === null ? words.clip.starting : words.clip.timeLeft(progress.secondsLeft);
     case "done": return words.clip.done;
     case "failed": return words.clip.failed;
     case "cancelled": return words.clip.cancelled;

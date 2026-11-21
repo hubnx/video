@@ -78,13 +78,16 @@ main {
   background: var(--surface);
 }
 
+/* Balanced lines, so a narrow window never leaves one word alone on the last line. */
 .lead {
   color: var(--muted);
+  text-wrap: balance;
 }
 
 .privacy {
   color: var(--muted);
   font-size: 0.875rem;
+  text-wrap: balance;
 }
 
 .drop-area.dragging {

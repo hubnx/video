@@ -3,7 +3,8 @@
   "version": "9.0.2",
   "release": "ffmpeg-9.0.2-1",
   "sha256": {
-    "mac-x64": "e9cfd7ba72034d7c22c18b5d9b452288c94dc8a0e395d6bbd03ed24bdd62475a",
-    "linux-x64": "e74b7d35971f514d32516ad1eff4a8d918c88bd9177d75bf63d61dafbfc717d1"
+    "linux-x64": "e74b7d35971f514d32516ad1eff4a8d918c88bd9177d75bf63d61dafbfc717d1",
+    "mac-arm64": "dfb39e5d25ebd4f9f7548d892df18432e7369097a1b7b98b9070ce80c124f3fd",
+    "mac-x64": "e9cfd7ba72034d7c22c18b5d9b452288c94dc8a0e395d6bbd03ed24bdd62475a"
   }
 }

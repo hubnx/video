@@ -31,7 +31,11 @@ export const words = {
     done: "Ready",
     failed: "Didn't finish",
     cancelled: "Stopped",
-    minutesLeft: (minutes: number) => (minutes <= 1 ? "about a minute left" : `about ${minutes} minutes left`),
+    timeLeft: (seconds: number) => {
+      if (seconds < 50) return "less than a minute left";
+      const minutes = Math.round(seconds / 60);
+      return minutes <= 1 ? "about a minute left" : `about ${minutes} minutes left`;
+    },
     starting: "Starting",
     notStarted: "This video couldn't be prepared. Close the app and open it again.",
   },

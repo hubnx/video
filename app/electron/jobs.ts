@@ -32,7 +32,9 @@ export function writingPath(output: string): string {
 
 export class JobRunner {
   private readonly waiting: Job[] = [];
-  private running: { job: Job; child: ChildProcess; cancelled: boolean } | null = null;
+  // Set the moment a job is taken from the queue, before anything is awaited: set later, a second job added meanwhile
+  // started too, and two FFmpegs ran at once (the screenshots, 2026-11-21).
+  private running: { job: Job; child: ChildProcess | null; cancelled: boolean } | null = null;
   private readonly ffmpeg: string;
   private readonly logs: string;
   private readonly report: (progress: JobProgress) => void;
@@ -61,7 +63,7 @@ export class JobRunner {
     }
     if (this.running?.job.clipId === clipId) {
       this.running.cancelled = true;
-      this.running.child.kill();
+      this.running.child?.kill(); // not started yet: it sees `cancelled` before it would
     }
   }
 
@@ -70,7 +72,7 @@ export class JobRunner {
     this.waiting.length = 0;
     if (this.running) {
       this.running.cancelled = true;
-      this.running.child.kill();
+      this.running.child?.kill();
     }
   }
 
@@ -78,16 +80,24 @@ export class JobRunner {
     if (this.running) return;
     const job = this.waiting.shift();
     if (!job) return;
-    void this.start(job);
+    const running = { job, child: null, cancelled: false };
+    this.running = running;
+    void this.start(running);
   }
 
-  private async start(job: Job): Promise<void> {
+  private async start(running: NonNullable<JobRunner["running"]>): Promise<void> {
+    const job = running.job;
     await mkdir(path.dirname(job.output), { recursive: true });
     await mkdir(this.logs, { recursive: true });
+    if (running.cancelled) {
+      this.report({ clipId: job.clipId, kind: job.kind, state: "cancelled" });
+      this.running = null;
+      this.next();
+      return;
+    }
     const log = createWriteStream(path.join(this.logs, `job-${job.kind}.log`), { flags: "w" });
     const child = spawn(this.ffmpeg, job.arguments, { windowsHide: true });
-    const running = { job, child, cancelled: false };
-    this.running = running;
+    running.child = child;
     lowerPriority(child);
     child.stderr?.pipe(log);
     const started = Date.now();

@@ -7,6 +7,10 @@ name: FFmpeg builds
 
 on:
   workflow_dispatch:
+    inputs:
+      targets:
+        description: Which to build, as a JSON list (a build already pinned in ffmpeg/builds.json is never rebuilt over)
+        default: '["linux-x64", "win-x64"]'
 
 permissions:
   contents: write # uploads to the FFmpeg release
@@ -16,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [linux-x64, win-x64]
+        target: ${{ fromJSON(inputs.targets) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:

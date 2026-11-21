@@ -14,9 +14,18 @@
 # published beside each release.
 set -euo pipefail
 
+# Bash reads a script as it runs: an edit made to this file mid-build changed what the build ran next ("g: command not
+# found", 2026-11-21). So it runs from a copy of itself, and this file can be edited while a build goes on.
+if [ -z "${FFMPEG_BUILD_COPY:-}" ]; then
+  copy="$(mktemp -t ffmpeg-build.XXXXXX)"
+  cp "$0" "$copy"
+  FFMPEG_BUILD_COPY="$copy" FFMPEG_BUILD_HERE="$(cd "$(dirname "$0")" && pwd)" exec bash "$copy" "$@"
+fi
+trap 'rm -f "$FFMPEG_BUILD_COPY"' EXIT
+
 target="${1:?target: mac-arm64, mac-x64, linux-x64 or win-x64}"
 output="$(mkdir -p "${2:?output folder}" && cd "$2" && pwd)"
-here="$(cd "$(dirname "$0")" && pwd)"
+here="$FFMPEG_BUILD_HERE"
 work="${FFMPEG_WORK:-$here/../local/ffmpeg-build}"
 
 # The pins: change one, and its SHA-256 with it (scripts/fetch-ffmpeg.ts then pins the new builds' own).
@@ -76,7 +85,9 @@ case "$target" in
   win-x64)
     export CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++
     cross=(--enable-cross-compile --arch=x86_64 --target-os=mingw32 --cross-prefix=x86_64-w64-mingw32-)
-    system=(--enable-mediafoundation --extra-ldflags=-static)
+    # Media Foundation's encoders (aac_mf) are built on Direct3D 11's types: without d3d11va, FFmpeg 9.0's mfenc.c
+    # doesn't compile (GitHub's build, 2026-11-21).
+    system=(--enable-mediafoundation --enable-d3d11va --extra-ldflags=-static)
     x264_host=(--host=x86_64-w64-mingw32 --cross-prefix=x86_64-w64-mingw32-)
     exe=".exe"
     ;;
