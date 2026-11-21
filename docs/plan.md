@@ -1,6 +1,6 @@
 # Plan: hubnx Video (`video`)
 
-Draft 2026-11-17: reviewed by `video assistant` (gate 1, approved with changes, folded in); waiting on the owner's OK. Who it's for, the jobs and the
+Draft 2026-11-17: reviewed by `video assistant` (gate 1, approved with changes, folded in). **OK'd by the owner 2026-11-21** ("ok as planned"); *In one minute* is frozen, and a change to it goes through `video assistant`. Day 0 = 11-21: day 1 = 11-22, release 1 ≈ 11-29, 1.1 ≈ 11-30. Who it's for, the jobs and the
 gaps are the product manager's: [product.md](product.md) › *Who it's for* and *Gap register*. The
 research behind every choice: [research/](research/).
 
