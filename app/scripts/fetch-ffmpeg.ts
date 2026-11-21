@@ -56,7 +56,7 @@ export async function fetchFfmpeg(target: Target): Promise<string> {
 
   await rm(folder, { recursive: true, force: true }); // each run replaces its own folder: old and new never mix
   await mkdir(folder, { recursive: true });
-  // A relative path, run from the folder: GNU tar (Git Bash's, on GitHub's Windows) reads "D:\\…" as a remote host.
+  // A relative path, run from the folder: GNU tar (Git Bash's, on GitHub's Windows) reads "D:\…" as a remote host.
   execFileSync("tar", ["-xJf", path.relative(folder, archive)], { cwd: folder });
   await writeFile(stamp, pinned);
   return folder;
