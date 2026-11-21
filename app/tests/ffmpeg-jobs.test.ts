@@ -45,9 +45,9 @@ describe("turning and sizing the picture", () => {
   it("turns a phone video upright once, with FFmpeg reading the file's rotation as none", () => {
     const args = proxyArguments("in.mov", "out.mp4", clip({ width: 1920, height: 1080, rotation: 90 })).join(" ");
     expect(args).toMatch(/-display_rotation:v:0 0 -i in\.mov/);
-    expect(pictureFilters({ ...hd, rotation: 90 }, { shortSide: 720 })).toBe("transpose=clock,scale=720:-2,format=yuv420p");
-    expect(pictureFilters({ ...hd, rotation: 270 }, { shortSide: 720 })).toBe("transpose=cclock,scale=720:-2,format=yuv420p");
-    expect(pictureFilters({ ...hd, rotation: 180 }, { shortSide: 720 })).toBe("hflip,vflip,scale=-2:720,format=yuv420p");
+    expect(pictureFilters({ ...hd, rotation: 90 }, { shortSide: 720 })).toBe("scale=-2:720,transpose=clock,format=yuv420p");
+    expect(pictureFilters({ ...hd, rotation: 270 }, { shortSide: 720 })).toBe("scale=-2:720,transpose=cclock,format=yuv420p");
+    expect(pictureFilters({ ...hd, rotation: 180 }, { shortSide: 720 })).toBe("scale=-2:720,hflip,vflip,format=yuv420p");
   });
 
   it("sizes the proxy's shorter side to 720 and never enlarges a smaller clip", () => {
@@ -55,7 +55,11 @@ describe("turning and sizing the picture", () => {
     expect(proxyArguments("in", "out.mp4", clip({ width: 640, height: 360 }))).toContain("scale=-2:360,format=yuv420p");
   });
 
-  it("tone-maps HDR to BT.709 before anything else, naming the input's colours rather than trusting the file's tags", () => {
+  it("sizes an HDR proxy before tone-mapping it, so the costly part runs on 720p, not 4K", () => {
+    expect(pictureFilters({ ...hd, width: 3840, height: 2160, dynamic: "hlg" }, { shortSide: 720 })).toMatch(/^scale=-2:720,zscale=tin=arib-std-b67/);
+  });
+
+  it("tone-maps HDR to BT.709 before turning it, naming the input's colours rather than trusting the file's tags", () => {
     expect(pictureFilters({ ...hd, dynamic: "hlg" }, { shortSide: null })).toMatch(/^zscale=tin=arib-std-b67:pin=bt2020:min=bt2020nc:rin=tv:t=linear:p=bt2020:m=bt2020nc:npl=100,.*tonemap=hable.*,format=yuv420p$/);
     expect(pictureFilters({ ...hd, dynamic: "pq" }, { shortSide: null })).toMatch(/^zscale=tin=smpte2084:/);
   });

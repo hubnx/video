@@ -46,20 +46,25 @@ export function proxyArguments(input: string, output: string, facts: ClipFacts):
 }
 
 /** A full-size H.264 copy for a video this computer can't decode, or HDR tone-mapped to SDR: what export reads in
- * place of the original. Upright and at a constant rate, as the proxy. */
+ * place of the original. Upright and at a constant rate, as the proxy. x264's superfast: the copy is only a step on the
+ * way to the export, which encodes again, and "fast" took 452 s a minute of 4K on GitHub's 2-core Ubuntu (2026-11-21). */
 export function editCopyArguments(input: string, output: string, facts: ClipFacts): string[] {
   const video = requiredVideo(facts);
   return [...COMMON, ...FORGET_ROTATION, "-i", input, "-map", "0:v:0", "-map", "0:a:0?",
     "-vf", pictureFilters(video, { shortSide: null }),
     "-fps_mode", "cfr", "-r", constantRate(video.frameRate),
-    "-c:v", "libx264", "-preset", "fast", "-crf", "18", "-pix_fmt", "yuv420p",
+    "-c:v", "libx264", "-preset", "superfast", "-crf", "18", "-pix_fmt", "yuv420p",
     "-c:a", "aac", "-ar", "48000", "-b:a", "192k", "-movflags", "+faststart", output];
 }
 
-/** Tone-map (HDR only), turn upright, then size. FFmpeg's own turning is off (FORGET_ROTATION), so the clip's one
- * clockwise rotation (probe.ts) is applied here once and never twice. */
+/** Size first, then tone-map (HDR only), then turn upright. Sizing first does the tone-map's costly floating-point work
+ * on the proxy's 720p rather than on 4K: on GitHub's 2-core Ubuntu, a minute of iPhone HDR took 226 s the other way
+ * round (the edit-copy timing, 2026-11-21). FFmpeg's own turning is off (FORGET_ROTATION), so the clip's one clockwise
+ * rotation (probe.ts) is applied here once and never twice. */
 export function pictureFilters(video: VideoFacts, size: { shortSide: number | null }): string {
   const filters: string[] = [];
+  // The stored picture's shorter side, which turning keeps the shorter side.
+  if (size.shortSide !== null) filters.push(video.width >= video.height ? `scale=-2:${size.shortSide}` : `scale=${size.shortSide}:-2`);
   // HLG and PQ to BT.709 with zimg (zscale), then Hable's curve: what Shotcut and Kdenlive do for phone HDR. The input's
   // colours, and the linear step's own, are all named rather than left to the file's tags: zscale finds "no path between
   // colorspaces" when they're missing or say BT.709, and FFmpeg 9.0 already left one out of its summary (the edit-copy
@@ -71,12 +76,6 @@ export function pictureFilters(video: VideoFacts, size: { shortSide: number | nu
   if (video.rotation === 90) filters.push("transpose=clock");
   if (video.rotation === 180) filters.push("hflip", "vflip");
   if (video.rotation === 270) filters.push("transpose=cclock");
-  if (size.shortSide !== null) {
-    // Sized after turning, so the shorter side is measured on the upright picture.
-    const turned = video.rotation % 180 !== 0;
-    const [uprightWidth, uprightHeight] = turned ? [video.height, video.width] : [video.width, video.height];
-    filters.push(uprightWidth >= uprightHeight ? `scale=-2:${size.shortSide}` : `scale=${size.shortSide}:-2`);
-  }
   filters.push("format=yuv420p");
   return filters.join(",");
 }
