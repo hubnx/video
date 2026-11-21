@@ -1,7 +1,8 @@
 /* hubnx Video's colours, light and dark following the system: the one source for the app's window (app/src/styles.css)
-   and the website. The accent is the icon's tile (brand/icon.svg): a red-orange no other Hub Nexus app uses
-   (../../docs/brand.md › Icons: typing's teal, desk's amber, globe's navy, Surehand's green, music's indigo, meet's
-   magenta). White on it is 5.2:1, so it carries white text on buttons in both themes. */
+   and the website. The accent is the icon's tile (brand/icon.svg): a fuchsia no other Hub Nexus app uses, about 293° of
+   hue, at least 42° from each (../../docs/brand.md › Icons: Songbrew's indigo, meet's magenta, Surehand's green,
+   typing's teal, desk's amber, globe's navy). White on it is 6.3:1, so filled buttons carry white text in both themes;
+   text in the accent's colour on the dark page uses a lighter tint (7.3:1). */
 :root {
   color-scheme: light dark;
   --page: #ffffff;
@@ -13,11 +14,11 @@
   --line-strong: #c9c9d0;
   --button: #ffffff;
   --hover: #ececef;
-  --accent: #c2410c;
-  --accent-hover: #a8380a;
+  --accent: #a21caf;
+  --accent-hover: #86198f;
   --on-accent: #ffffff;
-  --accent-text: #b13c0b;
-  --focus: #f08a5d;
+  --accent-text: #a21caf; /* 6.3:1 on the page */
+  --focus: #c026d3; /* 4.7:1 on the page: a focus ring needs 3:1 */
   --danger: #b42318;
 }
 
@@ -32,10 +33,10 @@
     --line-strong: #4a4a54;
     --button: #26262c;
     --hover: #2a2a31;
-    --accent: #c2410c;
-    --accent-hover: #d14a12;
-    --accent-text: #fb9a6c;
-    --focus: #fb9a6c;
+    --accent: #a21caf;
+    --accent-hover: #b62ac4;
+    --accent-text: #e879f9; /* 7.3:1 on the dark page */
+    --focus: #e879f9;
     --danger: #e5584c;
   }
 }

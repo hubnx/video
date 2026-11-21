@@ -1,6 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- hubnx Video's icon (../../docs/brand.md › Icons): the red-orange tile, rounded by 23% of its width, and a white
-       play triangle with a cut through it, for an editor that cuts. Shapes only, no text. -->
-  <rect width="64" height="64" rx="14.7" fill="#c2410c"/>
-  <path d="M22 16.5 L28.5 20.4 L28.5 43.6 L22 47.5 Z M33.5 23.4 L48 32 L33.5 40.6 Z" fill="#ffffff"/>
+  <!-- hubnx Video's icon (../../docs/brand.md › Icons): a fuchsia tile, rounded by 23% of its width, and a white film
+       strip cut in two by a clean diagonal, for an editor that cuts. Shapes only, no text. Chosen 2026-11-21 by
+       `video assistant` from four options (local/icon-options/sheet.png): the first, a play triangle on red-orange,
+       was within a shade of YouTube's logo. -->
+  <rect width="64" height="64" rx="14.7" fill="#a21caf"/>
+  <g fill="#ffffff" fill-rule="evenodd">
+    <path d="M12 18h17l-4 28H12z M15 21v3h3v-3z M15 28v3h3v-3z M15 35v3h3v-3z M15 42v2h3v-2z"/>
+    <path d="M35 18h17v28H31z M46 21v3h3v-3z M46 28v3h3v-3z M46 35v3h3v-3z M46 42v2h3v-2z"/>
+  </g>
 </svg>
