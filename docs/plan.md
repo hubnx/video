@@ -328,7 +328,7 @@ Proposed by `video assistant` (2026-11-17).
 ## The owner's steps
 
 1. **OK this plan**, or say what to change.
-2. **Done 2026-11-20** (the spelling being confirmed: the owner wrote "videoa"): add the alias `video@hubnx.com` (admin.google.com →
+2. **Done 2026-11-20** (checked in admin.google.com: the alias reads `video`): add the alias `video@hubnx.com` (admin.google.com →
    *Directory* › *Users* → your name → *Alternate email addresses* → add `video` → *Save*). The
    privacy and terms pages name it.
 3. **At the launch (1.1, about two weeks from now):** post the drafts from your own accounts
