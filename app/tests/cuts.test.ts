@@ -3,7 +3,7 @@
  * inside a word (docs/plan.md › Build order, day 5). And a pause found in a hum as well as in a quiet room.
  */
 import { describe, expect, it } from "vitest";
-import { kept, secondsSaved, silenceCuts, type Stretch } from "../src/shared/cuts.ts";
+import { kept, secondsSaved, silenceCuts, withoutSpeech, type Stretch } from "../src/shared/cuts.ts";
 import { flicksOf, secondsOf } from "../src/shared/time.ts";
 import type { Word } from "../src/shared/transcript.ts";
 import { loudness, quietStretches } from "../electron/quiet.ts";
@@ -12,10 +12,10 @@ const at = (start: number, end: number): Stretch => ({ start: flicksOf(start), e
 const word = (text: string, start: number, end: number): Word => ({ text, ...at(start, end) });
 
 describe("silence proposals", () => {
-  it("cuts a long pause down to a breath each side", () => {
+  it("cuts a long pause down to a quarter second each side", () => {
     const [cut] = silenceCuts([at(2, 5)], []);
-    expect(secondsOf(cut!.start)).toBeCloseTo(2.15);
-    expect(secondsOf(cut!.end)).toBeCloseTo(4.85);
+    expect(secondsOf(cut!.start)).toBeCloseTo(2.25);
+    expect(secondsOf(cut!.end)).toBeCloseTo(4.75);
   });
 
   it("leaves a natural pause alone", () => {
@@ -26,12 +26,16 @@ describe("silence proposals", () => {
     const soft = word("so", 4, 4.3);
     const [cut] = silenceCuts([at(1, 4.6)], [soft]);
     expect(cut!.end).toBeLessThanOrEqual(soft.start);
-    expect(secondsOf(cut!.end)).toBeCloseTo(3.85);
+    expect(secondsOf(cut!.end)).toBeCloseTo(3.75);
   });
 
   it("drops a pause that a word leaves too little of", () => {
     expect(silenceCuts([at(1, 2.2)], [word("uh-huh", 1.3, 1.9)])).toEqual([]);
   });
+});
+
+it("takes out of the quiet whatever the voice detector hears speech in", () => {
+  expect(withoutSpeech([at(1, 6)], [at(0, 1.5), at(3, 3.4), at(5.5, 9)])).toEqual([at(1.5, 3), at(3.4, 5.5)]);
 });
 
 describe("what plays after the cuts", () => {

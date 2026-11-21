@@ -25,9 +25,14 @@ export interface SilenceRules {
   paddingSeconds: number;
 }
 
-/** A pause of a second or more is cut down to a breath each side: the usual setting of jump-cut tools for talking
- * heads (Descript's and Recut's defaults sit between 0.5 and 1 s). */
-export const SILENCE: SilenceRules = { shortestSeconds: 1, paddingSeconds: 0.15 };
+/** A pause of a second or more is cut down to a quarter second each side. Measured on the filler check's AMI hour with
+ * quiet from loudness and the voice detector together (withoutSpeech): 0.15 s let 7 of 208 cuts reach 100 ms into the
+ * reference's words, and 0.25 s left 2 once the reference's stretched words are held to 1 s (scripts/check-silences.ts,
+ * 2026-11-21). Every cut also gets a short crossfade, so none clicks. */
+export const SILENCE: SilenceRules = { shortestSeconds: 1, paddingSeconds: 0.25 };
+
+/** A cut that removes less than this isn't worth the jump it makes. */
+const SHORTEST_CUT_SECONDS = 0.3;
 
 /** The silences worth cutting: each quiet stretch long enough, shrunk by the padding, and moved off any word that
  * overlaps it, since a word's own time is truer than the sound's loudness at a soft consonant. */
@@ -45,9 +50,26 @@ export function silenceCuts(quiet: readonly Stretch[], words: readonly Word[], r
       if (word.start - start >= end - word.end) end = (word.start - padding) as Flicks;
       else start = (word.end + padding) as Flicks;
     }
-    if (end - start >= flicksOf(rules.paddingSeconds * 2)) cuts.push({ kind: "silence", start, end });
+    if (end - start >= flicksOf(SHORTEST_CUT_SECONDS)) cuts.push({ kind: "silence", start, end });
   }
   return cuts;
+}
+
+/** The quiet that the voice detector also hears no speech in: loudness alone takes a soft word for quiet, and the
+ * detector alone counts a breath as speech; a cut needs both to agree (the silence check, 2026-11-21). */
+export function withoutSpeech(quiet: readonly Stretch[], speech: readonly Stretch[]): Stretch[] {
+  const sortedSpeech = [...speech].sort((one, other) => one.start - other.start);
+  return quiet.flatMap((stretch) => {
+    const pieces: Stretch[] = [];
+    let start = stretch.start;
+    for (const voice of sortedSpeech) {
+      if (voice.end <= start || voice.start >= stretch.end) continue;
+      if (voice.start > start) pieces.push({ start, end: voice.start });
+      start = Math.max(start, voice.end) as Flicks;
+    }
+    if (start < stretch.end) pieces.push({ start, end: stretch.end });
+    return pieces;
+  });
 }
 
 /** What plays once `cuts` are taken out of a clip `duration` long: the kept stretches, in order. */
