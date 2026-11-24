@@ -62,17 +62,23 @@ async function readNumber(page: Page, turned: boolean): Promise<number> {
   }, { turned, bits: BITS });
 }
 
+/** Moves the bar to `seconds`, as a person drags it, and waits until the app has drawn the frame showing there, by its
+ * own record of the frame drawn. Waiting only for "close to the moment" passed before a seek to the next frame had
+ * drawn (a frame is 0.033 s; the old tolerance was 0.04 s), so the pixels read were the last frame's: the 1-in-40
+ * miss of 2026-11-21, a fault of this check, not the app. A frame never drawn times out, and says which was. */
 async function seekTo(page: Page, seconds: number): Promise<void> {
-  const before = await page.locator(".preview-canvas").getAttribute("data-drawn");
   await page.locator(".preview-bar").evaluate((bar: HTMLInputElement, value) => {
     bar.value = String(value);
     bar.dispatchEvent(new Event("input"));
   }, seconds);
-  // Drawn once the frame for that moment is on the canvas (or the same frame again).
-  await page.waitForFunction(({ before, seconds }) => {
+  const target = Math.floor(seconds * RATE + 1e-6);
+  await page.waitForFunction(({ target, rate }) => {
     const drawn = document.querySelector<HTMLCanvasElement>(".preview-canvas")?.dataset.drawn;
-    return drawn !== undefined && drawn !== "" && (drawn !== before || Math.abs(Number(drawn) - seconds) < 0.04);
-  }, { before, seconds });
+    return drawn !== undefined && drawn !== "" && Math.floor(Number(drawn) * rate + 1e-6) === target;
+  }, { target, rate: RATE }, { timeout: 10_000 }).catch(async () => {
+    const drawn = await page.locator(".preview-canvas").getAttribute("data-drawn");
+    throw new Error(`a seek to frame ${target} never drew it: the app last drew ${drawn} s`);
+  });
 }
 
 /** Opens `file` in a fresh copy of the app, behind, through its own dialog, and runs `check` on its window. */
@@ -101,7 +107,7 @@ const failures: string[] = [];
 try {
   await withClip(numbered, async (page) => {
     // Random seeks, read back from the pixels.
-    const frames = Array.from({ length: 40 }, () => Math.floor(Math.random() * (FRAMES - 1)));
+    const frames = Array.from({ length: Number(process.env.SEEKS ?? 40) }, () => Math.floor(Math.random() * (FRAMES - 1)));
     let misses = 0;
     for (const frame of frames) {
       await seekTo(page, frame / RATE);

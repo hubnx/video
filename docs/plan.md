@@ -45,11 +45,11 @@ Detail and sources: [research/easy-editors.md](research/easy-editors.md),
 |---|---|---|---|---|---|---|---|---|---|
 | 4K export, no watermark | **Free** | Pro ($19.99/mo) | Free (Mac) | Paid | Free (Mac, 30 fps) | Free (to UHD 60) | Free | Free | Plans from $16/mo |
 | Captions from speech | **Free, on the computer** | Pro | Free, unlimited | Free, Microsoft's cloud | None | Studio ($295) | Free, on the computer | Add-on: Python + 3.4 GB | Paid, metered by minutes |
-| Silences and "um"s cut, checked first | **Free** | Pro (*unverified*) | Not stated | Not found | None | Not found | None ("out of scope") | None (asked since 2019) | Paid (credits) |
+| Silences and "um"s cut, checked first | **Free** | Pro (*unverified*) | Not stated (Instagram's *First Draft* trims silences in Reels; in the Mac app *unverified*) | Not found | None | Not found | None ("out of scope") | None (asked since 2019) | Paid (credits) |
 | Voice clean-up | **Free** | Pro | Not stated | Free | Free | Studio | Free (RNNoise) | Effects (*unverified*) | Paid (AI credits) |
 | 9:16 that follows the speaker | **Free (week 2)** | Paid (*unverified*) | Vertical format; following not stated | None | None | Studio | A filter, by hand | None | — |
-| Offline, no account | **Yes** | Account needed | Not stated; signing in carries styles over | Internet and Microsoft account | Yes | Sign-up form | Yes | Yes | Account |
-| Mac, Windows, Linux | **All three** | Mac, Windows | Mac (Apple chips, *unverified*); phones | Windows, web | Mac | All three | All three | All three | Mac, Windows |
+| Offline, no account | **Yes** | Account needed | Instagram sign-in required | Internet and Microsoft account | Yes | Sign-up form | Yes | Yes | Account |
+| Mac, Windows, Linux | **All three, Intel Macs too** | Mac, Windows | Macs with Apple chips only (M1 or later); phones | Windows, web | Mac | All three | All three | All three | Mac, Windows |
 | Easy for a CapCut user | **The goal: minutes to first export** | Yes | Yes (*unverified* on Mac) | Yes | Yes | Hard | Harder | Harder | Yes |
 | AI models to choose, local and online | **Yes** | No | No; MCP for AI agents | No | No | No | No | No | Online only |
 
@@ -74,7 +74,7 @@ Each release goes out to everyone (no private beta) and updates itself.
 | Release | What the user gets | Gap |
 |---|---|---|
 | **1 (target day 8; public quietly)** | Drop in a video. The transcript and captions appear (a few good styles, word by word; names fixed in a word list; SRT out). Silences and "um"s proposed on the transcript and the timeline: accept all in one click, undo any one in one click, never mid-word (fillers are named in the app and posts only once measured at 80%+, below). Trim and split while captions are still being made, then delete, unlimited undo. Export 720p, 1080p or 4K, captions burned in or as a file, with a *YouTube* preset. Voice clean-up as one switch if it fits (a 10 MiB model), with even loudness (FFmpeg's loudnorm, to YouTube's level) | G1, G2, G5, G16 |
-| **1.1 (the launch)** | **9:16 shorts:** reframe a landscape recording with the speaker kept in frame (face tracking on the computer), caption styles for shorts, a *Shorts / TikTok / Reels* export preset. A candidate, `video assistant`'s call: a slight alternating zoom on each cut, so cleaned-up talks don't jump | G4 |
+| **1.1 (the launch)** | **9:16 shorts:** reframe a landscape recording with the speaker kept in frame (face tracking on the computer), caption styles for shorts, a *Shorts / TikTok / Reels* export preset. **Smooth jump cuts** (G17, decided 2026-11-24): a switch in the clean-up panel, off by default; a gentle punch-in (about 108%), alternating at silence cuts where a face is in frame, from 1.1's face tracking, each zoom a block on the timeline to adjust or remove (Opus Clip sells it as Pro's *Auto Zoom*) | G4, G17 |
 | 1.2 | Voice clean-up (if not in 1); **background removal** behind a person | — |
 | 1.3 | **More tracks and titles:** pictures, clips and text over the video; lower thirds and title templates | G13 |
 | 1.4 | **Music** (the user's own, with Songbrew linked for music without copyright claims), and **transitions** | — |
