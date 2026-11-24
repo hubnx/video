@@ -50,8 +50,8 @@ restart or compaction, run CronList and re-create whatever is missing from the p
 
 | Job | Cron | Prompt |
 |---|---|---|
-| Daily scan | `51 8 * * 2-5`, recurring | VIDEO DAILY SCAN: read `video/docs/product.md` › *Rhythm*; check rivals' releases, prices and news and new review themes; read `video`'s commits and docs since the last scan; about ten calls; update this file only if something changed; tell the owner only what matters; send critical points to `video` |
-| Market and plan | `37 9 <next Monday> *`, one-shot | VIDEO WEEKLY PASS: the *Market and plan* row; then schedule the next Monday and Friday one-shots and re-create the daily scan |
+| Daily scan | `51 8 * * 2-5`, recurring | VIDEO DAILY SCAN: run `zsh video/local/pm/rivals.sh` (prints only what changed on GitHub), one news search for the closed rivals and new launches, `git log` of `video` since the last scan; act only on a change (this file, a critical point to `video`, the owner only if it matters); then rewrite `hubnx-apps/local/sessions/video-assistant.md` (template in that folder's README). No progress-only messages |
+| Market and plan | `37 9 <next Monday> *`, one-shot | VIDEO WEEKLY PASS: the *Market and plan* row; then the Monday housekeeping (cleanup of my own files and memory, token review, schedule check) in the status file's *Weekly* line; schedule the next Monday and Friday one-shots and re-create the daily scan |
 | Retro | `23 16 <next Friday> *`, one-shot | VIDEO RETRO: the *Retro* row; then schedule the next Friday |
 
 ## Last retro: week of 2026-11-17
