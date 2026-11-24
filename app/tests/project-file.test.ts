@@ -9,7 +9,7 @@ import path from "node:path";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { Autosave, openProject, saveProject } from "../electron/project-file.ts";
 import { PROJECT_FORMAT, PROJECT_VERSION, type Project } from "../src/shared/project.ts";
-import { wholeClip } from "../src/edit/timeline.ts";
+import { emptyEdit, split } from "../src/edit/timeline.ts";
 import { flicksOf } from "../src/shared/time.ts";
 
 let folder: string;
@@ -22,8 +22,11 @@ afterEach(async () => {
   await rm(folder, { recursive: true, force: true });
 });
 
+/** A project told apart by where its one split is. */
 function project(seconds: number): Project {
-  return { format: PROJECT_FORMAT, version: PROJECT_VERSION, clips: [], edit: wholeClip("a", flicksOf(seconds)), proposals: [] };
+  const edit = emptyEdit();
+  split(edit, flicksOf(seconds));
+  return { format: PROJECT_FORMAT, version: PROJECT_VERSION, clips: [], edit };
 }
 
 it("saves and opens a project as it was", async () => {

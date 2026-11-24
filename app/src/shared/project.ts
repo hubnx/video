@@ -1,9 +1,8 @@
 /**
- * A project as it's saved: the clips it uses, the edit, and the clean-up's proposals with what the person chose for
- * each. Every saved project names its format's version, and an older one is brought up to date step by step when
+ * A project as it's saved: the clips it uses and the edit. Every saved project names its format's version, and an older one is brought up to date step by step when
  * opened (`migrate`), so a project made by any release opens in every later one.
  */
-import type { Cut } from "./cuts.ts";
+import type { Stretch } from "./cuts.ts";
 import type { ClipFacts } from "./media.ts";
 import type { Flicks } from "./time.ts";
 
@@ -24,21 +23,24 @@ export interface ProjectClip {
   facts: ClipFacts;
 }
 
-/** What the person chose for a proposal: cut (its stretch is out of the edit) or kept (left as it was). */
-export type ProposalChoice = "cut" | "kept";
+/** Why a stretch of the clip was taken out: a silence or a possible "um" the clean-up proposed, or a piece deleted. */
+export type RemovedReason = "silence" | "filler" | "deleted";
 
-export interface Proposal {
-  clipId: string;
-  cut: Cut;
-  choice: ProposalChoice;
+export interface Removed extends Stretch {
+  reason: RemovedReason;
+}
+
+/** The edit (src/edit/timeline.ts): what's taken out of the clip, and where it was split. */
+export interface Edit {
+  removed: Removed[];
+  splits: Flicks[];
 }
 
 export interface Project {
   format: typeof PROJECT_FORMAT;
   version: typeof PROJECT_VERSION;
   clips: ProjectClip[];
-  edit: { segments: Segment[] };
-  proposals: Proposal[];
+  edit: Edit;
 }
 
 /** Each step from one version to the next, by the version it starts from. Empty until version 2 exists. */
