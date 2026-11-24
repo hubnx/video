@@ -13,7 +13,8 @@ import path from "node:path";
 import { silenceCuts, withoutSpeech, type Stretch } from "../src/shared/cuts.ts";
 import { flicksOf, secondsOf } from "../src/shared/time.ts";
 import type { Word } from "../src/shared/transcript.ts";
-import { loudness, quietStretches, speechSamples } from "../electron/quiet.ts";
+import { loudness, quietStretches } from "../src/shared/quiet.ts";
+import { speechSamples } from "../electron/quiet.ts";
 import { appFolder } from "./start.ts";
 
 const root = path.resolve(appFolder, "..", "local", "filler-check");

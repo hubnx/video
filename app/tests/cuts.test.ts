@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { kept, secondsSaved, silenceCuts, withoutSpeech, type Stretch } from "../src/shared/cuts.ts";
 import { flicksOf, secondsOf } from "../src/shared/time.ts";
 import type { Word } from "../src/shared/transcript.ts";
-import { loudness, quietStretches } from "../electron/quiet.ts";
+import { loudness, quietStretches } from "../src/shared/quiet.ts";
 
 const at = (start: number, end: number): Stretch => ({ start: flicksOf(start), end: flicksOf(end) });
 const word = (text: string, start: number, end: number): Word => ({ text, ...at(start, end) });

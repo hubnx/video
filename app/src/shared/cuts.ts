@@ -11,8 +11,8 @@ export interface Stretch {
   end: Flicks;
 }
 
-/** Why a stretch is proposed. Fillers ("um") join once the filler check measures 80% (docs/plan.md › Risks). */
-export type CutKind = "silence";
+/** Why a stretch is proposed: a long pause, or a possible "um" (English only, each cut by its own press: edit/cleanup.ts). */
+export type CutKind = "silence" | "filler";
 
 export interface Cut extends Stretch {
   kind: CutKind;

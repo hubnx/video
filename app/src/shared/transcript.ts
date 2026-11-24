@@ -3,6 +3,7 @@
  * into caption lines. Pure, shared by the main process (which makes the transcript) and the window (which shows it
  * and draws the captions), and checked by the tests without a model.
  */
+import type { Stretch } from "./cuts.ts";
 import { FLICKS_PER_SECOND, type Flicks } from "./time.ts";
 
 export interface Word {
@@ -16,12 +17,19 @@ export interface Transcript {
   words: Word[];
 }
 
+/** What the clean-up needs of a clip's sound, sent once with its transcript: its loudness every 20 ms in dBFS (quiet.ts
+ * › loudness), and where the voice detector heard speech. The window proposes silence cuts from these and the words. */
+export interface SoundMap {
+  levels: Float32Array;
+  voice: Stretch[];
+}
+
 /** How a clip's transcript is coming along, as the window hears it: the speech model downloading (its first use only),
  * the words of each stretch as they're heard, then the whole transcript (at once, when it was made before). */
 export type TranscriptProgress =
   | { clipId: string; state: "downloading"; done: number; total: number }
   | { clipId: string; state: "hearing"; fraction: number; words: Word[] }
-  | { clipId: string; state: "done"; transcript: Transcript }
+  | { clipId: string; state: "done"; transcript: Transcript; sound: SoundMap }
   | { clipId: string; state: "failed"; error: string };
 
 /** One caption on screen: one or two lines of words, shown from its first word's start to its last word's end. */

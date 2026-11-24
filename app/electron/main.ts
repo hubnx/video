@@ -7,7 +7,10 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { APP_NAME, CHANNELS, WEBSITE_PAGES, type OpenResult, type WebsitePage } from "../src/shared/app-api.ts";
 import type { Clip, ClipFacts, JobKind } from "../src/shared/media.ts";
-import type { Transcript, TranscriptProgress } from "../src/shared/transcript.ts";
+import type { Stretch } from "../src/shared/cuts.ts";
+import { loudness } from "../src/shared/quiet.ts";
+import type { SoundMap, Transcript, TranscriptProgress } from "../src/shared/transcript.ts";
+import { speechSamples } from "./quiet.ts";
 import { errorName, logError, startAppLog } from "./app-log.ts";
 import { Clips } from "./clips.ts";
 import { findFfmpeg } from "./ffmpeg.ts";
@@ -72,8 +75,11 @@ async function start(): Promise<void> {
     transcripts.set(id, controller);
     const stored = clips.stored(id, "transcript.json");
     try {
+      // The clean-up's sound map, measured from the speech sound in one pass (a minute of it in about 20 ms).
+      const soundMap = async (voice: Stretch[]): Promise<SoundMap> => ({ levels: loudness(await speechSamples(clips.made(id, "speech"))), voice });
       if (existsSync(stored)) {
-        sendTranscript({ clipId: id, state: "done", transcript: JSON.parse(await readFile(stored, "utf8")) as Transcript });
+        const voice = JSON.parse(await readFile(clips.stored(id, "voice.json"), "utf8")) as Stretch[];
+        sendTranscript({ clipId: id, state: "done", transcript: JSON.parse(await readFile(stored, "utf8")) as Transcript, sound: await soundMap(voice) });
         return;
       }
       const models = [PARAKEET_V3, SILERO_VAD];
@@ -86,7 +92,7 @@ async function start(): Promise<void> {
       const transcript: Transcript = { language: "", words: heard.words };
       await writeFile(clips.stored(id, "voice.json"), JSON.stringify(heard.voice));
       await writeFile(stored, JSON.stringify(transcript));
-      sendTranscript({ clipId: id, state: "done", transcript });
+      sendTranscript({ clipId: id, state: "done", transcript, sound: await soundMap(heard.voice) });
     } catch (error) {
       logError("transcript_unmade", errorName(error), error instanceof Error ? error.message.slice(0, 200) : "");
       sendTranscript({ clipId: id, state: "failed", error: error instanceof Error ? error.message.split(":")[0]! : "TRANSCRIBE_FAILED" });
