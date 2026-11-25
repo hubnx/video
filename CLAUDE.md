@@ -79,6 +79,14 @@ Dependencies point one way: window → preload → main process → FFmpeg.
   folder.
 - **Squirrel (the Mac's updater) checks the newer copy's signature against the older's**, so the update check needs
   signed packages; Apple's notary isn't part of it, so `check-update.ts` signs without notarizing.
+- **WebCodecs' `hardwareAcceleration: "prefer-hardware"` refuses outright where there's no hardware encoder** (GitHub's
+  Windows, VMs, older PCs: "not supported in this environment"): `export-video.ts` asks `canEncodeVideo` and falls back.
+- **Chromium keeps its software WebGL (SwiftShader) off unless asked**: without a usable graphics driver there's no
+  WebGL2, so the compositor can't start; `main.ts` passes `enable-unsafe-swiftshader`. Under it, on GitHub's Ubuntu,
+  a screenshot of the unseen window times out, so the checks' pictures never decide a verdict.
+- **The org's free GitHub Actions minutes are shared by every private hubnx repo** (2,000 a month; Windows counts
+  twice, Mac ten times) and ran out on 2026-11-25: jobs then don't start at all. Public repos run free. Each job a
+  run starts bills at least a minute, even one that skips its steps.
 - **A `DOMException` crosses the preload bridge as an empty object** (WebCodecs' errors are DOMExceptions): the window
   describes its own errors (`src/problems.ts`) and the bridge carries only text.
 - **Electron refuses a native add-on's own memory** ("External buffers are not allowed"): sherpa-onnx's `readWave` and
