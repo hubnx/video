@@ -89,7 +89,7 @@ jobs:
           # most people download and which updates itself: the flow runs on the AppImage.
           sudo apt-get install -y -q "$RUNNER_TEMP"/download/*.deb
           echo "DEB_FFMPEG=$(dpkg -L hubnx-video | grep '/resources/bin/ffmpeg$')" >> "$GITHUB_ENV"
-          echo "DEB_PROGRAM=$(dpkg -L hubnx-video | grep '/hubnx-video$' | head -1)" >> "$GITHUB_ENV"
+          echo "DEB_PROGRAM=$(dpkg -L hubnx-video | grep '^/opt/.*/hubnx-video$' | head -1)" >> "$GITHUB_ENV" # not /usr/share/doc's folder
           image=$(ls "$RUNNER_TEMP"/download/*.AppImage); chmod +x "$image"
           echo "PROGRAM=$image" >> "$GITHUB_ENV"
           if command -v pico2wave >/dev/null; then pico2wave -l en-US -w "$RUNNER_TEMP/speech.wav" "$SAID"; else espeak-ng -s 150 -w "$RUNNER_TEMP/speech.wav" "$SAID"; fi
