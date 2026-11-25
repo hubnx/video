@@ -13,7 +13,7 @@ import { wordsOf } from "./words.ts";
 
 // A native add-on, loaded at run time from node_modules and never bundled (electron/vite.config.ts); its types are ours
 // (sherpa-onnx-node.d.ts), for the few calls made here.
-import * as sherpa from "sherpa-onnx-node";
+import sherpa from "sherpa-onnx-node";
 
 const RATE = 16_000;
 const PAD_SECONDS = 0.2;

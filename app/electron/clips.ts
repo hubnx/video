@@ -9,7 +9,7 @@ import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
 import type { JobKind } from "../src/shared/media.ts";
 
-const MADE_FILE_NAMES: Record<JobKind, string> = { speech: "speech.wav", proxy: "proxy.mp4", editCopy: "edit-copy.mp4" };
+const MADE_FILE_NAMES: Record<JobKind, string> = { speech: "speech.wav", proxy: "proxy.mp4", editCopy: "edit-copy.mp4", voiceSource: "voice-48k.wav" };
 
 export class Clips {
   private readonly originals = new Map<string, string>();
@@ -42,7 +42,7 @@ export class Clips {
 
   /** Where the app keeps what it learned and what the person did with a clip: its transcript, where the voice detector
    * heard speech, and its project (the edit, autosaved). */
-  stored(id: string, name: "transcript.json" | "voice.json" | "project.hubnxvideo"): string {
+  stored(id: string, name: "transcript.json" | "voice.json" | "project.hubnxvideo" | "clean-voice.wav"): string {
     if (!/^[0-9a-f]{20}$/.test(id)) throw new Error(`not a clip id: ${id}`);
     return path.join(this.folder, id, name);
   }
@@ -52,6 +52,7 @@ export class Clips {
     if (!this.originals.has(id)) return null;
     if (file === "original") return this.original(id);
     if (file === "proxy" || file === "editCopy") return this.made(id, file);
+    if (file === "cleanVoice") return this.stored(id, "clean-voice.wav");
     return null;
   }
 }

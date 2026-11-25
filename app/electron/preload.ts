@@ -23,6 +23,8 @@ const api: VideoApi = {
   onJobProgress: (listener) => subscribe(CHANNELS.jobProgress, listener),
   onTranscriptProgress: (listener) => subscribe(CHANNELS.transcriptProgress, listener),
   saveEdit: (clipId, edit, choices) => void ipcRenderer.invoke(CHANNELS.saveEdit, clipId, edit, choices),
+  cleanVoice: (clipId) => ipcRenderer.invoke(CHANNELS.cleanVoice, clipId),
+  onVoiceProgress: (listener) => subscribe(CHANNELS.voiceProgress, listener),
   logProblem: (event, error) => {
     const described = error instanceof Error ? `${error.name}: ${error.message.split("\n")[0]}` : String(error);
     void ipcRenderer.invoke(CHANNELS.logProblem, event, described.slice(0, 300));

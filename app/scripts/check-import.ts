@@ -14,7 +14,7 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { programName, targetOf } from "../electron/targets.ts";
 import { probeClip } from "../electron/probe.ts";
-import { editCopyArguments, jobsFor, proxyArguments, speechArguments } from "../electron/ffmpeg-jobs.ts";
+import { jobArguments, jobsFor } from "../electron/ffmpeg-jobs.ts";
 import { JobRunner, writingPath } from "../electron/jobs.ts";
 import type { ClipFacts, JobKind, JobProgress, VideoFacts } from "../src/shared/media.ts";
 import { appFolder } from "./start.ts";
@@ -121,14 +121,9 @@ async function checkJobs(clip: TestClip, file: string, facts: ClipFacts): Promis
       if (progress.state === "done" || progress.state === "failed") done.set(progress.kind, progress.state);
       if (done.size === kinds.length) resolve();
     });
-    const argumentsOf: Record<JobKind, (output: string) => string[]> = {
-      speech: (output) => speechArguments(file, output),
-      proxy: (output) => proxyArguments(file, output, facts),
-      editCopy: (output) => editCopyArguments(file, output, facts),
-    };
     for (const kind of kinds) {
       const output = path.join(out, `${kind}${kind === "speech" ? ".wav" : ".mp4"}`);
-      runner.add({ clipId: clip.name, kind, arguments: argumentsOf[kind](writingPath(output)), writing: writingPath(output), output, durationSeconds: facts.durationSeconds });
+      runner.add({ clipId: clip.name, kind, arguments: jobArguments(kind, file, writingPath(output), facts), writing: writingPath(output), output, durationSeconds: facts.durationSeconds });
     }
   });
   for (const [kind, state] of done) if (state !== "done") fail(clip.name, `${kind} job ${state} (its log: ${path.join(out, "logs")})`);

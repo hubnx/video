@@ -330,6 +330,7 @@ button:disabled {
 }
 
 .cleanup-saved,
+.cleanup-voice,
 .cleanup-fillers,
 .label {
   color: var(--muted);

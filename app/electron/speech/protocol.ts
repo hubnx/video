@@ -1,5 +1,5 @@
-/** The messages between the main process and the transcriber (transcribe.ts), which runs in a utility process of its
- * own so a crash or a long run never stalls the window. */
+/** The messages between the main process and the speech workers (transcribe.ts, denoise.ts), each run in a utility
+ * process of its own so a crash or a long run never stalls the window. */
 import type { Stretch } from "../../src/shared/cuts.ts";
 import type { Word } from "../../src/shared/transcript.ts";
 
@@ -17,3 +17,12 @@ export type TranscribeEvent =
   | { type: "words"; words: Word[]; fraction: number }
   | { type: "done" }
   | { type: "failed"; error: string };
+
+export interface DenoiseRequest {
+  source: string; // the clip's sound at 48 kHz mono (ffmpeg-jobs.ts › voiceSourceArguments)
+  output: string; // where the clean voice goes, written beside it first and renamed into place when done
+  model: string;
+  threads: number;
+}
+
+export type DenoiseEvent = { type: "progress"; fraction: number } | { type: "done" } | { type: "failed"; error: string };

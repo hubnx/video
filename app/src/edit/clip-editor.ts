@@ -28,6 +28,8 @@ export class ClipEditor {
   /** Hides "um" and "uh" from the captions (English only), on by default: most creators don't want them on screen even
    * when they keep them in the sound (gate on day 4, 2026-11-21). */
   hideFillersInCaptions: boolean;
+  /** Whether the preview and export use the clean voice (DPDFNet), once it's made. */
+  cleanVoice: boolean;
 
   /** `saved`: the clip's project as last saved, opened again; otherwise a fresh edit with the defaults. */
   constructor(clipId: string, duration: Flicks, saved: { edit: Edit; choices: Choices } | null) {
@@ -38,10 +40,11 @@ export class ClipEditor {
     this.spacing = choices.spacing;
     this.captionStyle = choices.captionStyle;
     this.hideFillersInCaptions = choices.hideFillersInCaptions;
+    this.cleanVoice = choices.cleanVoice;
   }
 
   get choices(): Choices {
-    return { spacing: this.spacing, captionStyle: this.captionStyle, hideFillersInCaptions: this.hideFillersInCaptions };
+    return { spacing: this.spacing, captionStyle: this.captionStyle, hideFillersInCaptions: this.hideFillersInCaptions, cleanVoice: this.cleanVoice };
   }
 
   setCaptionStyle(style: CaptionStyle): void {
@@ -136,6 +139,11 @@ export class ClipEditor {
         for (const cut of proposals) remove(edit, { start: cut.start, end: cut.end, reason: "silence" });
       });
     }
+    this.changed();
+  }
+
+  setCleanVoice(on: boolean): void {
+    this.cleanVoice = on;
     this.changed();
   }
 

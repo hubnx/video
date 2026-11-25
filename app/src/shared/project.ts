@@ -41,9 +41,12 @@ export interface Choices {
   spacing: "tight" | "natural" | "relaxed"; // edit/cleanup.ts › SPACINGS
   captionStyle: "subtitles" | "wordByWord"; // preview/captions.ts › CAPTION_STYLES
   hideFillersInCaptions: boolean;
+  /** Voice clean-up (DPDFNet), off by default: it takes about 40 s an audio minute on an 8-thread Intel Mac (the voice
+   * check, 2026-11-24), so it runs only when asked. */
+  cleanVoice: boolean;
 }
 
-export const DEFAULT_CHOICES: Choices = { spacing: "natural", captionStyle: "wordByWord", hideFillersInCaptions: true };
+export const DEFAULT_CHOICES: Choices = { spacing: "natural", captionStyle: "wordByWord", hideFillersInCaptions: true, cleanVoice: false };
 
 export interface Project {
   format: typeof PROJECT_FORMAT;

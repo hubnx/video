@@ -6,12 +6,13 @@
  *   - one silence of those cut is put back on its own, the rest stay cut;
  *   - a new spacing cuts the silences again at it;
  *   - S splits at the playhead and Delete takes out the piece under it, its words struck through;
+ *   - "Clean voice" makes the clean voice in the background, says so, and keeps it with the clip;
  *   - undo, pressed until there's nothing left, restores the edit to nothing taken out.
  * Screenshots: local/screens/5-cleanup-*.png.
  *
  *   pnpm build && pnpm exec node scripts/check-cleanup.ts
  */
-import { rmSync } from "node:fs";
+import { existsSync, rmSync } from "node:fs";
 import path from "node:path";
 import { _electron as electron, type Page } from "playwright-core";
 import { appFolder, electronEnvironment, electronProgram, watchFrontmost } from "./start.ts";
@@ -130,6 +131,16 @@ try {
       await page.screenshot({ path: path.join(local, "screens", `5-cleanup-${name}-${theme}.png`) });
     }
   }
+
+  // Voice clean-up as one switch: made in the background with its progress said, then played in the preview.
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1280, 800));
+  await page.getByRole("checkbox", { name: "Clean voice" }).check();
+  const ready = page.locator(".cleanup [role=status]").filter({ hasText: /Background noise removed|couldn't be cleaned/ });
+  await ready.waitFor({ timeout: 10 * 60_000 });
+  const voiceSaid = await ready.innerText();
+  const made = existsSync(path.join(local, "app-data", "clips", (await page.locator(".clip").getAttribute("data-clip"))!, "clean-voice.wav"));
+  expect(voiceSaid.includes("Background noise removed") && made, `the voice was cleaned and kept with the clip ("${voiceSaid}")`);
+  await page.screenshot({ path: path.join(local, "screens", "6-clean-voice-laptop-light.png") });
 
   // Undo until there's nothing left: nothing taken out.
   const undo = page.getByRole("button", { name: "Undo", exact: true });

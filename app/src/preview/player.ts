@@ -17,7 +17,7 @@ export type Overlay = (shown: { start: number; end: number }, size: { width: num
 
 export class Player {
   private readonly frames: Frames;
-  private readonly clock: Clock;
+  private clock: Clock;
   private readonly compositor: Compositor;
   private readonly duration: number;
   private readonly changed: () => void;
@@ -42,6 +42,19 @@ export class Player {
     this.compositor = compositor;
     this.duration = duration;
     this.changed = changed;
+  }
+
+  /** Plays its sound from another clock (the clean voice, or the original's again), at the same moment, playing on if
+   * it was. */
+  replaceClock(clock: Clock): void {
+    const at = this.clock.now();
+    const wasPlaying = this.clock.playing;
+    this.stopPlaying();
+    this.clock.close();
+    this.clock = clock;
+    this.clock.moveTo(at);
+    if (wasPlaying) this.play();
+    this.changed();
   }
 
   setSkips(skips: { start: number; end: number }[]): void {

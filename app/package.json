@@ -12,7 +12,7 @@
     }
   },
   "scripts": {
-    "build": "vite build && vite build -c electron/vite.config.ts --mode main && vite build -c electron/vite.config.ts --mode preload && vite build -c electron/vite.config.ts --mode transcribe",
+    "build": "vite build && vite build -c electron/vite.config.ts --mode main && vite build -c electron/vite.config.ts --mode preload && vite build -c electron/vite.config.ts --mode transcribe && vite build -c electron/vite.config.ts --mode denoise",
     "dev": "pnpm build && node scripts/start.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",

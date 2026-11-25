@@ -49,8 +49,9 @@ export interface Clip {
  *   start at once even when the picture needs an edit copy (docs/plan.md › Build order, day 2);
  * - proxy: a small copy every frame of which decodes at once (all-intra H.264, 720p, constant frame rate), for
  *   smooth playing and seeking; export still uses the original;
- * - editCopy: a full-size H.264 copy of a video this computer can't decode, or of an HDR one tone-mapped to SDR. */
-export const JOB_KINDS = ["speech", "proxy", "editCopy"] as const;
+ * - editCopy: a full-size H.264 copy of a video this computer can't decode, or of an HDR one tone-mapped to SDR;
+ * - voiceSource: the sound at 48 kHz, mono, which voice clean-up reads; made only when it's switched on. */
+export const JOB_KINDS = ["speech", "proxy", "editCopy", "voiceSource"] as const;
 export type JobKind = (typeof JOB_KINDS)[number];
 
 export type JobProgress =
@@ -59,3 +60,10 @@ export type JobProgress =
   | { clipId: string; kind: JobKind; state: "done" }
   | { clipId: string; kind: JobKind; state: "failed"; error: string }
   | { clipId: string; kind: JobKind; state: "cancelled" };
+
+/** How a clip's voice clean-up is coming along: its sound at 48 kHz being made, the model downloading (first use only),
+ * the voice being cleaned, then ready to play (media:// › cleanVoice). */
+export type VoiceProgress =
+  | { clipId: string; state: "preparing" | "downloading" | "cleaning"; fraction: number }
+  | { clipId: string; state: "ready" }
+  | { clipId: string; state: "failed"; error: string };

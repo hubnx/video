@@ -35,13 +35,17 @@ export interface Preview {
   /** Where in the clip the preview is, in seconds. */
   readonly time: number;
   togglePlay(): void;
+  /** Plays the sound of the file at `address` (the clean voice) in place of the clip's own, or the clip's own again with
+   * null. */
+  useSound(address: string | null): Promise<void>;
 }
 
 /** The preview of the file at `address`, or null when this computer can't decode its picture. */
 export async function previewView(address: string, duration: number): Promise<Preview | null> {
   const frames = await Frames.open(address);
   if (!frames) return null;
-  const clock = (await SoundClock.open(address)) ?? new SteadyClock();
+  const soundOf = async (from: string) => (await SoundClock.open(from)) ?? new SteadyClock();
+  const clock = await soundOf(address);
   const canvas = element("canvas", { className: "preview-canvas", attributes: { "aria-label": words.preview.label } });
   const compositor = new Compositor(canvas);
   const playButton = element("button", { type: "button", className: "play" });
@@ -86,6 +90,7 @@ export async function previewView(address: string, duration: number): Promise<Pr
       return player.time;
     },
     togglePlay: () => (player.playing ? player.pause() : player.play()),
+    useSound: async (other) => player.replaceClock(await soundOf(other ?? address)),
     playStretch: (seconds, until) => {
       void player.seek(seconds).then(() => {
         player.play();

@@ -6,7 +6,7 @@ import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { APP_NAME, CHANNELS, WEBSITE_PAGES, type OpenResult, type WebsitePage } from "../src/shared/app-api.ts";
-import type { Clip, ClipFacts, JobKind } from "../src/shared/media.ts";
+import type { Clip, ClipFacts, JobKind, VoiceProgress } from "../src/shared/media.ts";
 import { PROJECT_FORMAT, PROJECT_VERSION } from "../src/shared/project.ts";
 import type { Stretch } from "../src/shared/cuts.ts";
 import { loudness } from "../src/shared/quiet.ts";
@@ -15,10 +15,10 @@ import { speechSamples } from "./quiet.ts";
 import { errorName, logError, startAppLog } from "./app-log.ts";
 import { Clips } from "./clips.ts";
 import { findFfmpeg } from "./ffmpeg.ts";
-import { editCopyArguments, jobsFor, proxyArguments, speechArguments } from "./ffmpeg-jobs.ts";
+import { jobArguments, jobsFor } from "./ffmpeg-jobs.ts";
 import { JobRunner, writingPath } from "./jobs.ts";
-import { downloadModels, modelsReady, PARAKEET_V3, SILERO_VAD } from "./models.ts";
-import { transcribe } from "./speech/speech.ts";
+import { downloadModels, DPDFNET, modelsReady, PARAKEET_V3, SILERO_VAD } from "./models.ts";
+import { cleanVoice, transcribe } from "./speech/speech.ts";
 import { mediaResponse } from "./media-response.ts";
 import { setMenu } from "./menu.ts";
 import { resolvePaths } from "./paths.ts";
@@ -68,6 +68,7 @@ async function start(): Promise<void> {
   let window: BrowserWindow | null = null;
   const clips = new Clips(paths.clips);
   const facts = new Map<string, ClipFacts>();
+  const workers = path.join(app.getAppPath(), "dist", "electron"); // the speech workers' programs (electron/vite.config.ts)
   const transcripts = new Map<string, AbortController>(); // the clips being transcribed, to stop them on quitting
   const sendTranscript = (progress: TranscriptProgress) => window?.webContents.send(CHANNELS.transcriptProgress, progress);
   // A clip's transcript, once its speech sound is made: the stored one if it was made before; otherwise the models
@@ -89,8 +90,7 @@ async function start(): Promise<void> {
       if (!modelsReady(paths.models, models)) {
         await downloadModels(paths.models, models, (done, total) => sendTranscript({ clipId: id, state: "downloading", done, total }), controller.signal);
       }
-      const program = path.join(app.getAppPath(), "dist", "electron", "transcribe.cjs");
-      const heard = await transcribe(program, clips.made(id, "speech"), paths.models,
+      const heard = await transcribe(workers, clips.made(id, "speech"), paths.models,
         (words, fraction) => sendTranscript({ clipId: id, state: "hearing", fraction, words }), controller.signal);
       const transcript: Transcript = { language: "", words: heard.words };
       await writeFile(clips.stored(id, "voice.json"), JSON.stringify(heard.voice));
@@ -103,9 +103,49 @@ async function start(): Promise<void> {
       transcripts.delete(id);
     }
   };
-  const jobs = new JobRunner(paths.ffmpeg, paths.logs, (progress) => {
+  // Voice clean-up, when asked: the sound at 48 kHz (a job), the model (first use only), then the cleaner, each step's
+  // progress to the window; the clean voice is stored with the clip, so it's made once.
+  const voices = new Map<string, AbortController>();
+  const voiceSources = new Map<string, () => void>(); // a clip waiting for its 48 kHz sound
+  const sendVoice = (progress: VoiceProgress) => window?.webContents.send(CHANNELS.voiceProgress, progress);
+  const cleanVoiceOf = async (id: string) => {
+    const found = facts.get(id);
+    if (!found || voices.has(id)) return;
+    const output = clips.stored(id, "clean-voice.wav");
+    if (existsSync(output)) {
+      sendVoice({ clipId: id, state: "ready" });
+      return;
+    }
+    const controller = new AbortController();
+    voices.set(id, controller);
+    try {
+      await new Promise<void>((resolve) => {
+        voiceSources.set(id, resolve);
+        addJob(id, "voiceSource", found);
+      });
+      if (!existsSync(clips.made(id, "voiceSource"))) throw new Error("VOICE_SOURCE_UNMADE");
+      if (!modelsReady(paths.models, [DPDFNET])) {
+        await downloadModels(paths.models, [DPDFNET], (done, total) => sendVoice({ clipId: id, state: "downloading", fraction: done / total }), controller.signal);
+      }
+      await cleanVoice(workers, clips.made(id, "voiceSource"), output, paths.models, (fraction) => sendVoice({ clipId: id, state: "cleaning", fraction }), controller.signal);
+      sendVoice({ clipId: id, state: "ready" });
+    } catch (error) {
+      logError("voice_uncleaned", errorName(error), error instanceof Error ? error.message.slice(0, 200) : "");
+      sendVoice({ clipId: id, state: "failed", error: error instanceof Error ? error.message.split(":")[0]! : "VOICE_FAILED" });
+    } finally {
+      voices.delete(id);
+    }
+  };
+  const jobs: JobRunner = new JobRunner(paths.ffmpeg, paths.logs, (progress) => {
     window?.webContents.send(CHANNELS.jobProgress, progress);
     if (progress.kind === "speech" && progress.state === "done") void transcribeClip(progress.clipId);
+    if (progress.kind === "voiceSource") {
+      if (progress.state === "running") sendVoice({ clipId: progress.clipId, state: "preparing", fraction: progress.fraction });
+      if (progress.state === "done" || progress.state === "failed" || progress.state === "cancelled") {
+        voiceSources.get(progress.clipId)?.();
+        voiceSources.delete(progress.clipId);
+      }
+    }
   });
 
   protocol.handle("media", async (request) => {
@@ -146,19 +186,14 @@ async function start(): Promise<void> {
     const file = choice.filePaths[0];
     return choice.canceled || !file ? null : open(file);
   });
+  const addJob = (id: string, kind: JobKind, found: ClipFacts) => {
+    const output = clips.made(id, kind);
+    jobs.add({ clipId: id, kind, arguments: jobArguments(kind, clips.original(id), writingPath(output), found), writing: writingPath(output), output, durationSeconds: found.durationSeconds });
+  };
   ipcMain.handle(CHANNELS.planClip, (_event, id: unknown, decodes: unknown) => {
     const found = typeof id === "string" ? facts.get(id) : undefined;
     if (!found || typeof id !== "string" || typeof decodes !== "boolean") throw new Error("not a clip opened in this run");
-    const original = clips.original(id);
-    const argumentsOf: Record<JobKind, (output: string) => string[]> = {
-      speech: (output) => speechArguments(original, output),
-      proxy: (output) => proxyArguments(original, output, found),
-      editCopy: (output) => editCopyArguments(original, output, found),
-    };
-    for (const kind of jobsFor(found, decodes)) {
-      const output = clips.made(id, kind);
-      jobs.add({ clipId: id, kind, arguments: argumentsOf[kind](writingPath(output)), writing: writingPath(output), output, durationSeconds: found.durationSeconds });
-    }
+    for (const kind of jobsFor(found, decodes)) addJob(id, kind, found);
   });
   // Each clip's project, saved about a second after its last change: written whole and renamed into place, so a crash
   // or a forced quit loses at most that second (project-file.ts; docs/plan.md › The promise › Never lose work).
@@ -172,6 +207,10 @@ async function start(): Promise<void> {
       autosaves.set(id, autosave);
     }
     autosave.changed({ format: PROJECT_FORMAT, version: PROJECT_VERSION, clips: [{ id, path: clips.original(id), name: path.basename(clips.original(id)), facts: found }], edit, choices });
+  });
+  ipcMain.handle(CHANNELS.cleanVoice, (_event, id: unknown) => {
+    if (typeof id !== "string" || !facts.has(id)) throw new Error("not a clip opened in this run");
+    void cleanVoiceOf(id);
   });
   ipcMain.handle(CHANNELS.cancelClip, (_event, id: unknown) => {
     if (typeof id === "string") jobs.cancel(id);
@@ -243,6 +282,6 @@ async function start(): Promise<void> {
   });
   app.on("will-quit", () => {
     jobs.stopAll();
-    for (const controller of transcripts.values()) controller.abort();
+    for (const controller of [...transcripts.values(), ...voices.values()]) controller.abort();
   });
 }

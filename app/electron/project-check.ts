@@ -22,5 +22,6 @@ export function isChoices(value: unknown): value is Choices {
   return typeof choices === "object" && choices !== null
     && ["tight", "natural", "relaxed"].includes(choices.spacing as string)
     && ["subtitles", "wordByWord"].includes(choices.captionStyle as string)
-    && typeof choices.hideFillersInCaptions === "boolean";
+    && typeof choices.hideFillersInCaptions === "boolean"
+    && typeof choices.cleanVoice === "boolean";
 }

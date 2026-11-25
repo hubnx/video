@@ -79,6 +79,39 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
     preview?.setSkips(editor.edit.removed.map((stretch) => ({ start: secondsOf(stretch.start), end: secondsOf(stretch.end) })));
   };
   editor.onChange(showEdit);
+  // The clean voice: asked for when switched on (made once, then kept with the clip), played in the preview once ready.
+  let voiceReady = false;
+  let soundIsClean = false;
+  const playCleanVoiceIfChosen = () => {
+    const wanted = editor.cleanVoice && voiceReady;
+    if (!preview || wanted === soundIsClean) return;
+    soundIsClean = wanted;
+    void preview.useSound(wanted ? mediaAddress(clip.id, "cleanVoice") : null);
+  };
+  let voiceAsked = false;
+  editor.onChange(() => {
+    if (editor.cleanVoice && !voiceAsked) {
+      voiceAsked = true;
+      void window.video.cleanVoice(clip.id);
+    }
+    if (!editor.cleanVoice) panel.voice(null);
+    else if (voiceReady) panel.voice(words.cleanup.voice.ready);
+    playCleanVoiceIfChosen();
+  });
+  window.video.onVoiceProgress((progress) => {
+    if (progress.clipId !== clip.id) return;
+    const percent = "fraction" in progress ? Math.round(progress.fraction * 100) : 0;
+    if (progress.state === "preparing" || progress.state === "downloading" || progress.state === "cleaning") panel.voice(words.cleanup.voice[progress.state](percent));
+    if (progress.state === "ready") {
+      voiceReady = true;
+      panel.voice(editor.cleanVoice ? words.cleanup.voice.ready : null);
+      playCleanVoiceIfChosen();
+    }
+    if (progress.state === "failed") {
+      panel.voice(words.cleanup.voice.failed);
+      voiceAsked = false; // a later switch-on tries again
+    }
+  });
 
   const rows = new Map<JobKind, HTMLElement>();
   let proxyDone: () => void = () => undefined;
@@ -156,6 +189,11 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
     });
     previewPlace.replaceChildren(preview.element, captionControls, timeline.element);
     showEdit();
+    if (editor.cleanVoice && !voiceAsked) {
+      voiceAsked = true;
+      void window.video.cleanVoice(clip.id); // opened with the switch on: the clean voice is found, or made
+    }
+    playCleanVoiceIfChosen();
   }).catch((error: unknown) => {
     window.video.logProblem("clip_not_prepared", error);
     showProblem(words.clip.notStarted);

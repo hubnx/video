@@ -84,6 +84,16 @@ export class SoundClock implements Clock {
   }
 
   private async schedule(generation: number): Promise<void> {
+    try {
+      await this.scheduleFrom(generation);
+    } catch (error) {
+      // A pause, a new play or closing (the clean voice swapped in) ends this loop on purpose, and its reader may then
+      // throw "Input has been disposed"; anything else is a real failure.
+      if (generation === this.generation) window.video.logProblem("sound_unplayed", error);
+    }
+  }
+
+  private async scheduleFrom(generation: number): Promise<void> {
     for await (const { buffer, timestamp } of this.sink.buffers(this.from)) {
       if (generation !== this.generation) return;
       const node = this.context.createBufferSource();

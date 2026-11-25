@@ -39,6 +39,15 @@ export const PARAKEET_V3: Model = {
   ],
 };
 
+/** Voice clean-up, Ceva's DPDFNet-2 at 48 kHz (Apache-2.0, code and weights: github.com/ceva-ip/DPDFNet, its Hugging Face
+ * card), in sherpa-onnx's ONNX form: 10.6 MB, streaming, so an hour is cleaned without holding it in memory. */
+export const DPDFNET: Model = {
+  id: "dpdfnet2-48khz-hr",
+  licence: "Apache-2.0",
+  files: [{ name: "dpdfnet2_48khz_hr.onnx", url: "https://github.com/k2-fsa/sherpa-onnx/releases/download/speech-enhancement-models/dpdfnet2_48khz_hr.onnx",
+    bytes: 10_596_848, sha256: "0b399f8a58dc4d70d8cd97541f5c39869406145193b957d00a03b66070944928" }],
+};
+
 /** Silero's voice detector, v6.2.3: what the silence check measured (sherpa-onnx's own copy is a different build). */
 export const SILERO_VAD: Model = {
   id: "silero-vad-6.2.3",

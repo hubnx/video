@@ -1,11 +1,12 @@
-// Builds the main process, its preload and the transcriber, all CommonJS, one format for the three: a sandboxed
-// preload must be CommonJS. vite build -c electron/vite.config.ts --mode main, then preload, then transcribe.
+// Builds the main process, its preload and the speech workers, all CommonJS, one format for all: a sandboxed preload
+// must be CommonJS. vite build -c electron/vite.config.ts --mode main, then preload, transcribe and denoise.
 import { defineConfig } from "vite";
 
 const ENTRIES = {
   main: "electron/main.ts",
   preload: "electron/preload.ts",
-  transcribe: "electron/speech/transcribe.ts", // run as a utility process (electron/speech/speech.ts)
+  transcribe: "electron/speech/transcribe.ts", // run as utility processes (electron/speech/speech.ts)
+  denoise: "electron/speech/denoise.ts",
 } as const;
 
 export default defineConfig(({ mode }) => {

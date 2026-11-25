@@ -34,6 +34,11 @@ export function speechArguments(input: string, output: string): string[] {
   return [...COMMON, "-i", input, "-map", "0:a:0", "-vn", "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", "-f", "wav", output];
 }
 
+/** The sound at 48 kHz, mono, 16-bit: what voice clean-up (DPDFNet at 48 kHz) reads. */
+export function voiceSourceArguments(input: string, output: string): string[] {
+  return [...COMMON, "-i", input, "-map", "0:a:0", "-vn", "-ac", "1", "-ar", "48000", "-c:a", "pcm_s16le", "-f", "wav", output];
+}
+
 /** A copy whose every frame is a keyframe (`-g 1 -bf 0`, as Kdenlive's and Shotcut's proxies), 720p, at a constant
  * frame rate, upright, SDR, with 48 kHz sound. */
 export function proxyArguments(input: string, output: string, facts: ClipFacts): string[] {
@@ -55,6 +60,16 @@ export function editCopyArguments(input: string, output: string, facts: ClipFact
     "-fps_mode", "cfr", "-r", constantRate(video.frameRate),
     "-c:v", "libx264", "-preset", "superfast", "-crf", "18", "-pix_fmt", "yuv420p",
     "-c:a", "aac", "-ar", "48000", "-b:a", "192k", "-movflags", "+faststart", output];
+}
+
+/** FFmpeg's arguments for a job of `kind`, reading `input` and writing `output`: the one place each kind is built from. */
+export function jobArguments(kind: JobKind, input: string, output: string, facts: ClipFacts): string[] {
+  switch (kind) {
+    case "speech": return speechArguments(input, output);
+    case "proxy": return proxyArguments(input, output, facts);
+    case "editCopy": return editCopyArguments(input, output, facts);
+    case "voiceSource": return voiceSourceArguments(input, output);
+  }
 }
 
 /** Size first, then tone-map (HDR only), then turn upright. Sizing first does the tone-map's costly floating-point work

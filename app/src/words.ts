@@ -12,9 +12,9 @@ export const words = {
   appName: APP_NAME,
   start: {
     heading: "Drop a video here",
-    // Says only what ships and is measured: "and the voice" joins when voice clean-up does (gate 2, 2026-11-21), and
-    // "ums" only once the filler check reaches 80% (docs/plan.md › Risks).
-    lead: "Captions and silences, cleaned up for you to check.",
+    // Says only what ships and is measured: the voice since its clean-up shipped and measured (the voice check,
+    // 2026-11-24: noise in pauses down 23.6 dB, speech within 1.1 dB); "ums" only once the filler check reaches 80%.
+    lead: "Captions, silences and the voice, cleaned up for you to check.",
     choose: "Choose a video",
     // Said at first run, where someone coming from an online editor notices it (docs/plan.md › The promise › Private).
     privacy: "Nothing is uploaded. No account. Your videos stay on this computer.",
@@ -30,6 +30,7 @@ export const words = {
       speech: "Getting the sound ready for captions",
       proxy: "Preparing your video for smooth playback",
       editCopy: "Making a copy this computer can export",
+      voiceSource: "Getting the sound ready for voice clean-up",
     } satisfies Record<JobKind, string>,
     waiting: "Waiting",
     done: "Ready",
@@ -51,6 +52,7 @@ export const words = {
       speech: "The sound couldn't be read, so captions can't be made for this video.",
       proxy: "The video couldn't be prepared for smooth playback.",
       editCopy: "A copy for export couldn't be made.",
+      voiceSource: "The sound couldn't be read, so the voice can't be cleaned up.",
     } satisfies Record<JobKind, string>,
     transcriptFailed: "Captions couldn't be made for this video.",
   },
@@ -83,6 +85,15 @@ export const words = {
     noPauses: "Clean up: no long pauses",
     undo: "Undo",
     redo: "Redo",
+    cleanVoice: "Clean voice",
+    // What the switch is doing, as the person sees it (src/shared/media.ts › VoiceProgress).
+    voice: {
+      preparing: (percent: number) => `Getting the sound ready… ${percent}%`,
+      downloading: (percent: number) => `Getting the voice model ready (first time only)… ${percent}%`,
+      cleaning: (percent: number) => `Cleaning the voice… ${percent}%`,
+      ready: "Background noise removed",
+      failed: "The voice couldn't be cleaned up for this video.",
+    },
   },
   timeline: {
     label: "Timeline",

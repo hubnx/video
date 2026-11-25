@@ -2,7 +2,7 @@
  * What the window may ask of the app (electron/preload.ts exposes exactly this as window.video), and the shapes it
  * gets back. The window never touches files or processes itself.
  */
-import type { Clip, JobProgress } from "./media.ts";
+import type { Clip, JobProgress, VoiceProgress } from "./media.ts";
 import type { Choices, Edit } from "./project.ts";
 import type { TranscriptProgress } from "./transcript.ts";
 
@@ -52,6 +52,8 @@ export const CHANNELS = {
   transcriptProgress: "clip:transcript-progress",
   logProblem: "app:log-problem",
   saveEdit: "clip:save-edit",
+  cleanVoice: "clip:clean-voice",
+  voiceProgress: "clip:voice-progress",
 } as const;
 
 /** Why a video didn't open, as a code the window turns into words (words.ts). */
@@ -60,7 +62,7 @@ export type OpenRefusal = "not_a_video" | "unreadable";
 export type OpenResult = { clip: Clip; saved: { edit: Edit; choices: Choices } | null } | { refused: OpenRefusal };
 
 /** media:// addresses: a clip's original, proxy or edit copy, by its id (electron/clips.ts serves only these). */
-export function mediaAddress(clipId: string, file: "original" | "proxy" | "editCopy"): string {
+export function mediaAddress(clipId: string, file: "original" | "proxy" | "editCopy" | "cleanVoice"): string {
   return `media://clip/${clipId}/${file}`;
 }
 
@@ -83,4 +85,7 @@ export interface VideoApi {
   logProblem(event: string, error: unknown): void;
   /** The clip's edit and choices as they are now: saved about a second after the last change (electron/project-file.ts). */
   saveEdit(clipId: string, edit: Edit, choices: Choices): void;
+  /** Makes the clip's clean voice, if it isn't made yet; its progress comes to onVoiceProgress. */
+  cleanVoice(clipId: string): Promise<void>;
+  onVoiceProgress(listener: (progress: VoiceProgress) => void): () => void;
 }
