@@ -5,7 +5,7 @@ import { app, BrowserWindow, dialog, ipcMain, nativeTheme, protocol, shell } fro
 import { accessSync, constants, existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { APP_NAME, CHANNELS, WEBSITE_PAGES, type ExportDestination, type ExportSound, type OpenResult, type WebsitePage } from "../src/shared/app-api.ts";
+import { APP_NAME, CHANNELS, draftRefusal, releaseNotesUrl, WEBSITE_PAGES, type AboutFacts, type ExportDestination, type ExportSound, type FeedbackDraft, type MenuCommand, type OpenResult, type WebsitePage } from "../src/shared/app-api.ts";
 import type { Clip, ClipFacts, JobKind, VoiceProgress } from "../src/shared/media.ts";
 import { PROJECT_FORMAT, PROJECT_VERSION } from "../src/shared/project.ts";
 import type { Stretch } from "../src/shared/cuts.ts";
@@ -23,7 +23,11 @@ import { cleanVoice, transcribe } from "./speech/speech.ts";
 import { mediaResponse } from "./media-response.ts";
 import { destinationFromChoice, suggestedDestination, type Disk } from "./export-destination.ts";
 import { Exports } from "./exports.ts";
+import { afterCheckIn, checkInReady, checkInState, withExport } from "./check-in.ts";
+import { checkInBody, feedbackUrl, logEnd, reportBody, reportDetails, sendCheckIn, sendReport, systemLine, type FeedbackSystem } from "./feedback.ts";
+import { licensesShown, openChromiumNotices, openSource } from "./licenses.ts";
 import { setMenu } from "./menu.ts";
+import { installUpdate, startUpdates, updatesItself } from "./updates.ts";
 import { resolvePaths } from "./paths.ts";
 import { probeClip } from "./probe.ts";
 import { Autosave, openProject } from "./project-file.ts";
@@ -66,9 +70,12 @@ async function start(): Promise<void> {
   // Kept on the computer only, from the first open: the day-7 check-in, if the person says yes after their first
   // export, counts from it (docs/plan.md › Keep or stop › The check-in).
   if (!settings.firstOpenedAt) await saveSettings({ firstOpenedAt: new Date().toISOString() }).catch((error: unknown) => logError("settings_unsaved", error));
-  setMenu();
 
   let window: BrowserWindow | null = null;
+  setMenu((command: MenuCommand) => window?.webContents.send(CHANNELS.menuCommand, command), { updates: updatesItself() });
+  // A setup failure, for the day-7 check-in's count (check-in.ts): a model that wouldn't download, or the speech engine
+  // or voice cleaner failing to run. Never one the person stopped.
+  const countSetupFailure = () => saveSettings({ setupFailures: (settings.setupFailures ?? 0) + 1 }).catch((error: unknown) => logError("settings_unsaved", errorName(error)));
   const clips = new Clips(paths.clips);
   const facts = new Map<string, ClipFacts>();
   const workers = path.join(app.getAppPath(), "dist", "electron"); // the speech workers' programs (electron/vite.config.ts)
@@ -101,6 +108,7 @@ async function start(): Promise<void> {
       sendTranscript({ clipId: id, state: "done", transcript, sound: await soundMap(heard.voice) });
     } catch (error) {
       logError("transcript_unmade", errorName(error), error instanceof Error ? error.message.slice(0, 200) : "");
+      if (!controller.signal.aborted) void countSetupFailure();
       sendTranscript({ clipId: id, state: "failed", error: error instanceof Error ? error.message.split(":")[0]! : "TRANSCRIBE_FAILED" });
     } finally {
       transcripts.delete(id);
@@ -140,6 +148,7 @@ async function start(): Promise<void> {
       }
     } catch (error) {
       logError("voice_uncleaned", errorName(error), error instanceof Error ? error.message.slice(0, 200) : "");
+      if (!controller.signal.aborted) void countSetupFailure();
       sendVoice({ clipId: id, state: "failed", error: error instanceof Error ? error.message.split(":")[0]! : "VOICE_FAILED" });
     } finally {
       voices.delete(id);
@@ -277,6 +286,8 @@ async function start(): Promise<void> {
       (fraction) => {
         if (!event.sender.isDestroyed()) event.sender.send(CHANNELS.exportProgress, [id, fraction]);
       });
+    // Counted for the day-7 check-in, on this computer only until a yes sends it (check-in.ts).
+    saveSettings(withExport(settings, new Date())).catch((error: unknown) => logError("settings_unsaved", errorName(error)));
     return destination;
   });
   ipcMain.handle(CHANNELS.cancelExport, (_event, id: unknown) => {
@@ -293,6 +304,55 @@ async function start(): Promise<void> {
     if (typeof event === "string" && /^[a-z_]{1,60}$/.test(event)) logError(`window_${event}`, String(detail).slice(0, 300));
   });
   ipcMain.handle(CHANNELS.appVersion, () => app.getVersion());
+  const system: FeedbackSystem = { version: app.getVersion(), platform: process.platform, systemVersion: process.getSystemVersion(), arch: process.arch };
+  ipcMain.handle(CHANNELS.about, (): AboutFacts => ({ version: system.version, system: systemLine(system), updates: updatesItself() }));
+
+  // Reports and the check-in: to hubnx.com from a person's copy, its dry run from the repo, a stand-in in the checks.
+  const sendTo = feedbackUrl(app.isPackaged, process.env.VIDEO_FEEDBACK_URL);
+  const draftOf = (draft: unknown): FeedbackDraft => {
+    const given = draft as Partial<FeedbackDraft> | null;
+    if (!given || (given.kind !== "problem" && given.kind !== "idea") || typeof given.message !== "string" || typeof given.email !== "string"
+      || typeof given.withLog !== "boolean" || (given.failure !== null && typeof given.failure !== "string")
+      || (given.theme !== "light" && given.theme !== "dark") || typeof given.locale !== "string") throw new Error("not a feedback draft");
+    return { kind: given.kind, message: given.message, email: given.email, withLog: given.withLog, failure: given.failure?.slice(0, 60) ?? null, theme: given.theme, locale: given.locale.slice(0, 35) };
+  };
+  const detailsOf = async (draft: FeedbackDraft) => reportDetails(system, draft.failure, draft.withLog ? await logEnd(paths.logs) : null);
+  ipcMain.handle(CHANNELS.feedbackPreview, async (_event, draft: unknown) => detailsOf(draftOf(draft)));
+  ipcMain.handle(CHANNELS.sendFeedback, async (_event, given: unknown) => {
+    const draft = draftOf(given);
+    if (draftRefusal(draft)) return "refused";
+    return sendReport(sendTo, reportBody(draft, system, await detailsOf(draft)));
+  });
+  // The check-in goes once it's due and the person said yes: looked at on opening, after a yes, and every six hours.
+  let checkingIn = false;
+  const checkInIfDue = async () => {
+    if (checkingIn || !checkInReady(settings, new Date())) return;
+    checkingIn = true;
+    try {
+      const outcome = await sendCheckIn(sendTo, checkInBody(checkInState(settings, new Date()).counts, system));
+      await saveSettings(afterCheckIn(settings, outcome, new Date()));
+    } catch (error) {
+      logError("checkin_unsaved", errorName(error));
+    } finally {
+      checkingIn = false;
+    }
+  };
+  ipcMain.handle(CHANNELS.checkIn, () => checkInState(settings, new Date()));
+  ipcMain.handle(CHANNELS.answerCheckIn, async (_event, answer: unknown) => {
+    if (answer !== "yes" && answer !== "no") throw new Error("not an answer");
+    await saveSettings({ checkIn: { answer, answeredAt: new Date().toISOString() } });
+    void checkInIfDue();
+    return checkInState(settings, new Date());
+  });
+  void checkInIfDue();
+  setInterval(() => void checkInIfDue(), 6 * 60 * 60 * 1000);
+
+  ipcMain.handle(CHANNELS.licenses, () => licensesShown());
+  ipcMain.handle(CHANNELS.openLicenseSource, (_event, url: unknown) => {
+    if (typeof url !== "string") throw new Error("not an address");
+    return openSource(url);
+  });
+  ipcMain.handle(CHANNELS.openChromiumNotices, () => openChromiumNotices());
   ipcMain.handle(CHANNELS.ffmpeg, () => findFfmpeg(paths.ffmpeg));
   ipcMain.handle(CHANNELS.openWebsite, (_event, page: WebsitePage) => {
     if (!Object.hasOwn(WEBSITE_PAGES, page)) throw new Error(`not one of the app's pages: ${String(page)}`);
@@ -336,6 +396,21 @@ async function start(): Promise<void> {
     window = null;
   });
   await shown.loadFile(path.join(app.getAppPath(), "dist", "renderer", "index.html"));
+
+  // Updates, once the window can hear of them (updates.ts).
+  const updates = startUpdates((update) => window?.webContents.send(CHANNELS.updateFound, update), process.env.VIDEO_UPDATE_FEED);
+  ipcMain.handle(CHANNELS.checkForUpdates, () => updates.check());
+  ipcMain.handle(CHANNELS.installUpdate, () => {
+    const found = updates.found();
+    // Quitting would stop an export under way (before-quit cancels it), so the restart waits for it.
+    if (found?.state !== "ready" || exports.busy()) return false;
+    installUpdate(found.version, shown.isFocused());
+    return true;
+  });
+  ipcMain.handle(CHANNELS.openReleaseNotes, () => {
+    const found = updates.found();
+    if (found) return shell.openExternal(releaseNotesUrl(found.version));
+  });
 
   app.on("second-instance", () => {
     if (shown.isMinimized()) shown.restore();

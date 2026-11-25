@@ -266,7 +266,9 @@ before it goes out.
 
 **Launch checklist, day 8** (hubnx-apps `CLAUDE.md` › Phase 2):
 - [ ] The registry row updated
-- [ ] Repo `hubnx/video` public; `video.hubnx.com` with its zone ($0.50 a month, approved)
+- [ ] Repo `hubnx/video` public
+- [x] `video.hubnx.com` with its zone ($0.50 a month, approved): stack `video-site` live 2026-11-25 (pages only, out of
+  search; packages at release 1), in the private `hubnx/video-ops`
 - [ ] Shared parts from the public `hubnx/web-parts` repo pinned by commit, never a path into
   hubnx-apps' private `shared/`, since this repo goes public (*Apps HQ* splits it out by day 8)
 - [x] The contributor agreement check: the repo calls `hubnx/.github`'s reusable workflow, never a
@@ -286,7 +288,7 @@ before it goes out.
 - [ ] Privacy-first visitor counts (visitors → downloads), as typing's: the CDN's request log
   counted into numbers alone
 - [ ] Search Console: the site's sitemap on the `hubnx.com` domain property
-- [ ] The AWS budget: `video-monthly`, about $2 a month, in the site's own stack, filtered on
+- [x] The AWS budget (in the stack, 2026-11-25): `video-monthly`, about $2 a month, in the site's own stack, filtered on
   `user:Project$video` and emailing apps@hubnx.com (free; decisions, 2026-11-19; as `music-monthly`). Every
   resource tagged `Project=video` and `Portfolio=hubnx-apps`; the account-wide alarm is the backstop
 - [ ] The feedback form (app and site) through the shared parts' `feedback-report.ts`, which holds

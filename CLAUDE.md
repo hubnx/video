@@ -36,7 +36,8 @@ heavy runs go through `taskpolicy -b`, after `uptime` shows a 1-minute load unde
 | Package (unsigned for checks; `--signed` signs and notarizes the Macs), into `local/release/<target>/` | `pnpm build && pnpm package mac-x64` |
 | Open a package behind and check FFmpeg runs inside it; GitHub's Windows, Ubuntu (and Apple-chip Mac with `-f mac=true`) with `gh workflow run package-check.yml` | `pnpm check-package mac-x64` |
 | Redraw `build-resources/icon.png` and the site's icons (`site/public/`) from `../brand/icon.svg` | `pnpm exec node scripts/render-icons.ts` |
-| **The website** (`site/`, its own pnpm package): build, its tests, and every page at phone, tablet, laptop and wide sizes in both themes into `local/site-screens/` (headless Chrome, the server stopped after) | from `site/`: `pnpm build` · `pnpm test` · `pnpm build && pnpm screens` |
+| **The site's hosting, deploy and live check**: the private `ops/` (`hubnx/video-ops`, cloned here and git-ignored; its own `CLAUDE.md`). Pages only, or pages, packages and update feeds (`app/scripts/release-files.ts` lists them, feeds last) | from `ops/`: `pnpm run deploy` · `pnpm run deploy --release` · `pnpm run check-live` |
+| **The website** (`site/`, its own pnpm package; build the app first, whose licences list it carries): build, its tests, and every page at phone, tablet, laptop and wide sizes in both themes into `local/site-screens/` (headless Chrome, the server stopped after) | from `site/`: `pnpm build` · `pnpm test` · `pnpm build && pnpm screens` |
 
 ## How it's built
 

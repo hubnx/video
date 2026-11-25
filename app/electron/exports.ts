@@ -102,6 +102,11 @@ export class Exports {
   }
 
   /** Stops every export and waits until each has tidied its files away: the app is quitting. */
+  /** Whether an export is under way, which quitting (an update's restart) would stop. */
+  busy(): boolean {
+    return this.sessions.size > 0;
+  }
+
   async cancelAll(): Promise<void> {
     const finishing = [...this.sessions.values()].map((session) => session.finishing);
     await Promise.all([...this.sessions.keys()].map((id) => this.cancel(id)));

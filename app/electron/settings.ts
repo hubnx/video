@@ -8,6 +8,16 @@ export interface Settings {
   // This computer's voice clean-up speed, seconds per minute of sound, from its last clean-up of a minute or more: the
   // estimate on the switch (src/shared/voice-speed.ts).
   voiceSecondsPerMinute?: number;
+  // The day-7 check-in's counts, kept on this computer only until a yes sends them once (check-in.ts).
+  exportsMade?: number;
+  firstExportAt?: string;
+  setupFailures?: number;
+  checkIn?: { answer: "yes" | "no"; answeredAt: string };
+  checkInSentAt?: string;
+  // Never tried again: the route refused it (its code), or was busy twice.
+  checkInEnded?: string;
+  // After the route was busy (429): tried once more, a day later.
+  checkInRetryAt?: string;
 }
 
 export async function readSettings(file: string): Promise<Settings> {

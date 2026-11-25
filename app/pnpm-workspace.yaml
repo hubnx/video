@@ -1,3 +1,8 @@
 allowBuilds:
   electron: true # downloads its own program
   electron-winstaller: false # for Squirrel installers; the app builds NSIS
+# Every system's speech engine, not only this computer's: each package is built here for all four targets and carries
+# its own system's sherpa-onnx (scripts/package.ts leaves the others out).
+supportedArchitectures:
+  os: [current, darwin, win32, linux]
+  cpu: [current, x64, arm64]

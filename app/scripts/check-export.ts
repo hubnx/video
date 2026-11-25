@@ -94,11 +94,11 @@ async function exportTo(app: ElectronApplication, page: Page, clip: string, file
   const started = Date.now();
   await dialog.getByRole("button", { name: "Export", exact: true }).click();
   if (pictureWhileRunning) {
-    await dialog.locator(".export-status").filter({ hasText: /left/ }).waitFor({ timeout: 5 * 60_000 });
+    await dialog.locator(".dialog-status").filter({ hasText: /left/ }).waitFor({ timeout: 5 * 60_000 });
     await page.screenshot({ path: pictureWhileRunning });
   }
-  await dialog.locator(".export-status").filter({ hasText: /Saved as|didn't finish|Stopped/ }).waitFor({ timeout: 20 * 60_000 });
-  const said = await dialog.locator(".export-status").innerText();
+  await dialog.locator(".dialog-status").filter({ hasText: /Saved as|didn't finish|Stopped/ }).waitFor({ timeout: 20 * 60_000 });
+  const said = await dialog.locator(".dialog-status").innerText();
   const name = file ? path.basename(file) : `${path.basename(clip, path.extname(clip))} edited.mp4`;
   expect(said === `Saved as ${name}.`, `the export said "${said}"`);
   return (Date.now() - started) / 1000;
@@ -204,13 +204,13 @@ try {
     const stopped = path.join(folder, "talk-stopped.mp4");
     const dialog = await openExportTo(app, page, talkCopy, stopped);
     await dialog.getByRole("button", { name: "Export", exact: true }).click();
-    await dialog.locator(".export-status").filter({ hasText: /left/ }).waitFor({ timeout: 5 * 60_000 });
+    await dialog.locator(".dialog-status").filter({ hasText: /left/ }).waitFor({ timeout: 5 * 60_000 });
     // Esc mid-export: the dialog stays, with the run, since only Cancel stops it.
     await page.keyboard.press("Escape");
     await page.waitForTimeout(300);
     expect(await dialog.evaluate((element: HTMLDialogElement) => element.open), "Esc mid-export leaves the dialog and its run in place");
     await dialog.getByRole("button", { name: "Cancel" }).click();
-    await dialog.locator(".export-status").filter({ hasText: /Stopped/ }).waitFor({ timeout: 60_000 });
+    await dialog.locator(".dialog-status").filter({ hasText: /Stopped/ }).waitFor({ timeout: 60_000 });
     const left = readdirSync(folder).filter((name) => name.startsWith("talk-stopped"));
     expect(left.length === 0, `a cancelled export leaves nothing behind (${left.join(", ") || "nothing"})`);
     await dialog.getByRole("button", { name: "Cancel" }).click();

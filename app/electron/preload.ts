@@ -35,6 +35,19 @@ const api: VideoApi = {
   onExportProgress: (listener) => subscribe<[number, number]>(CHANNELS.exportProgress, ([exportId, fraction]) => listener(exportId, fraction)),
   showExported: (destination) => ipcRenderer.invoke(CHANNELS.showExported, destination),
   logProblem: (event, detail) => void ipcRenderer.invoke(CHANNELS.logProblem, event, detail),
+  about: () => ipcRenderer.invoke(CHANNELS.about),
+  onMenuCommand: (listener) => subscribe(CHANNELS.menuCommand, listener),
+  onUpdate: (listener) => subscribe(CHANNELS.updateFound, listener),
+  checkForUpdates: () => ipcRenderer.invoke(CHANNELS.checkForUpdates),
+  installUpdate: () => ipcRenderer.invoke(CHANNELS.installUpdate),
+  openReleaseNotes: () => ipcRenderer.invoke(CHANNELS.openReleaseNotes),
+  feedbackPreview: (draft) => ipcRenderer.invoke(CHANNELS.feedbackPreview, draft),
+  sendFeedback: (draft) => ipcRenderer.invoke(CHANNELS.sendFeedback, draft),
+  licenses: () => ipcRenderer.invoke(CHANNELS.licenses),
+  openLicenseSource: (url) => ipcRenderer.invoke(CHANNELS.openLicenseSource, url),
+  openChromiumNotices: () => ipcRenderer.invoke(CHANNELS.openChromiumNotices),
+  checkIn: () => ipcRenderer.invoke(CHANNELS.checkIn),
+  answerCheckIn: (answer) => ipcRenderer.invoke(CHANNELS.answerCheckIn, answer),
 };
 
 contextBridge.exposeInMainWorld("video", api);

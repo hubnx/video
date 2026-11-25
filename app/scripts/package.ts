@@ -63,8 +63,8 @@ export async function packageApp(target: Target, options: PackageOptions): Promi
       // their build's sources list travel with them (../ffmpeg/build.sh).
       extraResources: [{ from: ffmpeg, to: "bin", filter: ["ffmpeg", "ffprobe", "ffmpeg.exe", "ffprobe.exe", "COPYING.GPLv3", "BUILD.txt"] }],
       mac: {
-        target: ["dmg"],
-        artifactName: download,
+        target: ["dmg", "zip"], // the zip is what the Mac's updater reads (release-files.ts › UPDATE_FILES)
+        artifactName: download.replace(/\.dmg$/, ".${ext}"),
         category: "public.app-category.video",
         identity: signedMac ? APPLE.identity : null,
         hardenedRuntime: signedMac,
@@ -94,8 +94,8 @@ export async function packageApp(target: Target, options: PackageOptions): Promi
         depends: ["libgtk-3-0", "libnotify4", "libnss3", "libxss1", "libxtst6", "xdg-utils", "libatspi2.0-0", "libuuid1",
           "libsecret-1-0", "libasound2t64 | libasound2", "libgbm1"],
       },
-      // Where installed copies will look for a newer version (electron-updater's feed beside the downloads). Needed now
-      // too: without it, electron-builder's update-info step crashes on Linux (GitHub's package check, 2026-11-21).
+      // Where installed copies look for a newer version: electron-updater's feed (latest-mac.yml, latest.yml,
+      // latest-linux.yml) beside the downloads, and the app's own copy of where to read it (electron/updates.ts).
       publish: { provider: "generic", url: RELEASE_URL },
     },
   });

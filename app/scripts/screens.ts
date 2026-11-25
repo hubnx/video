@@ -49,6 +49,29 @@ try {
   await page.getByRole("heading", { name: "Drop a video here" }).waitFor();
   await shoot(running, page, "1-start");
 
+  // Day 8's dialogs over the start screen: Settings, the feedback form with what it sends shown, the licenses; and
+  // the update's strip, as a ready update would show it.
+  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.locator("dialog.settings[open]").waitFor();
+  await page.locator(".check-in-numbers li").first().waitFor();
+  await shoot(running, page, "8-settings");
+  await page.locator("dialog.settings").getByRole("button", { name: "Open-source licenses" }).click();
+  await page.locator("dialog.licenses[open] .license-list").waitFor();
+  await shoot(running, page, "8-licenses");
+  await page.locator("dialog.licenses").getByRole("button", { name: "Close" }).click();
+  await page.locator("dialog.settings").getByRole("button", { name: "Close" }).click();
+  await page.locator(".top-actions").getByRole("button", { name: "Feedback" }).click();
+  const feedback = page.locator("dialog.feedback[open]");
+  await feedback.locator("textarea").fill("The captions stopped halfway through a long video.");
+  await feedback.getByRole("checkbox").check();
+  await feedback.locator("summary").click();
+  await feedback.locator(".feedback-preview").filter({ hasText: "hubnx Video" }).waitFor();
+  await shoot(running, page, "8-feedback");
+  await feedback.getByRole("button", { name: "Cancel" }).click();
+  await running.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.webContents.send("update:found", { state: "ready", version: "1.0.1" }));
+  await page.locator(".notice").filter({ hasText: "1.0.1 is ready" }).waitFor();
+  await shoot(running, page, "8-update");
+
   // The system's file dialog answers with the test clip, as if the person picked it.
   await running.evaluate(({ dialog }, file) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });

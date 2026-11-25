@@ -5,6 +5,7 @@
  * file in the main process (electron/exports.ts).
  */
 import { element } from "./dom.ts";
+import { openFeedback } from "./feedback-view.ts";
 import { logProblem } from "./problems.ts";
 import type { ClipEditor } from "./edit/clip-editor.ts";
 import { joinedSegments } from "./edit/timeline.ts";
@@ -31,7 +32,7 @@ export function exportView(clip: Clip, editor: ClipEditor,
   let captions: CaptionOutput = "burnedIn";
   const frameRate = steadyRate(video.frameRate).value;
   // Every row puts its label the same way: beside its control, or above it in a narrow window (styles.css).
-  const row = (label: string, control: HTMLElement) => element("div", { className: "export-row" }, element("span", { className: "label", textContent: label }), control);
+  const row = (label: string, control: HTMLElement) => element("div", { className: "dialog-row" }, element("span", { className: "label", textContent: label }), control);
   const choice = <Value extends string>(label: string, options: readonly Value[], names: Record<Value, string>, get: () => Value, set: (value: Value) => void) => {
     const group = element("div", { className: "segmented", attributes: { role: "radiogroup", "aria-label": label } },
       ...options.map((option) => element("button", { type: "button", textContent: names[option], dataset: { value: option }, attributes: { role: "radio" },
@@ -78,15 +79,17 @@ export function exportView(clip: Clip, editor: ClipEditor,
     choice(words.export.captions, CAPTION_OUTPUTS, words.export.captionOutputs, () => captions, (value) => (captions = value)),
     row(words.export.savesTo, element("span", { className: "export-place" }, placeName, change)),
     element("p", { className: "export-note", textContent: words.export.youtube }),
-    element("details", { className: "export-details" }, element("summary", { textContent: words.export.details }), detailsText));
-  const status = element("p", { className: "export-status", attributes: { role: "status" } });
+    element("details", { className: "dialog-details" }, element("summary", { textContent: words.export.details }), detailsText));
+  const status = element("p", { className: "dialog-status", attributes: { role: "status" } });
   const bar = element("progress", { max: 1, value: 0, hidden: true });
   const start = element("button", { type: "button", className: "primary", textContent: words.export.start });
   const cancel = element("button", { type: "button", textContent: words.export.cancel });
   const show = element("button", { type: "button", className: "primary", textContent: words.export.show, hidden: true });
-  const dialog = element("dialog", { className: "export", attributes: { "aria-labelledby": "export-heading" } },
-    element("h2", { id: "export-heading", textContent: words.export.heading }), choices, status, bar,
-    element("div", { className: "export-buttons" }, cancel, show, start));
+  // The day-7 check-in's one ask, after the first export that works: in this view, never a dialog of its own.
+  const checkIn = element("div", { className: "check-in", hidden: true });
+  const dialog = element("dialog", { className: "dialog export", attributes: { "aria-labelledby": "export-heading" } },
+    element("h2", { id: "export-heading", textContent: words.export.heading }), choices, status, bar, checkIn,
+    element("div", { className: "dialog-buttons" }, cancel, show, start));
 
   // One export at a time, each with its own stop switch and number, so nothing of one run can reach another's.
   let running: AbortController | null = null;
@@ -172,6 +175,7 @@ export function exportView(clip: Clip, editor: ClipEditor,
       status.textContent = words.export.done(target.fileName);
       cancel.textContent = words.export.close;
       show.hidden = false;
+      void offerCheckIn(checkIn);
     } catch (error) {
       if (exportId !== null) await window.video.cancelExport(exportId);
       const cancelled = signal.aborted;
@@ -179,6 +183,8 @@ export function exportView(clip: Clip, editor: ClipEditor,
       if (!cancelled && !nothingLeft) logProblem("export_failed", error);
       showChoices();
       status.textContent = cancelled ? words.export.cancelled : nothingLeft ? words.export.nothingLeft : words.export.failed;
+      if (!cancelled && !nothingLeft) status.append(" ", element("button", { type: "button", className: "quiet", textContent: words.feedback.open,
+        onclick: () => openFeedback({ kind: "problem", failure: `export_failed: ${error instanceof Error ? error.name : "unknown"}` }) }));
     } finally {
       if (running === controller) running = null;
       bar.hidden = true;
@@ -186,6 +192,7 @@ export function exportView(clip: Clip, editor: ClipEditor,
   };
 
   const showChoices = () => {
+    checkIn.hidden = true;
     choices.hidden = false;
     start.hidden = false;
     show.hidden = true;
@@ -207,4 +214,22 @@ export function exportView(clip: Clip, editor: ClipEditor,
       dialog.showModal();
     },
   };
+}
+
+/** Asks once whether the day-7 check-in may go, showing exactly its three numbers (electron/check-in.ts): only while
+ * unanswered, so the first export that works is where it's asked. */
+async function offerCheckIn(place: HTMLElement): Promise<void> {
+  const state = await window.video.checkIn();
+  if (state.answer !== null || state.sentAt) return;
+  const answer = (choice: "yes" | "no") => void window.video.answerCheckIn(choice).then(() => {
+    place.replaceChildren(element("p", { textContent: words.checkIn.thanks }));
+  });
+  place.replaceChildren(
+    element("p", { textContent: words.checkIn.ask }),
+    element("ul", { className: "check-in-numbers" }, ...words.checkIn.numbers(state.counts).map((line) => element("li", { textContent: line }))),
+    element("p", { className: "muted", textContent: words.checkIn.nothingElse }),
+    element("div", { className: "check-in-actions" },
+      element("button", { type: "button", textContent: words.checkIn.no, onclick: () => answer("no") }),
+      element("button", { type: "button", textContent: words.checkIn.yes, onclick: () => answer("yes") })));
+  place.hidden = false;
 }

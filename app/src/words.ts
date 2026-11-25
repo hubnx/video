@@ -3,7 +3,7 @@
  * ../../../docs/brand.md), and translating later is this one file. Written to the owner's rule for words people read:
  * plain, the point first, short sentences (~/.claude/CLAUDE.md › Outreach and SEO).
  */
-import { APP_NAME, type OpenRefusal } from "./shared/app-api.ts";
+import { APP_NAME, type CheckInCounts, type FeedbackDraft, type FeedbackResult, type OpenRefusal } from "./shared/app-api.ts";
 import type { JobKind } from "./shared/media.ts";
 import type { CaptionStyle } from "./preview/captions.ts";
 import type { Spacing } from "./edit/cleanup.ts";
@@ -125,6 +125,91 @@ export const words = {
     cancelled: "Stopped. Nothing was saved.",
     failed: "The export didn't finish. Nothing was saved.",
     nothingLeft: "Everything is cut, so there's nothing to export. Undo to bring some back.",
+  },
+  topBar: {
+    feedback: "Feedback",
+    settings: "Settings",
+  },
+  update: {
+    ready: (version: string) => `${APP_NAME} ${version} is ready. It installs when you quit.`,
+    restart: "Restart now",
+    // Said when the restart waits for an export (quitting would stop it).
+    afterExport: "Restart after the export finishes.",
+    whatsNew: "What's new",
+    outOfReach: (version: string) => `${APP_NAME} ${version} is out. This copy can't update itself where it is.`,
+    download: "Download it",
+    dismiss: "Not now",
+  },
+  settings: {
+    heading: "Settings",
+    updates: "Updates",
+    check: "Check for updates",
+    checking: "Checking…",
+    found: {
+      newest: "You have the newest version.",
+      unreachable: "Couldn't reach the website. The app checks again later.",
+      not_updating: "This copy doesn't update itself. Get new versions from the website.",
+    },
+    downloading: (version: string) => `Downloading ${version}. It installs when you quit.`,
+    ready: (version: string) => `${version} is ready. It installs when you quit.`,
+    outOfReach: (version: string) => `${version} is out. Download it from the website.`,
+    checkIn: "Counts, once",
+    checkInSwitch: "Send three counts once, a week after you started",
+    sent: (day: string) => `Sent on ${day}. Nothing more goes.`,
+    goesOn: (day: string) => `Goes on ${day}, if this is on.`,
+    help: "Help",
+    feedback: "Send feedback",
+    licenses: "Open-source licenses",
+    privacy: "Privacy",
+    terms: "Terms",
+    close: "Close",
+  },
+  // The day-7 check-in, in the words hubnx.com/about/privacy uses for it (docs/plan.md › Keep or stop › The check-in).
+  checkIn: {
+    ask: "Help us make it better? A week after you started, the app can send three counts, once.",
+    numbers: (counts: CheckInCounts) => [
+      `Videos exported: ${counts.videosExported}`,
+      `Minutes to your first export: ${counts.minutesToFirstExport ?? "none yet"}`,
+      `Setup failures: ${counts.setupFailures}`,
+    ],
+    nothingElse: "With the app's version and system. Nothing else: no video, words, name or install number.",
+    yes: "Yes, send them",
+    no: "No, thanks",
+    thanks: "Thanks. You can change this in Settings.",
+  },
+  feedback: {
+    heading: "Send feedback",
+    problemHeading: "Send a problem report",
+    open: "Send a problem report",
+    kinds: { problem: "A problem", idea: "An idea" } satisfies Record<FeedbackDraft["kind"], string>,
+    kind: "What it's about",
+    message: { problem: "What happened?", idea: "What would help?" } satisfies Record<FeedbackDraft["kind"], string>,
+    email: "Your email, if you'd like an answer",
+    optional: "(optional)",
+    withLog: "Include the app's log, to help us find the problem",
+    preview: "See exactly what's sent",
+    previewIntro: "Your words go with this:",
+    send: "Send",
+    sending: "Sending…",
+    cancel: "Cancel",
+    close: "Close",
+    refusals: {
+      message_short: "Say a little more: at least ten characters, so we know what to look at.",
+      message_long: "Keep it under 5,000 characters.",
+      email: "That doesn't look like an email address. Check it, or leave the box empty.",
+    },
+    results: {
+      sent: "Thanks. We read every report.",
+      refused: "It wasn't accepted. Check the email address, or leave it empty, and try again.",
+      too_many: "Too many reports from this network just now. Try again in an hour.",
+      unreachable: "Couldn't reach Hub Nexus. Check the internet connection, then try again.",
+    } satisfies Record<FeedbackResult, string>,
+  },
+  licenses: {
+    heading: "Open-source licenses",
+    intro: `${APP_NAME} is open source under the GNU AGPL, version 3. It's built with the software below, each under its own license.`,
+    chromium: "Chromium's notices",
+    close: "Close",
   },
   preview: {
     label: "Preview",

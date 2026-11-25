@@ -14,7 +14,9 @@ import { APP_ID } from "../src/shared/app-api.ts";
  * icon or sound (electron/main.ts › BEHIND; ~/.claude/CLAUDE.md › Tests never take my screen); `pnpm dev` alone
  * shows it. */
 export function electronEnvironment(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
-  const environment: NodeJS.ProcessEnv = { ...process.env, VIDEO_BEHIND: "1", ...extra };
+  // A report or check-in a check sends goes nowhere unless the check names its own stand-in: never to hubnx.com
+  // (docs/plan.md › Keep or stop › The check-in).
+  const environment: NodeJS.ProcessEnv = { ...process.env, VIDEO_BEHIND: "1", VIDEO_FEEDBACK_URL: "http://127.0.0.1:9/api/feedback", ...extra };
   delete environment.ELECTRON_RUN_AS_NODE;
   return environment;
 }

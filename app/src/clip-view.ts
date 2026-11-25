@@ -12,6 +12,7 @@ import type { Clip, JobKind, JobProgress } from "./shared/media.ts";
 import { flicksOf, secondsOf } from "./shared/time.ts";
 import { captionLines, type TranscriptProgress, type Word } from "./shared/transcript.ts";
 import { element } from "./dom.ts";
+import { openFeedback } from "./feedback-view.ts";
 import { logProblem } from "./problems.ts";
 import { cleanupPanel } from "./cleanup-panel.ts";
 import { ClipEditor } from "./edit/clip-editor.ts";
@@ -119,7 +120,8 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
       playCleanVoiceIfChosen();
     }
     if (progress.state === "failed") {
-      panel.voice(words.cleanup.voice.failed);
+      panel.voice(null);
+      showProblem(words.cleanup.voice.failed, `voice_failed: ${progress.error}`);
       voiceAsked = false; // a later switch-on tries again
     }
   });
@@ -146,7 +148,7 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
     if (progress.kind === "editCopy" && progress.state === "done") editCopy.resolve();
     if (progress.kind === "editCopy" && (progress.state === "failed" || progress.state === "cancelled")) editCopy.reject(new Error(`EDIT_COPY_${progress.state.toUpperCase()}`));
     if (progress.kind !== "speech") activity.preparing = progress.state === "running" ? progress : null;
-    if (progress.state === "failed") showProblem(words.clip.jobFailed[progress.kind]);
+    if (progress.state === "failed") showProblem(words.clip.jobFailed[progress.kind], `${progress.kind}_failed`);
     showStatus();
   });
   const heard: Word[] = [];
@@ -159,11 +161,13 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
       editor.setHeard([...heard], null);
     }
     if (progress.state === "done") editor.setHeard(progress.transcript.words, progress.sound);
-    if (progress.state === "failed") showProblem(words.clip.transcriptFailed);
+    if (progress.state === "failed") showProblem(words.clip.transcriptFailed, `transcript_failed: ${progress.error}`);
     showStatus();
   });
-  const showProblem = (text: string) => {
-    problem.textContent = text;
+  // What didn't work, in its own sentence, with the way to tell us (gate 2: *Send a problem report*).
+  const showProblem = (text: string, failure: string) => {
+    problem.replaceChildren(`${text} `, element("button", { type: "button", className: "quiet", textContent: words.feedback.open,
+      onclick: () => openFeedback({ kind: "problem", failure }) }));
     problem.hidden = false;
   };
 
@@ -238,7 +242,7 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
     playCleanVoiceIfChosen();
   }).catch((error: unknown) => {
     logProblem("clip_not_prepared", error);
-    showProblem(words.clip.notStarted);
+    showProblem(words.clip.notStarted, "clip_not_prepared");
   });
   showStatus();
   showEdit();
