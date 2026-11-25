@@ -278,7 +278,7 @@ before it goes out.
 - [ ] Privacy, terms and `/about/` pages; the footer's *About Hub Nexus* (no "by Hub Nexus" line
   beside the name, which wears `hubnx` already); *More from Hub Nexus*; the feedback form; outbound
   and file links in a new tab, set once at build time (`docs/brand.md`)
-- [ ] Open-source licenses: `/licenses/` on the site and *Help* › *Open-source licenses* in the app,
+- [x] Open-source licenses (2026-11-25): `/licenses/` on the site and *Help* › *Open-source licenses* in the app,
   both made at build time by the shared builder and its Electron part (lifted from Songbrew's
   `notices-collector.ts` and `app-notices.ts`: every build's packages, what electron-builder packs,
   Electron's and Chromium's notices). Ours to add: FFmpeg's GPLv3 text with its source offer, ONNX
@@ -291,7 +291,8 @@ before it goes out.
 - [x] The AWS budget (in the stack, 2026-11-25): `video-monthly`, about $2 a month, in the site's own stack, filtered on
   `user:Project$video` and emailing apps@hubnx.com (free; decisions, 2026-11-19; as `music-monthly`). Every
   resource tagged `Project=video` and `Portfolio=hubnx-apps`; the account-wide alarm is the backstop
-- [ ] The feedback form (app and site) through the shared parts' `feedback-report.ts`, which holds
+- [x] The feedback form (app and site, 2026-11-25; the app's sends from its main process in the same contract,
+  `electron/feedback.ts`, proved by `scripts/check-feedback.ts`) through the shared parts' `feedback-report.ts`, which holds
   hubnx.com's `/api/feedback` contract: hubnx registered `video` for both, the site at
   exactly `https://video.hubnx.com` (hubnx's Assistant, 2026-11-20)
 - [ ] For `hubnx.com/apps` at 1.1: the app's icon as an SVG on the site; `video assistant` sends

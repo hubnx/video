@@ -33,7 +33,10 @@ heavy runs go through `taskpolicy -b`, after `uptime` shows a 1-minute load unde
 | Voice clean-up's speed, for the estimate on its switch (`src/shared/voice-speed.ts`): here at normal priority, and GitHub's three with `gh workflow run voice-speed.yml` | `pnpm exec node scripts/time-voice.ts` |
 | WebCodecs' encoders and decoders at 1080p and 4K, here (`local/probe/`); GitHub's three with `gh workflow run probe.yml` | `pnpm probe` |
 | The 4K HEVC proxy and edit-copy times (`local/edit-copy-timing/`); GitHub's Windows and Ubuntu with `gh workflow run edit-copy-timing.yml` | `pnpm exec node scripts/time-edit-copy.ts ../local/edit-copy-timing/hevc-4k-10min.mov 60` |
-| Package (unsigned for checks; `--signed` signs and notarizes the Macs), into `local/release/<target>/` | `pnpm build && pnpm package mac-x64` |
+| Package (unsigned for checks; `--signed` signs and notarizes the Macs), into `local/release/<target>/`: a release builds all four here | `pnpm build && pnpm package mac-x64` |
+| Day 8's feedback check: a problem report and the day-7 check-in read by a stand-in on this Mac (never hubnx.com), the check-in's body then accepted by hubnx.com's dry run | `pnpm build && pnpm exec node scripts/check-feedback.ts` |
+| **Before every release, the fresh-install check**: the release's own packages installed on GitHub's Windows, Ubuntu (AppImage, and the .deb opens) and Apple-chip Mac (notarized and stapled), each captioning, cleaning up and exporting a talk clip with the flash and beep in sync; minutes to first export in each log's `FRESH_INSTALL_RESULT` line. The Intel Mac here, on its package | `gh workflow run fresh-install.yml -f tag=v1.0.0` · here: `pnpm exec node scripts/check-fresh-install.ts --program "../local/release/mac-x64/mac/hubnx Video.app/Contents/MacOS/hubnx Video" --speech <wav> --said "<its words>"` |
+| **The update check, whenever the updater changes**: an older signed Intel copy, installed from its disk image, finds a newer on a server here, downloads it, restarts into it (about 10 min, most of it zipping) | `pnpm build && pnpm exec node scripts/check-update.ts` |
 | Open a package behind and check FFmpeg runs inside it; GitHub's Windows, Ubuntu (and Apple-chip Mac with `-f mac=true`) with `gh workflow run package-check.yml` | `pnpm check-package mac-x64` |
 | Redraw `build-resources/icon.png` and the site's icons (`site/public/`) from `../brand/icon.svg` | `pnpm exec node scripts/render-icons.ts` |
 | **The site's hosting, deploy and live check**: the private `ops/` (`hubnx/video-ops`, cloned here and git-ignored; its own `CLAUDE.md`). Pages only, or pages, packages and update feeds (`app/scripts/release-files.ts` lists them, feeds last) | from `ops/`: `pnpm run deploy` · `pnpm run deploy --release` · `pnpm run check-live` |
@@ -70,6 +73,12 @@ Dependencies point one way: window → preload → main process → FFmpeg.
   `new Quality({ bitrate })`. Its typing accepts any object as a `Quality`, so the type check doesn't catch it, and a
   bitrate taken as a level asks for quantizer mode at level 6.2, which this Mac's hardware encoder refuses ("Encoder
   initialization error"). This Intel Mac's hardware H.264 encoder also refuses `latencyMode: "realtime"`.
+- **Plain `node` here is Node 20**, which can't run TypeScript: run scripts with `pnpm exec node`, which uses the
+  project's Node 24 (`devEngines`).
+- **A check that clears `local/<tool>/` at its start clears a log written there**: keep a run's log outside its own
+  folder.
+- **Squirrel (the Mac's updater) checks the newer copy's signature against the older's**, so the update check needs
+  signed packages; Apple's notary isn't part of it, so `check-update.ts` signs without notarizing.
 - **A `DOMException` crosses the preload bridge as an empty object** (WebCodecs' errors are DOMExceptions): the window
   describes its own errors (`src/problems.ts`) and the bridge carries only text.
 - **Electron refuses a native add-on's own memory** ("External buffers are not allowed"): sherpa-onnx's `readWave` and

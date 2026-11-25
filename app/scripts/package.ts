@@ -36,18 +36,24 @@ const SHERPA_SYSTEM: Record<Target, (typeof SHERPA_SYSTEMS)[number]> = { "mac-ar
 
 export interface PackageOptions {
   signed: boolean;
+  /** Whether a signed Mac build goes to Apple's notary too, as every release must (default: when signed). The update
+   * check signs without it: Squirrel checks the signature, not the notary's ticket. */
+  notarize?: boolean;
   /** package.json's unless given. */
   version?: string;
+  /** local/release/<target> unless given. */
+  output?: string;
 }
 
 /** Builds one target's packages and returns the folder they're in. */
 export async function packageApp(target: Target, options: PackageOptions): Promise<string> {
   const version = options.version ?? (JSON.parse(readFileSync(path.join(appFolder, "package.json"), "utf8")) as { version: string }).version;
-  const output = path.join(local, "release", target);
+  const output = options.output ?? path.join(local, "release", target);
   const ffmpeg = await fetchFfmpeg(target);
   const mac = target.startsWith("mac");
   const signedMac = mac && options.signed;
-  if (signedMac) Object.assign(process.env, { APPLE_API_KEY: APPLE.apiKey, APPLE_API_KEY_ID: APPLE.apiKeyId, APPLE_API_ISSUER: APPLE.apiIssuer });
+  const notarizedMac = signedMac && (options.notarize ?? true);
+  if (notarizedMac) Object.assign(process.env, { APPLE_API_KEY: APPLE.apiKey, APPLE_API_KEY_ID: APPLE.apiKeyId, APPLE_API_ISSUER: APPLE.apiIssuer });
   const download = RELEASE_FILES[target](version);
 
   rmSync(output, { recursive: true, force: true }); // each run replaces its own folder: old and new never mix
@@ -74,7 +80,7 @@ export async function packageApp(target: Target, options: PackageOptions): Promi
         category: "public.app-category.video",
         identity: signedMac ? APPLE.identity : null,
         hardenedRuntime: signedMac,
-        notarize: signedMac,
+        notarize: notarizedMac,
       },
       dmg: { sign: signedMac, writeUpdateInfo: false },
       win: { target: "nsis", executableName: INSTALLED_NAME },
@@ -107,7 +113,7 @@ export async function packageApp(target: Target, options: PackageOptions): Promi
   });
   // electron-builder notarizes the app inside; the disk image people download is notarized too, and Apple's ticket
   // stapled to it, so macOS can check it even offline.
-  if (signedMac) {
+  if (notarizedMac) {
     const image = path.join(output, download);
     execFileSync("xcrun", ["notarytool", "submit", image, "--key", APPLE.apiKey, "--key-id", APPLE.apiKeyId, "--issuer", APPLE.apiIssuer, "--wait"], { stdio: "inherit" });
     execFileSync("xcrun", ["stapler", "staple", image], { stdio: "inherit" });
