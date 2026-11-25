@@ -9,6 +9,7 @@ import { open, rename, rm, writeFile, type FileHandle } from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline";
 import { errorName, logError } from "./app-log.ts";
+import { captionsFileOf } from "./export-destination.ts";
 import { muxArguments, soundFilter, type SoundPlan } from "./export-sound.ts";
 
 interface Session {
@@ -72,7 +73,7 @@ export class Exports {
       if (session.cancelled) throw new Error("EXPORT_CANCELLED");
       if (code !== 0) throw new Error("EXPORT_MUX_FAILED");
       await rename(writing, session.destination);
-      if (captions !== null) await writeFile(session.destination.replace(/\.[^.]+$/, ".srt"), captions);
+      if (captions !== null) await writeFile(captionsFileOf(session.destination), captions);
     } finally {
       await rm(writing, { force: true });
       await rm(filter, { force: true });

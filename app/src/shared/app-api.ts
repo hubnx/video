@@ -54,7 +54,8 @@ export const CHANNELS = {
   saveEdit: "clip:save-edit",
   cleanVoice: "clip:clean-voice",
   voiceProgress: "clip:voice-progress",
-  chooseExport: "export:choose",
+  exportDestination: "export:destination",
+  changeExportDestination: "export:change-destination",
   beginExport: "export:begin",
   writeExport: "export:write",
   finishExport: "export:finish",
@@ -71,6 +72,13 @@ export type OpenResult = { clip: Clip; saved: { edit: Edit; choices: Choices } |
 /** media:// addresses: a clip's original, proxy or edit copy, by its id (electron/clips.ts serves only these). */
 export function mediaAddress(clipId: string, file: "original" | "proxy" | "editCopy" | "cleanVoice"): string {
   return `media://clip/${clipId}/${file}`;
+}
+
+/** Where an export will be saved: the whole path for the calls, and the two names the dialog shows. */
+export interface ExportDestination {
+  path: string;
+  folderName: string;
+  fileName: string;
 }
 
 export interface VideoApi {
@@ -94,9 +102,11 @@ export interface VideoApi {
   /** Makes the clip's clean voice, if it isn't made yet; its progress comes to onVoiceProgress. */
   cleanVoice(clipId: string): Promise<void>;
   onVoiceProgress(listener: (progress: VoiceProgress) => void): () => void;
-  /** The system's save dialog for an export; null when the person closed it. */
-  chooseExport(suggestedName: string): Promise<string | null>;
-  /** Starts an export to a destination the dialog gave; its number for the calls below. */
+  /** Where the clip's export goes unless the person changes it (electron/export-destination.ts), asked afresh each time. */
+  exportDestination(clipId: string): Promise<ExportDestination>;
+  /** The system's save dialog, starting from `current`; null when the person closed it. */
+  changeExportDestination(clipId: string, current: string): Promise<ExportDestination | null>;
+  /** Starts an export to a destination given by the two calls above; its number for the calls below. */
   beginExport(destination: string): Promise<number>;
   /** A piece of the encoded MP4 (the picture), at its place in the file. */
   writeExport(exportId: number, position: number, data: Uint8Array): Promise<void>;

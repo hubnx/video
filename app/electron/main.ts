@@ -2,10 +2,10 @@
  * The app's main process: one window, and the programs behind it.
  */
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme, protocol, shell } from "electron";
-import { existsSync } from "node:fs";
+import { accessSync, constants, existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { APP_NAME, CHANNELS, WEBSITE_PAGES, type ExportSound, type OpenResult, type WebsitePage } from "../src/shared/app-api.ts";
+import { APP_NAME, CHANNELS, WEBSITE_PAGES, type ExportDestination, type ExportSound, type OpenResult, type WebsitePage } from "../src/shared/app-api.ts";
 import type { Clip, ClipFacts, JobKind, VoiceProgress } from "../src/shared/media.ts";
 import { PROJECT_FORMAT, PROJECT_VERSION } from "../src/shared/project.ts";
 import type { Stretch } from "../src/shared/cuts.ts";
@@ -20,6 +20,7 @@ import { JobRunner, writingPath } from "./jobs.ts";
 import { downloadModels, DPDFNET, modelsReady, PARAKEET_V3, SILERO_VAD } from "./models.ts";
 import { cleanVoice, transcribe } from "./speech/speech.ts";
 import { mediaResponse } from "./media-response.ts";
+import { destinationFromChoice, suggestedDestination, type Disk } from "./export-destination.ts";
 import { Exports } from "./exports.ts";
 import { setMenu } from "./menu.ts";
 import { resolvePaths } from "./paths.ts";
@@ -213,18 +214,37 @@ async function start(): Promise<void> {
     if (typeof id !== "string" || !facts.has(id)) throw new Error("not a clip opened in this run");
     void cleanVoiceOf(id);
   });
-  // Exports: the destination comes only from the save dialog here, never from the window (exports.ts).
+  // Exports: a destination comes only from here (the suggestion or the save dialog), never from the window (exports.ts).
   const exports = new Exports(paths.ffmpeg);
-  const chosenDestinations = new Set<string>();
-  ipcMain.handle(CHANNELS.chooseExport, async (_event, suggested: unknown) => {
-    const name = typeof suggested === "string" && suggested ? suggested.replace(/[\\/:*?"<>|]/g, " ").slice(0, 120) : "video";
-    const choice = await dialog.showSaveDialog({ defaultPath: path.join(app.getPath("videos"), `${name}.mp4`), filters: [{ name: "MP4 video", extensions: ["mp4"] }] });
+  const destinations = new Set<string>();
+  const disk: Disk = {
+    exists: existsSync,
+    writable: (folder) => {
+      try {
+        accessSync(folder, constants.W_OK);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+  };
+  const destinationOf = (file: string): ExportDestination => {
+    destinations.add(file);
+    return { path: file, folderName: path.basename(path.dirname(file)), fileName: path.basename(file) };
+  };
+  ipcMain.handle(CHANNELS.exportDestination, (_event, clipId: unknown) => {
+    if (typeof clipId !== "string" || !facts.has(clipId)) throw new Error("not an open clip");
+    return destinationOf(suggestedDestination(clips.original(clipId), app.getPath("videos"), disk));
+  });
+  ipcMain.handle(CHANNELS.changeExportDestination, async (_event, clipId: unknown, current: unknown) => {
+    if (typeof clipId !== "string" || !facts.has(clipId)) throw new Error("not an open clip");
+    const choice = await dialog.showSaveDialog({ defaultPath: typeof current === "string" && destinations.has(current) ? current : app.getPath("videos"),
+      filters: [{ name: "MP4 video", extensions: ["mp4"] }] });
     if (choice.canceled || !choice.filePath) return null;
-    chosenDestinations.add(choice.filePath);
-    return choice.filePath;
+    return destinationOf(destinationFromChoice(choice.filePath, clips.original(clipId), disk, process.platform));
   });
   ipcMain.handle(CHANNELS.beginExport, (_event, destination: unknown) => {
-    if (typeof destination !== "string" || !chosenDestinations.has(destination)) throw new Error("not a destination the save dialog gave");
+    if (typeof destination !== "string" || !destinations.has(destination)) throw new Error("not a destination this process gave");
     return exports.begin(destination);
   });
   ipcMain.handle(CHANNELS.writeExport, (_event, id: unknown, position: unknown, data: unknown) => {
@@ -246,7 +266,7 @@ async function start(): Promise<void> {
     if (typeof id === "number") return exports.cancel(id);
   });
   ipcMain.handle(CHANNELS.showExported, (_event, destination: unknown) => {
-    if (typeof destination === "string" && chosenDestinations.has(destination)) shell.showItemInFolder(destination);
+    if (typeof destination === "string" && destinations.has(destination)) shell.showItemInFolder(destination);
   });
   ipcMain.handle(CHANNELS.cancelClip, (_event, id: unknown) => {
     if (typeof id === "string") jobs.cancel(id);

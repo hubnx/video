@@ -14,7 +14,7 @@
  *   pnpm build && pnpm exec node scripts/check-export.ts
  */
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { cpus } from "node:os";
 import path from "node:path";
 import { _electron as electron, type ElectronApplication, type Page } from "playwright-core";
@@ -67,13 +67,27 @@ async function seekTo(page: Page, seconds: number): Promise<void> {
   await page.waitForTimeout(250);
 }
 
-/** Exports through the app's own dialog to `file`, captions as chosen; returns how long it took. */
-async function exportTo(app: ElectronApplication, page: Page, file: string, captions: string, pictureWhileRunning?: string): Promise<number> {
-  await app.evaluate(({ dialog }, chosen) => {
-    dialog.showSaveDialog = async () => ({ canceled: false, filePath: chosen });
-  }, file);
+/** Opens the export dialog, checks where it offers to save (beside the clip, as its name plus "edited"), and changes
+ * that to `file` through Change…, as a person would. */
+async function openExportTo(app: ElectronApplication, page: Page, clip: string, file: string | null) {
   await page.getByRole("button", { name: "Export", exact: true }).first().click();
   const dialog = page.locator("dialog.export");
+  const offered = `${path.basename(path.dirname(clip))} › ${path.basename(clip, path.extname(clip))} edited.mp4`;
+  await dialog.locator(".export-place-name").filter({ hasText: offered }).waitFor({ timeout: 10_000 })
+    .then(() => expect(true, `the dialog offers "${offered}" before saving`), () => expect(false, `the dialog offers "${offered}" before saving`));
+  if (file) {
+    await app.evaluate(({ dialog }, chosen) => {
+      dialog.showSaveDialog = async () => ({ canceled: false, filePath: chosen });
+    }, file);
+    await dialog.getByRole("button", { name: "Change…" }).click();
+    await dialog.locator(".export-place-name").filter({ hasText: path.basename(file) }).waitFor({ timeout: 10_000 });
+  }
+  return dialog;
+}
+
+/** Exports through the app's own dialog to `file` (null: where it offers), captions as chosen; returns how long it took. */
+async function exportTo(app: ElectronApplication, page: Page, clip: string, file: string | null, captions: string, pictureWhileRunning?: string): Promise<number> {
+  const dialog = await openExportTo(app, page, clip, file);
   await dialog.getByRole("radio", { name: captions }).click();
   const started = Date.now();
   await dialog.getByRole("button", { name: "Export", exact: true }).click();
@@ -83,7 +97,8 @@ async function exportTo(app: ElectronApplication, page: Page, file: string, capt
   }
   await dialog.locator(".export-status").filter({ hasText: /Saved as|didn't finish|Stopped/ }).waitFor({ timeout: 20 * 60_000 });
   const said = await dialog.locator(".export-status").innerText();
-  expect(said === `Saved as ${path.basename(file)}.`, `the export said "${said}"`);
+  const name = file ? path.basename(file) : `${path.basename(clip, path.extname(clip))} edited.mp4`;
+  expect(said === `Saved as ${name}.`, `the export said "${said}"`);
   return (Date.now() - started) / 1000;
 }
 
@@ -111,7 +126,7 @@ try {
     await page.keyboard.press("s");
     await seekTo(page, 2.5);
     await page.keyboard.press("Delete");
-    timings.numbered = await exportTo(app, page, cutOut, "None");
+    timings.numbered = await exportTo(app, page, numbered, cutOut, "None");
   });
 
   const facts = JSON.parse(execFileSync(ffprobe, ["-v", "error", "-show_streams", "-show_format", "-of", "json", cutOut], { encoding: "utf8" })) as {
@@ -149,18 +164,16 @@ try {
   expect(flash === 120, `the flash at exported frame ${flash} (120 expected: frame 150 less the 30 cut)`);
   expect(Math.abs(beepAt - flashAt) <= 1 / RATE + 0.01, `the beep at ${beepAt.toFixed(3)} s and the flash at ${flashAt.toFixed(3)} s, within a frame`);
 
-  // Captions in the picture, from the talk clip.
-  const captioned = path.join(folder, "talk-captioned.mp4");
-  await withClip(talk, async (app, page) => {
+  // Captions in the picture, from the talk clip, saved where the dialog offers: beside the clip (a copy, here).
+  const talkCopy = path.join(folder, path.basename(talk));
+  copyFileSync(talk, talkCopy);
+  const captioned = path.join(folder, "talk-60s edited.mp4");
+  await withClip(talkCopy, async (app, page) => {
     await page.locator(".transcript-paragraph").first().waitFor({ timeout: 10 * 60_000 });
     await page.locator(".clip-status").waitFor({ state: "hidden", timeout: 10 * 60_000 });
     // Cancelled partway: it says so, and nothing is left at the destination or beside it.
     const stopped = path.join(folder, "talk-stopped.mp4");
-    await app.evaluate(({ dialog }, chosen) => {
-      dialog.showSaveDialog = async () => ({ canceled: false, filePath: chosen });
-    }, stopped);
-    await page.getByRole("button", { name: "Export", exact: true }).first().click();
-    const dialog = page.locator("dialog.export");
+    const dialog = await openExportTo(app, page, talkCopy, stopped);
     await dialog.getByRole("button", { name: "Export", exact: true }).click();
     await dialog.locator(".export-status").filter({ hasText: /left/ }).waitFor({ timeout: 5 * 60_000 });
     await dialog.getByRole("button", { name: "Cancel" }).click();
@@ -168,7 +181,7 @@ try {
     const left = readdirSync(folder).filter((name) => name.startsWith("talk-stopped"));
     expect(left.length === 0, `a cancelled export leaves nothing behind (${left.join(", ") || "nothing"})`);
     await dialog.getByRole("button", { name: "Cancel" }).click();
-    timings.talk = await exportTo(app, page, captioned, "In the video", path.join(local, "screens", "7-export-running-laptop-light.png"));
+    timings.talk = await exportTo(app, page, talkCopy, null, "In the video", path.join(local, "screens", "7-export-running-laptop-light.png"));
     await page.screenshot({ path: path.join(local, "screens", "7-export-done-laptop-light.png") });
   });
   const lowBand = execFileSync(ffmpeg, ["-hide_banner", "-loglevel", "error", "-ss", "12", "-i", captioned, "-frames:v", "1", "-vf", "crop=iw:ih*0.15:0:ih*0.8,scale=320:-2",
@@ -179,7 +192,7 @@ try {
   // A minute of a phone's 4K HEVC, at 4K.
   const big = path.join(folder, "phone-4k.mp4");
   await withClip(phone4k, async (app, page) => {
-    timings.phone4k = await exportTo(app, page, big, "None");
+    timings.phone4k = await exportTo(app, page, phone4k, big, "None");
   });
   const bigFacts = execFileSync(ffprobe, ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height,nb_frames", "-of", "csv=p=0", big], { encoding: "utf8" }).trim();
   expect(/^3840,2160,(179[7-9]|180[0-1])$/.test(bigFacts), `the 4K export is 3840 by 2160 with a minute of frames (${bigFacts})`);
@@ -187,7 +200,7 @@ try {
   // HDR: the export waits for the edit copy (tone-mapped to SDR) and reads that.
   const hdr = path.join(folder, "phone-hdr.mp4");
   await withClip(phoneHdr, async (app, page) => {
-    timings.phoneHdr = await exportTo(app, page, hdr, "None");
+    timings.phoneHdr = await exportTo(app, page, phoneHdr, hdr, "None");
   });
   const hdrFacts = execFileSync(ffprobe, ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=color_transfer,nb_frames", "-of", "csv=p=0", hdr], { encoding: "utf8" }).trim();
   expect(!/arib-std-b67|smpte2084/.test(hdrFacts) && Number(hdrFacts.split(",").at(-1)) > 0, `the HDR clip exported as SDR from its edit copy (${hdrFacts})`);

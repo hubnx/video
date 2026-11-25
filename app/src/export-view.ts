@@ -10,6 +10,7 @@ import type { ClipEditor } from "./edit/clip-editor.ts";
 import { exportPicture } from "./export/export-video.ts";
 import { CAPTION_OUTPUTS, EXPORT_SIZES, exportBitrate, exportDimensions, sizesFor, type CaptionOutput, type ExportSize } from "./export/presets.ts";
 import { srt } from "./export/srt.ts";
+import type { ExportDestination } from "./shared/app-api.ts";
 import type { Clip } from "./shared/media.ts";
 import { steadyRate } from "./shared/frame-rate.ts";
 import { secondsOf } from "./shared/time.ts";
@@ -25,31 +26,56 @@ export function exportView(clip: Clip, editor: ClipEditor,
   const sizes = sizesFor(uprightWidth, uprightHeight);
   let size: ExportSize = sizes.at(-1)!; // the clip's own size, up to 4K
   let captions: CaptionOutput = "burnedIn";
+  const frameRate = steadyRate(video.frameRate).value;
+  // Every row puts its label the same way: beside its control, or above it in a narrow window (styles.css).
+  const row = (label: string, control: HTMLElement) => element("div", { className: "export-row" }, element("span", { className: "label", textContent: label }), control);
   const choice = <Value extends string>(label: string, options: readonly Value[], names: Record<Value, string>, get: () => Value, set: (value: Value) => void) => {
     const group = element("div", { className: "segmented", attributes: { role: "radiogroup", "aria-label": label } },
       ...options.map((option) => element("button", { type: "button", textContent: names[option], dataset: { value: option }, attributes: { role: "radio" },
         onclick: () => {
           set(option);
           refresh();
+          showDetails();
         } })));
     const refresh = () => {
       for (const button of group.querySelectorAll<HTMLElement>("button")) button.setAttribute("aria-checked", String(button.dataset.value === get()));
     };
     refresh();
-    return element("div", { className: "export-row" }, element("span", { className: "label", textContent: label }), group);
+    return row(label, group);
   };
   // A clip with one size to give says what it is, rather than offering a choice of one (and a smaller clip isn't 720p).
   const onlySize = () => {
     const { width, height } = exportDimensions(uprightWidth, uprightHeight, size);
-    return element("div", { className: "export-row" }, element("span", { className: "label", textContent: words.export.size }),
-      element("span", { textContent: `${Math.min(width, height)}p` }));
+    return row(words.export.size, element("span", { textContent: `${Math.min(width, height)}p` }));
+  };
+  // Where it saves, said before it saves, with the way to change it (gate 7).
+  let destination: ExportDestination | null = null;
+  const placeName = element("span", { className: "export-place-name" });
+  const change = element("button", { type: "button", className: "quiet", textContent: words.export.change, onclick: async () => {
+    if (!destination) return;
+    const picked = await window.video.changeExportDestination(clip.id, destination.path);
+    if (picked) showDestination(picked);
+  } });
+  const showDestination = (shown: ExportDestination | null) => {
+    destination = shown;
+    placeName.textContent = shown ? words.export.place(shown.folderName, shown.fileName) : "";
+    start.disabled = !shown;
+    change.disabled = !shown;
+  };
+  // The format's facts, for whoever wants them, out of everyone else's way.
+  const detailsText = element("p");
+  const showDetails = () => {
+    const dimensions = exportDimensions(uprightWidth, uprightHeight, size);
+    detailsText.textContent = words.export.detailsText(dimensions.width, dimensions.height, frameRate, exportBitrate(size, frameRate) / 1_000_000);
   };
   const choices = element("div", { className: "export-choices" },
     sizes.length > 1
       ? choice(words.export.size, sizes, Object.fromEntries((Object.keys(EXPORT_SIZES) as ExportSize[]).map((each) => [each, each])) as Record<ExportSize, string>, () => size, (value) => (size = value))
       : onlySize(),
     choice(words.export.captions, CAPTION_OUTPUTS, words.export.captionOutputs, () => captions, (value) => (captions = value)),
-    element("p", { className: "export-note", textContent: words.export.youtube }));
+    row(words.export.savesTo, element("span", { className: "export-place" }, placeName, change)),
+    element("p", { className: "export-note", textContent: words.export.youtube }),
+    element("details", { className: "export-details" }, element("summary", { textContent: words.export.details }), detailsText));
   const status = element("p", { className: "export-status", attributes: { role: "status" } });
   const bar = element("progress", { max: 1, value: 0, hidden: true });
   const start = element("button", { type: "button", className: "primary", textContent: words.export.start });
@@ -61,7 +87,6 @@ export function exportView(clip: Clip, editor: ClipEditor,
 
   let running: AbortController | null = null;
   let exportId: number | null = null;
-  let destination: string | null = null;
 
   cancel.addEventListener("click", () => {
     if (running) {
@@ -71,13 +96,13 @@ export function exportView(clip: Clip, editor: ClipEditor,
     dialog.close();
   });
   show.addEventListener("click", () => {
-    if (destination) void window.video.showExported(destination);
+    if (destination) void window.video.showExported(destination.path);
   });
   start.addEventListener("click", () => void run());
 
   const run = async () => {
-    destination = await window.video.chooseExport(clip.name.replace(/\.[^.]+$/, ""));
     if (!destination) return;
+    const target = destination;
     running = new AbortController();
     const signal = running.signal;
     // The picture's loop sees the signal itself; the sound is FFmpeg's in the main process, which only this stops.
@@ -105,10 +130,9 @@ export function exportView(clip: Clip, editor: ClipEditor,
         status.textContent = secondsLeft === null ? words.export.preparing : `${words.export.preparing} ${words.clip.timeLeft(secondsLeft)}`;
       })]);
       const segments = editor.segments;
-      const frameRate = steadyRate(video.frameRate).value;
       const dimensions = exportDimensions(uprightWidth, uprightHeight, size);
       const lines = captionLines(editor.captionWords);
-      exportId = await window.video.beginExport(destination);
+      exportId = await window.video.beginExport(target.path);
       const id = exportId;
       await exportPicture({ address, segments, ...dimensions, frameRate, bitrate: exportBitrate(size, frameRate),
         captions: captions === "burnedIn" && lines.length ? { lines, style: editor.captionStyle } : null },
@@ -126,7 +150,7 @@ export function exportView(clip: Clip, editor: ClipEditor,
         stopListening();
       }
       // Done: the one thing left is to find the file, so Show in folder is the main button and the choices stay away.
-      status.textContent = words.export.done(destination.split(/[\\/]/).at(-1)!);
+      status.textContent = words.export.done(target.fileName);
       cancel.textContent = words.export.close;
       show.hidden = false;
     } catch (error) {
@@ -154,6 +178,13 @@ export function exportView(clip: Clip, editor: ClipEditor,
     element: dialog,
     open: () => {
       showChoices();
+      showDetails();
+      // Asked afresh each time: the last export now holds its name, so this one gets the next.
+      showDestination(null);
+      void window.video.exportDestination(clip.id).then(showDestination, (error: unknown) => {
+        logProblem("export_destination_unknown", error);
+        status.textContent = words.export.failed;
+      });
       dialog.showModal();
     },
   };

@@ -499,6 +499,46 @@ button:disabled {
   .export .segmented button {
     padding-inline: 12px;
   }
+
+  /* Narrow: every label above its control, never some beside and some above (gate 7). More specific than the row's
+     own rule further down, which would otherwise win. */
+  .export .export-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}
+
+/* Where it saves: the place, then Change… as a quiet text button beside it. */
+.export-place {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  overflow-wrap: anywhere;
+}
+
+button.quiet {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.export-details {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.export-details summary {
+  cursor: pointer;
+  width: fit-content;
+}
+
+.export-details p {
+  margin: 6px 0 0;
 }
 
 .export::backdrop {
