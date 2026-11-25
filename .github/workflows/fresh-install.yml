@@ -12,10 +12,9 @@ on:
       tag:
         description: The release to check (its packages are on it), such as v1.0.0
         required: true
-      mac:
-        description: Also check the Apple-chip Mac (ten times the minutes)
-        type: boolean
-        default: true
+      systems:
+        description: Which systems, of windows ubuntu mac (the Mac's minutes count ten times)
+        default: windows ubuntu mac
 
 env:
   # The sentence each system's own voice says in the clip; the captions must hear most of its longer words.
@@ -28,16 +27,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-24.04, macos-15]
+        include:
+          - { os: windows-latest, system: windows }
+          - { os: ubuntu-24.04, system: ubuntu }
+          - { os: macos-15, system: mac }
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     defaults:
       run:
         shell: bash
     steps:
-      - name: Only the Mac when asked
+      - name: Only the systems asked for
         id: run
-        run: echo "go=${{ matrix.os != 'macos-15' || inputs.mac }}" >> "$GITHUB_OUTPUT"
+        run: echo "go=${{ contains(inputs.systems, matrix.system) }}" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@v7
         if: steps.run.outputs.go == 'true'
@@ -124,6 +126,6 @@ jobs:
         if: always() && steps.run.outputs.go == 'true'
         continue-on-error: true
         with:
-          name: fresh-install-${{ matrix.os }}
+          name: fresh-install-${{ matrix.system }}
           path: local/fresh-install/*.png
           retention-days: 7
