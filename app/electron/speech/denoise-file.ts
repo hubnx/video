@@ -60,7 +60,7 @@ async function wavData(file: Awaited<ReturnType<typeof open>>): Promise<{ dataSt
 }
 
 /** A 44-byte header for 16-bit mono 48 kHz PCM, `bytes` of samples after it. */
-function wavHeader(bytes: number): Buffer {
+export function wavHeader(bytes: number): Buffer {
   const header = Buffer.alloc(44);
   header.write("RIFF", 0, "latin1");
   header.writeUInt32LE(36 + bytes, 4);

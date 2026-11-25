@@ -17,6 +17,7 @@ import path from "node:path";
 import { denoiseFile } from "../electron/speech/denoise-file.ts";
 import { DPDFNET, downloadModels, modelFolder, modelsReady } from "../electron/models.ts";
 import { speechSamples } from "../electron/quiet.ts";
+import { modelThreads } from "../electron/speech/threads.ts";
 import { appFolder } from "./start.ts";
 
 const local = path.resolve(appFolder, "..", "local");
@@ -39,7 +40,7 @@ ff("-i", clean, "-f", "lavfi", "-t", "60", "-i", `anoisesrc=color=pink:amplitude
   "-filter_complex", "[0][1][2]amix=inputs=3:normalize=0", "-ac", "1", "-ar", String(RATE), "-c:a", "pcm_s16le", noisy);
 
 if (!modelsReady(path.join(local, "models"), [DPDFNET])) await downloadModels(path.join(local, "models"), [DPDFNET], () => undefined, new AbortController().signal);
-const threads = Math.max(1, Math.min(8, cpus().length - 1));
+const threads = modelThreads();
 const started = Date.now();
 await denoiseFile({ source: noisy, output: cleaned, model: path.join(modelFolder(path.join(local, "models"), DPDFNET), "dpdfnet2_48khz_hr.onnx"), threads }, () => undefined);
 const secondsPerMinute = (Date.now() - started) / 1000;

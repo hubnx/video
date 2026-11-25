@@ -1,0 +1,35 @@
+# How long voice clean-up takes a minute of sound on GitHub's Mac (Apple chip), Windows and Ubuntu, for the estimate
+# on its switch before this computer has measured its own (app/src/shared/voice-speed.ts). Started by hand only: Mac
+# minutes count ten times against the free plan's. Results are read from the run's log, not saved as artifacts: the
+# organisation's artifact storage fills up (2026-11-21).
+name: Voice clean-up speed
+
+on:
+  workflow_dispatch:
+
+jobs:
+  time:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, windows-latest, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: pnpm
+        run: corepack enable && corepack prepare pnpm@12.15.0 --activate
+
+      - name: The app's packages
+        working-directory: app
+        run: pnpm install --frozen-lockfile
+
+      - name: Time a minute of sound
+        working-directory: app
+        shell: bash
+        run: pnpm exec node scripts/time-voice.ts | tee speed.txt && grep '^VOICE_SPEED ' speed.txt

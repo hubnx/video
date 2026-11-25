@@ -3,22 +3,16 @@
  * what they find. A crash there ends that process alone, and is reported as a failure, never a frozen window.
  */
 import { utilityProcess } from "electron";
-import { availableParallelism } from "node:os";
 import path from "node:path";
 import type { Stretch } from "../../src/shared/cuts.ts";
 import type { Word } from "../../src/shared/transcript.ts";
 import { DPDFNET, modelFolder, PARAKEET_V3, SILERO_VAD } from "../models.ts";
 import type { DenoiseEvent, DenoiseRequest, TranscribeEvent, TranscribeRequest } from "./protocol.ts";
+import { modelThreads } from "./threads.ts";
 
 export interface Heard {
   words: Word[];
   voice: Stretch[];
-}
-
-/** Processor threads for a model: all but one, at most 8 (the filler check's and the voice check's speeds were measured
- * at 8). */
-export function modelThreads(): number {
-  return Math.max(1, Math.min(8, availableParallelism() - 1));
 }
 
 /** Runs one request in a worker until it says it's done or failed; `event` hears everything it says on the way. The
