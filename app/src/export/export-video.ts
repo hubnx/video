@@ -5,7 +5,7 @@
  * main process, which then adds the sound (electron/exports.ts). Frames are read from the clip by timestamp, so a phone's
  * varying frame rate lands on the steady one without drift.
  */
-import { ALL_FORMATS, CanvasSource, Input, Mp4OutputFormat, Output, Quality, StreamTarget, UrlSource, VideoSampleSink, type VideoSample } from "mediabunny";
+import { ALL_FORMATS, canEncodeVideo, CanvasSource, Input, Mp4OutputFormat, Output, Quality, StreamTarget, UrlSource, VideoSampleSink, type VideoSample } from "mediabunny";
 import { captionAt, drawCaption, type CaptionStyle } from "../preview/captions.ts";
 import { Compositor, type QuarterTurns } from "../preview/compositor.ts";
 import type { Segment } from "../shared/project.ts";
@@ -44,7 +44,9 @@ export async function exportPicture(plan: ExportPicture, write: (position: numbe
       target: new StreamTarget(new WritableStream({ write: (chunk) => write(chunk.position, chunk.data) }), { chunked: true, chunkSize: 8 * 1024 * 1024 }),
     });
     // A bitrate goes in as { bitrate }: a bare number is a 0-1 quality level (CLAUDE.md › Traps).
-    const source = new CanvasSource(canvas, { codec: "avc", quality: new Quality({ bitrate: plan.bitrate, bitrateMode: "variable" }), keyFrameInterval: 2, hardwareAcceleration: "prefer-hardware" });
+    const quality = new Quality({ bitrate: plan.bitrate, bitrateMode: "variable" });
+    const source = new CanvasSource(canvas, { codec: "avc", quality, keyFrameInterval: 2,
+      hardwareAcceleration: await encoderAcceleration(plan.width, plan.height, plan.frameRate, quality) });
     output.addVideoTrack(source, { frameRate: plan.frameRate });
     await output.start();
 
@@ -98,4 +100,14 @@ export async function exportPicture(plan: ExportPicture, write: (position: numbe
     compositor?.release(); // a context per export would otherwise wait for collection, and Chromium drops the oldest: the preview's
     input.dispose();
   }
+}
+
+/** The graphics chip's H.264 encoder where there is one, else the browser's own: asked for alone, a computer without
+ * one (GitHub's Windows, a virtual machine, an older PC) refused the export outright (the fresh-install check,
+ * 2026-11-25: "not supported in this environment"). */
+async function encoderAcceleration(width: number, height: number, frameRate: number, quality: Quality): Promise<HardwareAcceleration> {
+  for (const hardwareAcceleration of ["prefer-hardware", "no-preference", "prefer-software"] as const) {
+    if (await canEncodeVideo("avc", { width, height, frameRate, quality, hardwareAcceleration })) return hardwareAcceleration;
+  }
+  throw new Error("EXPORT_NO_H264_ENCODER");
 }

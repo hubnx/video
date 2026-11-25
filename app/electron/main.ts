@@ -49,6 +49,12 @@ protocol.registerSchemesAsPrivileged([
   { scheme: "media", privileges: { standard: true, secure: true, stream: true, supportFetchAPI: true, corsEnabled: true } },
 ]);
 
+// The preview and the export draw with WebGL2. Where the graphics driver can't (a virtual machine, an old or blocked
+// driver, GitHub's Ubuntu), Chromium's own software renderer, SwiftShader, does it; Chromium now keeps it off unless
+// asked, so the clip never opened there (the fresh-install check, 2026-11-25: COMPOSITOR_NO_WEBGL2). "Unsafe" is about
+// web pages' WebGL running in software: this window loads only the app's own files.
+app.commandLine.appendSwitch("enable-unsafe-swiftshader");
+
 // One copy at a time: a second launch brings the first window forward instead.
 if (!app.requestSingleInstanceLock()) app.quit();
 else void start();
