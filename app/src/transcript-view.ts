@@ -29,6 +29,12 @@ export function transcriptView(editor: ClipEditor, seek: (seconds: number) => vo
   let lit: HTMLElement | null = null;
   let marks = new Map<HTMLElement, Cut>();
 
+  list.addEventListener("keydown", (event) => {
+    if ((event.key === "Enter" || event.key === " ") && (event.target as Element).matches(".word.filler")) {
+      event.preventDefault();
+      (event.target as HTMLElement).click();
+    }
+  });
   list.addEventListener("click", (event) => {
     const target = event.target as Element;
     const mark = target.closest<HTMLElement>(".pause, .word.filler");
@@ -75,7 +81,8 @@ export function transcriptView(editor: ClipEditor, seek: (seconds: number) => vo
         className: ["word", filler ? "filler" : "", removed ? "removed" : ""].filter(Boolean).join(" "),
         textContent: word.text,
         dataset: { start: String(secondsOf(word.start)) },
-        ...(filler && !removed ? { title: wordsShown.transcript.cutFiller } : {}),
+        // A possible um takes the keyboard too, and shows what a press does: its "Cut" pill (styles.css › .word.filler).
+        ...(filler && !removed ? { title: wordsShown.transcript.cutFiller, tabIndex: 0, attributes: { role: "button", "data-action": wordsShown.transcript.cut } } : {}),
       });
       if (filler) marks.set(span, filler);
       spans.push({ word, span });

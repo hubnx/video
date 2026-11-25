@@ -62,6 +62,7 @@ export const words = {
     putBack: "Cut. Click to put it back",
     // Possible, not certain: the filler check found 70% of these are real (gate on day 1's numbers).
     cutFiller: "Possible um: click to cut it",
+    cut: "Cut",
   },
   captions: {
     label: "Captions:",
@@ -75,11 +76,11 @@ export const words = {
     putBackAll: "Put all the silences back",
     wouldSave: (seconds: number) => `${duration(seconds)} shorter`,
     shorter: (seconds: number) => `Cut · ${duration(seconds)} shorter`,
-    none: "No long pauses to cut.",
     spacingLabel: "Pauses:",
     spacing: "Pause spacing",
     spacings: { tight: "Tight", natural: "Natural", relaxed: "Relaxed" } satisfies Record<Spacing, string>,
-    possibleFillers: (count: number) => `${count} possible ${count === 1 ? "um" : "ums"} marked in the transcript`,
+    possibleFillers: (count: number) => `${count} possible ${count === 1 ? "um" : "ums"}: click one in the transcript to cut it`,
+    noPauses: "Clean up: no long pauses",
     undo: "Undo",
     redo: "Redo",
   },

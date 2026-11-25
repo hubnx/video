@@ -110,7 +110,8 @@ button {
   cursor: pointer;
 }
 
-button:focus-visible {
+/* One focus ring for everything that takes the keyboard, in the brand's colour in both themes (gate on day 5). */
+:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
@@ -263,10 +264,29 @@ button:disabled {
   color: var(--on-accent);
 }
 
-/* A possible "um": lightly underlined, to cut with one press (English only). */
+/* A possible "um": lightly underlined, to cut with one press (English only), its "Cut" pill shown on hover and focus so
+   the action can be found (gate on day 5). */
 .word.filler {
+  position: relative;
   text-decoration: underline dotted var(--muted);
   text-underline-offset: 3px;
+}
+
+.word.filler[data-action]:hover::after,
+.word.filler[data-action]:focus-visible::after {
+  content: attr(data-action);
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .word.removed {
@@ -311,7 +331,6 @@ button:disabled {
 
 .cleanup-saved,
 .cleanup-fillers,
-.cleanup-none,
 .label {
   color: var(--muted);
   font-size: 0.9rem;
@@ -373,7 +392,7 @@ button:disabled {
 }
 
 .timeline-canvas {
-  --timeline-piece: var(--line-strong);
+  --timeline-wave: var(--line-strong);
   display: block;
   width: 100%;
   height: 48px;
@@ -425,10 +444,4 @@ button:disabled {
 
 .play {
   min-width: 80px;
-}
-
-/* The timeline takes the keyboard (S, Delete): its focus ring in the brand's colour, as every button's is. */
-.timeline-canvas:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
 }
