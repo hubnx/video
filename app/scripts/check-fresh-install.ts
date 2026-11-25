@@ -95,7 +95,8 @@ try {
   const said = await dialog.locator(".dialog-status").innerText();
   expect(said.startsWith(`Saved as ${path.basename(exported)}.`), `the export said "${said.split("\n")[0]}"`);
   seconds.firstExport = since();
-  await page.screenshot({ path: path.join(out, "exported.png") });
+  // A picture for whoever looks later, never the verdict: GitHub's Ubuntu, drawing in software, timed it out once.
+  await page.screenshot({ path: path.join(out, "exported.png"), timeout: 10_000 }).catch((error: unknown) => console.log(`no picture: ${String(error).split("\n")[0]}`));
   if (process.platform === "darwin" && !oursRunning()) failures.push("WATCHED_NOTHING: macOS never listed our app as running");
 } catch (error) {
   failures.push(`the flow stopped: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`);
