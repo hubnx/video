@@ -15,7 +15,8 @@ import { element } from "./dom.ts";
 import { cleanupPanel } from "./cleanup-panel.ts";
 import { ClipEditor } from "./edit/clip-editor.ts";
 import { sourceAt, timelineAt } from "./edit/timeline.ts";
-import { CAPTION_STYLES, type CaptionStyle } from "./preview/captions.ts";
+import { CAPTION_STYLES } from "./preview/captions.ts";
+import type { Choices, Edit } from "./shared/project.ts";
 import { previewView, type Preview } from "./preview-view.ts";
 import { timelineView } from "./timeline-view.ts";
 import { transcriptView } from "./transcript-view.ts";
@@ -24,9 +25,11 @@ import { words } from "./words.ts";
 /** How much is played either side of a possible "um" just cut, so the person hears the join (gate on day 1). */
 const HEAR_AROUND_SECONDS = 1;
 
-/** The view of one video; it lives as long as the window does (opening another comes with the project, day 6). */
-export function clipView(clip: Clip): HTMLElement {
-  const editor = new ClipEditor(clip.id, flicksOf(clip.facts.durationSeconds));
+/** The view of one video, opened with its project as last saved (null the first time); it lives as long as the window
+ * does. Every change is saved about a second later (electron/project-file.ts). */
+export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | null): HTMLElement {
+  const editor = new ClipEditor(clip.id, flicksOf(clip.facts.durationSeconds), saved);
+  editor.onChange(() => window.video.saveEdit(clip.id, editor.edit, editor.choices));
   const status = element("div", { className: "clip-status", attributes: { role: "status" } });
   const statusText = element("span", { className: "clip-status-text" });
   const statusBar = element("progress", { max: 1, value: 0 });
@@ -43,11 +46,10 @@ export function clipView(clip: Clip): HTMLElement {
   const transcript = transcriptView(editor, seek, cutFiller);
   const panel = cleanupPanel(editor);
   const timeline = timelineView(editor, seek);
-  let style: CaptionStyle = "wordByWord";
   const styleButtons = element("div", { className: "segmented", attributes: { role: "radiogroup", "aria-label": words.captions.style } },
     ...CAPTION_STYLES.map((each) => element("button", { type: "button", textContent: words.captions.styles[each], dataset: { style: each },
-      attributes: { role: "radio", "aria-checked": String(each === style) }, onclick: () => setStyle(each) })));
-  const hideFillers = element("input", { type: "checkbox", checked: true, onchange: () => editor.setHideFillers(hideFillers.checked) });
+      attributes: { role: "radio" }, onclick: () => editor.setCaptionStyle(each) })));
+  const hideFillers = element("input", { type: "checkbox", checked: editor.hideFillersInCaptions, onchange: () => editor.setHideFillers(hideFillers.checked) });
   const hideFillersLabel = element("label", { className: "switch", hidden: true }, hideFillers, words.captions.hideFillers);
   const captionControls = element("div", { className: "caption-controls" },
     element("span", { className: "label", textContent: words.captions.label }), styleButtons, hideFillersLabel);
@@ -66,18 +68,14 @@ export function clipView(clip: Clip): HTMLElement {
     statusText.textContent = left === null ? text : `${text} ${words.clip.timeLeft(left)}`;
     statusBar.value = fraction;
   };
-  const setStyle = (chosen: CaptionStyle) => {
-    style = chosen;
-    for (const button of styleButtons.querySelectorAll<HTMLElement>("button")) button.setAttribute("aria-checked", String(button.dataset.style === chosen));
-    showEdit();
-  };
   /** Every view drawn again from the editor. */
   const showEdit = () => {
     transcript.render();
     panel.render();
     timeline.render();
     hideFillersLabel.hidden = !editor.english;
-    preview?.setCaptions(captionLines(editor.captionWords), style);
+    for (const button of styleButtons.querySelectorAll<HTMLElement>("button")) button.setAttribute("aria-checked", String(button.dataset.style === editor.captionStyle));
+    preview?.setCaptions(captionLines(editor.captionWords), editor.captionStyle);
     preview?.setSkips(editor.edit.removed.map((stretch) => ({ start: secondsOf(stretch.start), end: secondsOf(stretch.end) })));
   };
   editor.onChange(showEdit);

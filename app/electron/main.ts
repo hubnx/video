@@ -7,6 +7,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { APP_NAME, CHANNELS, WEBSITE_PAGES, type OpenResult, type WebsitePage } from "../src/shared/app-api.ts";
 import type { Clip, ClipFacts, JobKind } from "../src/shared/media.ts";
+import { PROJECT_FORMAT, PROJECT_VERSION } from "../src/shared/project.ts";
 import type { Stretch } from "../src/shared/cuts.ts";
 import { loudness } from "../src/shared/quiet.ts";
 import type { SoundMap, Transcript, TranscriptProgress } from "../src/shared/transcript.ts";
@@ -22,6 +23,8 @@ import { mediaResponse } from "./media-response.ts";
 import { setMenu } from "./menu.ts";
 import { resolvePaths } from "./paths.ts";
 import { probeClip } from "./probe.ts";
+import { Autosave, openProject } from "./project-file.ts";
+import { isChoices, isEdit } from "./project-check.ts";
 import { readSettings, writeSettings, type Settings } from "./settings.ts";
 
 const paths = resolvePaths();
@@ -124,7 +127,8 @@ async function start(): Promise<void> {
       if (!found.video && !found.audio) return { refused: "not_a_video" };
       facts.set(id, found);
       const clip: Clip = { id, name: path.basename(file), facts: found };
-      return { clip };
+      const project = await openProject(clips.stored(id, "project.hubnxvideo"));
+      return { clip, saved: project ? { edit: project.edit, choices: project.choices } : null };
     } catch (error) {
       // The file system refuses what can't be read, with a code such as EACCES; ffprobe refuses what isn't a media
       // file, exiting with a number.
@@ -155,6 +159,19 @@ async function start(): Promise<void> {
       const output = clips.made(id, kind);
       jobs.add({ clipId: id, kind, arguments: argumentsOf[kind](writingPath(output)), writing: writingPath(output), output, durationSeconds: found.durationSeconds });
     }
+  });
+  // Each clip's project, saved about a second after its last change: written whole and renamed into place, so a crash
+  // or a forced quit loses at most that second (project-file.ts; docs/plan.md › The promise › Never lose work).
+  const autosaves = new Map<string, Autosave>();
+  ipcMain.handle(CHANNELS.saveEdit, (_event, id: unknown, edit: unknown, choices: unknown) => {
+    const found = typeof id === "string" ? facts.get(id) : undefined;
+    if (!found || typeof id !== "string" || !isEdit(edit) || !isChoices(choices)) throw new Error("not an edit of a clip opened in this run");
+    let autosave = autosaves.get(id);
+    if (!autosave) {
+      autosave = new Autosave(clips.stored(id, "project.hubnxvideo"));
+      autosaves.set(id, autosave);
+    }
+    autosave.changed({ format: PROJECT_FORMAT, version: PROJECT_VERSION, clips: [{ id, path: clips.original(id), name: path.basename(clips.original(id)), facts: found }], edit, choices });
   });
   ipcMain.handle(CHANNELS.cancelClip, (_event, id: unknown) => {
     if (typeof id === "string") jobs.cancel(id);
@@ -214,6 +231,16 @@ async function start(): Promise<void> {
   });
   app.on("window-all-closed", () => app.quit());
   // However the app quits (Cmd+Q skips window-all-closed), FFmpeg's running job and the transcriber go with it.
+  // Quitting waits for each pending save first: the last second of edits is the person's work too.
+  let flushedBeforeQuit = false;
+  app.on("before-quit", (event) => {
+    if (flushedBeforeQuit) return;
+    event.preventDefault();
+    Promise.all([...autosaves.values()].map((autosave) => autosave.flush().catch(() => undefined))).finally(() => {
+      flushedBeforeQuit = true;
+      app.quit();
+    });
+  });
   app.on("will-quit", () => {
     jobs.stopAll();
     for (const controller of transcripts.values()) controller.abort();

@@ -13,4 +13,4 @@ const screen = required("#screen");
 // A file dropped anywhere outside the drop area would otherwise be opened by Chromium as a page.
 for (const kind of ["dragover", "drop"] as const) document.addEventListener(kind, (event) => event.preventDefault());
 
-screen.replaceChildren(startView((clip) => screen.replaceChildren(clipView(clip))));
+screen.replaceChildren(startView(({ clip, saved }) => screen.replaceChildren(clipView(clip, saved))));

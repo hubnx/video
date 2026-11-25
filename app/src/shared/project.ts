@@ -36,11 +36,21 @@ export interface Edit {
   splits: Flicks[];
 }
 
+/** The person's choices for the clip, kept with the edit so a reopened project looks as they left it. */
+export interface Choices {
+  spacing: "tight" | "natural" | "relaxed"; // edit/cleanup.ts › SPACINGS
+  captionStyle: "subtitles" | "wordByWord"; // preview/captions.ts › CAPTION_STYLES
+  hideFillersInCaptions: boolean;
+}
+
+export const DEFAULT_CHOICES: Choices = { spacing: "natural", captionStyle: "wordByWord", hideFillersInCaptions: true };
+
 export interface Project {
   format: typeof PROJECT_FORMAT;
   version: typeof PROJECT_VERSION;
   clips: ProjectClip[];
   edit: Edit;
+  choices: Choices;
 }
 
 /** Each step from one version to the next, by the version it starts from. Empty until version 2 exists. */

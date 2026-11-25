@@ -4,7 +4,8 @@
  * every change goes through here, so each is one step of undo and every view hears of it.
  */
 import type { Cut, Stretch } from "../shared/cuts.ts";
-import type { Edit, Segment } from "../shared/project.ts";
+import { DEFAULT_CHOICES, type Choices, type Edit, type Segment } from "../shared/project.ts";
+import type { CaptionStyle } from "../preview/captions.ts";
 import type { Flicks } from "../shared/time.ts";
 import type { SoundMap, Word } from "../shared/transcript.ts";
 import { fillerCuts, isEnglish, isFiller, silenceProposals, type FillerCut, type Spacing } from "./cleanup.ts";
@@ -12,24 +13,40 @@ import { History } from "./history.ts";
 import { deleteSegment, emptyEdit, remove, restore, segments, split } from "./timeline.ts";
 
 export class ClipEditor {
-  private readonly history = new History<Edit>(emptyEdit());
+  private readonly history: History<Edit>;
   private readonly listeners: (() => void)[] = [];
   private readonly clipId: string;
   private readonly duration: Flicks;
   words: Word[] = [];
   sound: SoundMap | null = null;
-  spacing: Spacing = "natural";
+  spacing: Spacing;
+  captionStyle: CaptionStyle;
   /** Worked out once per change of words, sound or spacing, not at every read: an hour's sound map is 180,000 levels. */
   english = false;
   silences: Cut[] = [];
   fillers: FillerCut[] = [];
   /** Hides "um" and "uh" from the captions (English only), on by default: most creators don't want them on screen even
    * when they keep them in the sound (gate on day 4, 2026-11-21). */
-  hideFillersInCaptions = true;
+  hideFillersInCaptions: boolean;
 
-  constructor(clipId: string, duration: Flicks) {
+  /** `saved`: the clip's project as last saved, opened again; otherwise a fresh edit with the defaults. */
+  constructor(clipId: string, duration: Flicks, saved: { edit: Edit; choices: Choices } | null) {
     this.clipId = clipId;
     this.duration = duration;
+    this.history = new History<Edit>(saved?.edit ?? emptyEdit());
+    const choices = saved?.choices ?? DEFAULT_CHOICES;
+    this.spacing = choices.spacing;
+    this.captionStyle = choices.captionStyle;
+    this.hideFillersInCaptions = choices.hideFillersInCaptions;
+  }
+
+  get choices(): Choices {
+    return { spacing: this.spacing, captionStyle: this.captionStyle, hideFillersInCaptions: this.hideFillersInCaptions };
+  }
+
+  setCaptionStyle(style: CaptionStyle): void {
+    this.captionStyle = style;
+    this.changed();
   }
 
   onChange(listener: () => void): void {

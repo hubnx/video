@@ -3,6 +3,7 @@
  * gets back. The window never touches files or processes itself.
  */
 import type { Clip, JobProgress } from "./media.ts";
+import type { Choices, Edit } from "./project.ts";
 import type { TranscriptProgress } from "./transcript.ts";
 
 /** The name a person sees, everywhere: hubnx plus the app's address word (../../../docs/brand.md › Naming). Always
@@ -50,11 +51,13 @@ export const CHANNELS = {
   jobProgress: "clip:job-progress",
   transcriptProgress: "clip:transcript-progress",
   logProblem: "app:log-problem",
+  saveEdit: "clip:save-edit",
 } as const;
 
 /** Why a video didn't open, as a code the window turns into words (words.ts). */
 export type OpenRefusal = "not_a_video" | "unreadable";
-export type OpenResult = { clip: Clip } | { refused: OpenRefusal };
+/** An opened clip, with its project as last saved when it was opened before (null the first time). */
+export type OpenResult = { clip: Clip; saved: { edit: Edit; choices: Choices } | null } | { refused: OpenRefusal };
 
 /** media:// addresses: a clip's original, proxy or edit copy, by its id (electron/clips.ts serves only these). */
 export function mediaAddress(clipId: string, file: "original" | "proxy" | "editCopy"): string {
@@ -78,4 +81,6 @@ export interface VideoApi {
   /** Writes a problem the window met to the app's log, under a searchable event name. No file names or words of the
    * person's: an error's kind and first line only. */
   logProblem(event: string, error: unknown): void;
+  /** The clip's edit and choices as they are now: saved about a second after the last change (electron/project-file.ts). */
+  saveEdit(clipId: string, edit: Edit, choices: Choices): void;
 }

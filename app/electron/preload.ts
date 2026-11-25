@@ -22,6 +22,7 @@ const api: VideoApi = {
   cancelClip: (clipId) => ipcRenderer.invoke(CHANNELS.cancelClip, clipId),
   onJobProgress: (listener) => subscribe(CHANNELS.jobProgress, listener),
   onTranscriptProgress: (listener) => subscribe(CHANNELS.transcriptProgress, listener),
+  saveEdit: (clipId, edit, choices) => void ipcRenderer.invoke(CHANNELS.saveEdit, clipId, edit, choices),
   logProblem: (event, error) => {
     const described = error instanceof Error ? `${error.name}: ${error.message.split("\n")[0]}` : String(error);
     void ipcRenderer.invoke(CHANNELS.logProblem, event, described.slice(0, 300));

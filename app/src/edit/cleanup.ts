@@ -8,12 +8,13 @@
 import { silenceCuts, withoutSpeech, type Cut } from "../shared/cuts.ts";
 import { LEVEL_SECONDS, quietStretches } from "../shared/quiet.ts";
 import { flicksOf, secondsOf } from "../shared/time.ts";
+import type { Choices } from "../shared/project.ts";
 import type { SoundMap, Word } from "../shared/transcript.ts";
 
 /** How much quiet each silence cut leaves either side: Natural is the measured default (cuts.ts › SILENCE); creators
  * differ on pace (gate on silences, 2026-11-21). */
-export const SPACINGS = { tight: 0.15, natural: 0.25, relaxed: 0.4 } as const;
-export type Spacing = keyof typeof SPACINGS;
+export const SPACINGS = { tight: 0.15, natural: 0.25, relaxed: 0.4 } as const satisfies Record<Choices["spacing"], number>;
+export type Spacing = Choices["spacing"];
 
 export function silenceProposals(sound: SoundMap, words: readonly Word[], spacing: Spacing): Cut[] {
   return silenceCuts(withoutSpeech(quietStretches(sound.levels), sound.voice), words, { shortestSeconds: 1, paddingSeconds: SPACINGS[spacing] });

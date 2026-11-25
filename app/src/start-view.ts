@@ -1,10 +1,11 @@
-/** The start screen: drop a video, or choose one. Opening one hands it to `opened`. */
+/** The start screen: drop a video, or choose one. Opening one hands it, with its saved project, to `opened`. */
 import type { OpenResult } from "./shared/app-api.ts";
-import type { Clip } from "./shared/media.ts";
 import { element } from "./dom.ts";
 import { refusalWords, words } from "./words.ts";
 
-export function startView(opened: (clip: Clip) => void): HTMLElement {
+export type Opened = Extract<OpenResult, { clip: unknown }>;
+
+export function startView(opened: (result: Opened) => void): HTMLElement {
   const message = element("p", { className: "start-message", attributes: { role: "status" } });
   const choose = element("button", { type: "button", className: "primary", textContent: words.start.choose });
   const dropArea = element("div", { className: "drop-area" },
@@ -23,7 +24,7 @@ export function startView(opened: (clip: Clip) => void): HTMLElement {
       message.textContent = refusalWords(result.refused);
       return;
     }
-    opened(result.clip);
+    opened(result);
   };
   const begin = () => {
     choose.disabled = true;

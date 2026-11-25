@@ -2,13 +2,14 @@
  * Captions drawn on a picture: the caption showing at a moment, in a style. Drawn on a 2D canvas the picture's size,
  * which the compositor lays over the frame, so the preview and the export (day 7) draw captions the same way.
  */
+import type { Choices } from "../shared/project.ts";
 import { captionText, type CaptionLine } from "../shared/transcript.ts";
 import type { Flicks } from "../shared/time.ts";
 
 /** Release 1's styles (docs/plan.md › What each release has): plain subtitles, and the same with each word lit as
  * it's said, the look people come from CapCut for. */
-export const CAPTION_STYLES = ["subtitles", "wordByWord"] as const;
-export type CaptionStyle = (typeof CAPTION_STYLES)[number];
+export const CAPTION_STYLES = ["subtitles", "wordByWord"] as const satisfies readonly Choices["captionStyle"][];
+export type CaptionStyle = Choices["captionStyle"];
 
 /** The lit word's colour: a warm yellow that reads on any picture under the outline. */
 const LIT = "#ffd84d";
