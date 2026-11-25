@@ -312,6 +312,11 @@ main {
   text-align: center;
 }
 
+/* The .deb, Linux's other download, on a line of its own under the AppImage, never wrapped after a dot. */
+.download .also {
+  display: block;
+}
+
 .download .file,
 .download .first-open {
   font-size: 0.9rem;
@@ -338,7 +343,7 @@ main {
   color: var(--muted);
 }
 
-#windows p,
+#windows > p,
 .part > p {
   max-width: var(--reading);
   margin-inline: auto;
@@ -356,12 +361,21 @@ main {
   gap: 16px;
 }
 
+/* Each window a column, its button row pushed to the bottom as the real dialog's is, so the two pictures, side by side
+   at the same height, keep their buttons on one line. */
 .smartscreen-window {
+  display: flex;
+  flex-direction: column;
   padding: 18px;
   border-radius: 6px;
   background: #1f5aa6;
   color: #ffffff;
   font-size: 0.9rem;
+}
+
+.smartscreen-window .smartscreen-buttons {
+  margin: auto 0 0;
+  padding-top: 10px;
 }
 
 .smartscreen-window p {

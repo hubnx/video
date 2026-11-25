@@ -26,7 +26,7 @@ const DOWNLOADS: Download[] = [
   { target: "win-x64", title: "Windows", needs: "Windows 10 or 11, 64-bit",
     firstOpen: `If Windows says it protected your PC, choose More info, then Run anyway (<a href="#windows">pictured below</a>).` },
   { target: "linux-x64", title: "Linux", needs: "64-bit, such as Ubuntu 22.04 or later",
-    also: { file: LINUX_DEB(VERSION), label: "or the .deb, for Ubuntu and Debian" },
+    also: { file: LINUX_DEB(VERSION), label: "Or the .deb, for Ubuntu and Debian" },
     firstOpen: "Allow the AppImage to run as a program, in its Properties, then open it." },
 ];
 
@@ -40,7 +40,7 @@ function sizeOf(target: Target, file: string): string {
 export function renderDownloads(): string {
   return DOWNLOADS.map((download) => {
     const file = RELEASE_FILES[download.target](VERSION);
-    const also = download.also ? ` · <a href="/download/${download.also.file}" download>${download.also.label}</a>${sizeOf(download.target, download.also.file)}` : "";
+    const also = download.also ? `<span class="also"><a href="/download/${download.also.file}" download>${download.also.label}</a>${sizeOf(download.target, download.also.file)}</span>` : "";
     return `<section class="card download" data-target="${download.target}">
             <h2>${download.title}<span class="yours" hidden>This computer</span></h2>
             <p class="needs">${download.needs}</p>
