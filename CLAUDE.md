@@ -27,6 +27,7 @@ heavy runs go through `taskpolicy -b`, after `uptime` shows a 1-minute load unde
 | Day 2's import check: eight kinds of clip made by a full FFmpeg (Homebrew's here), read and prepared as the app does | `TEST_FFMPEG=/usr/local/bin/ffmpeg pnpm exec node scripts/check-import.ts` |
 | Day 3's preview check: exact frames on 40 random seeks, the picture within a frame of the sound, a sideways phone clip upright | `pnpm build && TEST_FFMPEG=/usr/local/bin/ffmpeg pnpm exec node scripts/check-preview.ts` |
 | Day 4's transcript check: a minute of AMI talk heard (the models downloaded once into `local/models/`), its transcript filling in, captions on the picture; screenshots `local/screens/4-transcript-*` | `pnpm build && pnpm exec node scripts/check-transcript.ts` |
+| Day 7's export check: a cut clip's frames and sound in sync, a cancelled export leaving nothing, captions in the picture, a minute of 4K HEVC at 4K, an HDR clip through its edit copy; times per computer in `local/export-check/timings.json` | `pnpm build && pnpm exec node scripts/check-export.ts` |
 | **Guards, run on any change to the speech engine, the voice detector or the cut code, their numbers logged in `docs/plan.md` › Risks** (local only: the AMI audio never goes in git): the silence cuts against AMI's words, and the filler detectors | `pnpm exec node scripts/check-silences.ts`; the filler check's scripts in `local/filler-check/scripts/` (`results.md` says how) |
 | Screenshots of every screen, four window sizes, light and dark, into `local/screens/` | `pnpm build && pnpm exec node scripts/screens.ts` |
 | WebCodecs' encoders and decoders at 1080p and 4K, here (`local/probe/`); GitHub's three with `gh workflow run probe.yml` | `pnpm probe` |
@@ -41,8 +42,8 @@ Dependencies point one way: window → preload → main process → FFmpeg.
 
 | Part | Files |
 |---|---|
-| Window (Vite, plain TypeScript) | `app/src/`: `main.ts` picks the screen; `start-view.ts`, `clip-view.ts`, `preview-view.ts`; `preview/` (`frames.ts` Mediabunny's frames by timestamp, `clock.ts` the sound's clock, `compositor.ts` WebGL2, `player.ts`); `words.ts` holds **every word shown**; `shared/` the types both sides use (`app-api.ts`, `media.ts`, `time.ts` in flicks) |
-| Main process (Electron) | `app/electron/`: `main.ts` (the window, its messages, `media://`), `clips.ts` (opened files and what's made from them), `probe.ts` (ffprobe's facts), `ffmpeg-jobs.ts` (which copies a clip needs, and FFmpeg's arguments), `jobs.ts` (one FFmpeg at a time, below normal priority), `media-response.ts` (byte ranges), `paths.ts`, `targets.ts`, `preload.ts` (the only bridge) |
+| Window (Vite, plain TypeScript) | `app/src/`: `main.ts` picks the screen; `start-view.ts`, `clip-view.ts`, `preview-view.ts`; `preview/` (`frames.ts` Mediabunny's frames by timestamp, `clock.ts` the sound's clock, `compositor.ts` WebGL2, `player.ts`); `export-view.ts` and `export/` (the picture encoded by WebCodecs through the preview's own compositor and captions, presets, the captions file); `problems.ts` (the window's errors to the log); `words.ts` holds **every word shown**; `shared/` the types both sides use (`app-api.ts`, `media.ts`, `time.ts` in flicks) |
+| Main process (Electron) | `app/electron/`: `main.ts` (the window, its messages, `media://`), `clips.ts` (opened files and what's made from them), `probe.ts` (ffprobe's facts), `ffmpeg-jobs.ts` (which copies a clip needs, and FFmpeg's arguments), `jobs.ts` (one FFmpeg at a time, below normal priority), `exports.ts` and `export-sound.ts` (the window's picture written to disk, then FFmpeg adds the cut sound at YouTube's loudness), `media-response.ts` (byte ranges), `paths.ts`, `targets.ts`, `preload.ts` (the only bridge) |
 | FFmpeg | `ffmpeg/build.sh` (pinned FFmpeg 9.0.2, x264, zimg; GPLv3, no x265 or nonfree), `ffmpeg/builds.json` (each build's SHA-256), the release `ffmpeg-9.0.2-1` (the builds and their sources: GPL's source offer) |
 
 ## Traps
@@ -60,6 +61,12 @@ Dependencies point one way: window → preload → main process → FFmpeg.
 - **At background priority the sound clock runs slow**: under `taskpolicy -b`, as checks run here, the preview's clock
   ran at a third to half real time (2026-11-24); at normal priority it's real time. A check waits on the clock's time,
   never on wall time.
+- **Mediabunny's `new Quality(number)` is a 0–1 quality level, not a bitrate**: a bitrate goes in
+  `new Quality({ bitrate })`. Its typing accepts any object as a `Quality`, so the type check doesn't catch it, and a
+  bitrate taken as a level asks for quantizer mode at level 6.2, which this Mac's hardware encoder refuses ("Encoder
+  initialization error"). This Intel Mac's hardware H.264 encoder also refuses `latencyMode: "realtime"`.
+- **A `DOMException` crosses the preload bridge as an empty object** (WebCodecs' errors are DOMExceptions): the window
+  describes its own errors (`src/problems.ts`) and the bridge carries only text.
 - **Electron refuses a native add-on's own memory** ("External buffers are not allowed"): sherpa-onnx's `readWave` and
   `Vad.front(true)` hand it over, so the transcriber reads the WAV itself and asks for copies (`front(false)`).
 
@@ -71,4 +78,4 @@ Dependencies point one way: window → preload → main process → FFmpeg.
 | [docs/product.md](docs/product.md) | **The product manager's** (`video assistant`): who it's for, the scoreboard of rivals, the gap register, what we lead with, the last retro |
 | [docs/research/](docs/research/) | Competitors' workflows, features, prices and users' complaints; the AI models and online services; the engine's building blocks (2026-11-17) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | For contributors: the contributor agreement, build and test |
-| `local/` (not in git) | Outputs kept for later or for an audit, one folder per tool: `probe/`, `edit-copy-timing/` (the clip and the times), `filler-check/` (the measured set, its source and licence, every detector's output), `import-check/`, `preview-check/`, `screens/`, `release/`, `release-logs/`, `ffmpeg-build/` (sources, logs, builds), `ffmpeg-for-app/`, `icon-options/` (the icon decision's sheet), `research/` |
+| `local/` (not in git) | Outputs kept for later or for an audit, one folder per tool: `probe/`, `edit-copy-timing/` (the clip and the times), `filler-check/` (the measured set, its source and licence, every detector's output), `import-check/`, `preview-check/`, `export-check/` (the exports and their times), `screens/`, `release/`, `release-logs/`, `ffmpeg-build/` (sources, logs, builds), `ffmpeg-for-app/`, `icon-options/` (the icon decision's sheet), `research/` |

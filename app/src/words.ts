@@ -7,6 +7,7 @@ import { APP_NAME, type OpenRefusal } from "./shared/app-api.ts";
 import type { JobKind } from "./shared/media.ts";
 import type { CaptionStyle } from "./preview/captions.ts";
 import type { Spacing } from "./edit/cleanup.ts";
+import type { CaptionOutput } from "./export/presets.ts";
 
 export const words = {
   appName: APP_NAME,
@@ -97,6 +98,24 @@ export const words = {
   },
   timeline: {
     label: "Timeline",
+  },
+  export: {
+    open: "Export",
+    heading: "Export",
+    size: "Size:",
+    captions: "Captions:",
+    captionOutputs: { burnedIn: "In the video", file: "As a file (.srt)", none: "None" } satisfies Record<CaptionOutput, string>,
+    youtube: "Set up for YouTube: H.264 at YouTube's recommended quality, sound evened to YouTube's loudness.",
+    start: "Export",
+    cancel: "Cancel",
+    close: "Close",
+    show: "Show in folder",
+    preparing: "Getting the video ready to export…",
+    picture: "Exporting…",
+    sound: "Adding the sound…",
+    done: (file: string) => `Saved as ${file}.`,
+    cancelled: "Stopped. Nothing was saved.",
+    failed: "The export didn't finish. Nothing was saved.",
   },
   preview: {
     label: "Preview",

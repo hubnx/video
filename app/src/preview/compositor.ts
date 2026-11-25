@@ -39,12 +39,13 @@ export class Compositor {
   private readonly overlayTexture: WebGLTexture;
   /** The last picture's share of the canvas: an overlay covers exactly the picture, not the black bars. */
   private scale: [number, number] = [1, 1];
-  readonly canvas: HTMLCanvasElement;
+  readonly canvas: HTMLCanvasElement | OffscreenCanvas;
 
-  constructor(canvas: HTMLCanvasElement) {
+  /** On a canvas on screen, sized to it as it's shown; on an OffscreenCanvas (export), at the size it was made. */
+  constructor(canvas: HTMLCanvasElement | OffscreenCanvas) {
     this.canvas = canvas;
     // preserveDrawingBuffer: the checks read the drawn frame back (scripts/check-preview.ts).
-    const gl = canvas.getContext("webgl2", { alpha: false, antialias: false, preserveDrawingBuffer: true });
+    const gl = canvas.getContext("webgl2", { alpha: false, antialias: false, preserveDrawingBuffer: true }) as WebGL2RenderingContext | null;
     if (!gl) throw new Error("COMPOSITOR_NO_WEBGL2");
     this.gl = gl;
     const program = gl.createProgram();
@@ -117,8 +118,9 @@ export class Compositor {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
-  /** The canvas's pixels match its size on screen, sharp on a high-density display. */
+  /** The canvas's pixels match its size on screen, sharp on a high-density display; an export's canvas keeps its own. */
   private fitCanvas(): void {
+    if (!(this.canvas instanceof HTMLCanvasElement)) return;
     const width = Math.max(1, Math.round(this.canvas.clientWidth * devicePixelRatio));
     const height = Math.max(1, Math.round(this.canvas.clientHeight * devicePixelRatio));
     if (this.canvas.width !== width || this.canvas.height !== height) {

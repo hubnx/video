@@ -4,6 +4,7 @@
  * clip, as the decoders give them.
  */
 import { ALL_FORMATS, AudioBufferSink, Input, UrlSource } from "mediabunny";
+import { logProblem } from "../problems.ts";
 
 export interface Clock {
   /** Where in the clip it is now: what is being heard this moment, the speakers' delay taken off. */
@@ -89,7 +90,7 @@ export class SoundClock implements Clock {
     } catch (error) {
       // A pause, a new play or closing (the clean voice swapped in) ends this loop on purpose, and its reader may then
       // throw "Input has been disposed"; anything else is a real failure.
-      if (generation === this.generation) window.video.logProblem("sound_unplayed", error);
+      if (generation === this.generation) logProblem("sound_unplayed", error);
     }
   }
 

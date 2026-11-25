@@ -54,8 +54,13 @@ try {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });
   }, CLIP);
   await page.getByRole("button", { name: "Choose a video" }).click();
-  await page.locator(".job progress").first().waitFor({ timeout: 60_000 });
+  await page.locator(".clip-status progress").waitFor({ timeout: 60_000 });
   await shoot(running, page, "2-preparing");
+
+  // The export dialog over the clip, before it starts: its size and caption choices.
+  await page.getByRole("button", { name: "Export", exact: true }).click();
+  await page.locator("dialog.export[open]").waitFor();
+  await shoot(running, page, "7-export");
 } catch (error) {
   failure = error;
 } finally {

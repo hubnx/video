@@ -25,10 +25,14 @@ const api: VideoApi = {
   saveEdit: (clipId, edit, choices) => void ipcRenderer.invoke(CHANNELS.saveEdit, clipId, edit, choices),
   cleanVoice: (clipId) => ipcRenderer.invoke(CHANNELS.cleanVoice, clipId),
   onVoiceProgress: (listener) => subscribe(CHANNELS.voiceProgress, listener),
-  logProblem: (event, error) => {
-    const described = error instanceof Error ? `${error.name}: ${error.message.split("\n")[0]}` : String(error);
-    void ipcRenderer.invoke(CHANNELS.logProblem, event, described.slice(0, 300));
-  },
+  chooseExport: (suggestedName) => ipcRenderer.invoke(CHANNELS.chooseExport, suggestedName),
+  beginExport: (destination) => ipcRenderer.invoke(CHANNELS.beginExport, destination),
+  writeExport: (exportId, position, data) => ipcRenderer.invoke(CHANNELS.writeExport, exportId, position, data),
+  finishExport: (exportId, clipId, sound, durationSeconds, captions) => ipcRenderer.invoke(CHANNELS.finishExport, exportId, clipId, sound, durationSeconds, captions),
+  cancelExport: (exportId) => ipcRenderer.invoke(CHANNELS.cancelExport, exportId),
+  onExportProgress: (listener) => subscribe<[number, number]>(CHANNELS.exportProgress, ([exportId, fraction]) => listener(exportId, fraction)),
+  showExported: (destination) => ipcRenderer.invoke(CHANNELS.showExported, destination),
+  logProblem: (event, detail) => void ipcRenderer.invoke(CHANNELS.logProblem, event, detail),
 };
 
 contextBridge.exposeInMainWorld("video", api);

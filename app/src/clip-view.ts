@@ -12,12 +12,14 @@ import type { Clip, JobKind, JobProgress } from "./shared/media.ts";
 import { flicksOf, secondsOf } from "./shared/time.ts";
 import { captionLines, type TranscriptProgress, type Word } from "./shared/transcript.ts";
 import { element } from "./dom.ts";
+import { logProblem } from "./problems.ts";
 import { cleanupPanel } from "./cleanup-panel.ts";
 import { ClipEditor } from "./edit/clip-editor.ts";
 import { sourceAt, timelineAt } from "./edit/timeline.ts";
 import { CAPTION_STYLES } from "./preview/captions.ts";
 import type { Choices, Edit } from "./shared/project.ts";
 import { previewView, type Preview } from "./preview-view.ts";
+import { exportView } from "./export-view.ts";
 import { timelineView } from "./timeline-view.ts";
 import { transcriptView } from "./transcript-view.ts";
 import { words } from "./words.ts";
@@ -116,6 +118,11 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
   const rows = new Map<JobKind, HTMLElement>();
   let proxyDone: () => void = () => undefined;
   const proxyReady = new Promise<void>((resolve) => (proxyDone = resolve));
+  // The edit copy, for export when the window can't use the original: settled when it's made or has failed, and its
+  // progress passed on to an export waiting for it.
+  const editCopy = Promise.withResolvers<void>();
+  editCopy.promise.catch(() => undefined); // nobody may be waiting; an export that is hears it from its own await
+  let editCopyWatcher: ((fraction: number, secondsLeft: number | null) => void) | null = null;
   window.video.onJobProgress((progress) => {
     if (progress.clipId !== clip.id) return;
     let row = rows.get(progress.kind);
@@ -126,6 +133,9 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
     }
     row.replaceChildren(element("span", { textContent: words.clip.jobs[progress.kind] }), element("span", { className: "job-state", textContent: stateWords(progress) }));
     if (progress.kind === "proxy" && progress.state === "done") proxyDone();
+    if (progress.kind === "editCopy" && progress.state === "running") editCopyWatcher?.(progress.fraction, progress.secondsLeft);
+    if (progress.kind === "editCopy" && progress.state === "done") editCopy.resolve();
+    if (progress.kind === "editCopy" && (progress.state === "failed" || progress.state === "cancelled")) editCopy.reject(new Error(`EDIT_COPY_${progress.state.toUpperCase()}`));
     if (progress.kind !== "speech") activity.preparing = progress.state === "running" ? progress : null;
     if (progress.state === "failed") showProblem(words.clip.jobFailed[progress.kind]);
     showStatus();
@@ -178,7 +188,29 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
     }
   });
 
-  plan(clip).then(async (decodes) => {
+  // Export reads the original when this computer decodes it and it's SDR; otherwise its edit copy (upright, SDR), made
+  // from the moment the clip opened, waiting for it with its progress shown (docs/plan.md › Risks, the 4K HEVC row).
+  let decodesOriginal: Promise<boolean> = Promise.resolve(false);
+  const pictureForExport = async (progress: (fraction: number, secondsLeft: number | null) => void) => {
+    const decodes = await decodesOriginal;
+    if (decodes && clip.facts.video?.dynamic === "sdr") return mediaAddress(clip.id, "original");
+    editCopyWatcher = progress;
+    try {
+      await editCopy.promise;
+    } finally {
+      editCopyWatcher = null;
+    }
+    return mediaAddress(clip.id, "editCopy");
+  };
+  const exporter = clip.facts.video ? exportView(clip, editor, pictureForExport) : null;
+  const exportButton = element("button", { type: "button", className: "primary", textContent: words.export.open, hidden: !exporter,
+    onclick: () => {
+      preview?.pause();
+      exporter?.open();
+    } });
+
+  decodesOriginal = plan(clip);
+  decodesOriginal.then(async (decodes) => {
     if (!clip.facts.video) return;
     if (!decodes) await proxyReady;
     preview = await previewView(mediaAddress(clip.id, decodes ? "original" : "proxy"), clip.facts.durationSeconds);
@@ -195,16 +227,17 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
     }
     playCleanVoiceIfChosen();
   }).catch((error: unknown) => {
-    window.video.logProblem("clip_not_prepared", error);
+    logProblem("clip_not_prepared", error);
     showProblem(words.clip.notStarted);
   });
   showStatus();
   showEdit();
+  // Export is the screen's one filled button, top right, so it never competes with Clean up (gate on day 5).
   return element("section", { className: "clip", attributes: { "data-clip": clip.id } },
-    element("h1", { textContent: clip.name }), status, problem,
+    element("div", { className: "clip-title" }, element("h1", { textContent: clip.name }), exportButton), status, problem,
     element("div", { className: "clip-body" }, previewPlace,
       element("div", { className: "clip-side" }, element("div", { className: "clip-side-inner" }, panel.element, transcript.element))),
-    details);
+    details, ...(exporter ? [exporter.element] : []));
 }
 
 /** Whether this computer's window can decode the original, which decides the proxy and edit copy (ffmpeg-jobs.ts);
@@ -217,7 +250,7 @@ async function plan(clip: Clip): Promise<boolean> {
       const track = await input.getPrimaryVideoTrack();
       decodes = track ? await track.canDecode() : false;
     } catch (error) {
-      window.video.logProblem("clip_not_decodable", error); // a container the window can't read: an edit copy, then
+      logProblem("clip_not_decodable", error); // a container the window can't read: an edit copy, then
       decodes = false;
     } finally {
       input.dispose();

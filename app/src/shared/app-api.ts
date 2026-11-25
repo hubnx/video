@@ -54,6 +54,13 @@ export const CHANNELS = {
   saveEdit: "clip:save-edit",
   cleanVoice: "clip:clean-voice",
   voiceProgress: "clip:voice-progress",
+  chooseExport: "export:choose",
+  beginExport: "export:begin",
+  writeExport: "export:write",
+  finishExport: "export:finish",
+  cancelExport: "export:cancel",
+  exportProgress: "export:progress",
+  showExported: "export:show",
 } as const;
 
 /** Why a video didn't open, as a code the window turns into words (words.ts). */
@@ -80,12 +87,29 @@ export interface VideoApi {
   cancelClip(clipId: string): Promise<void>;
   onJobProgress(listener: (progress: JobProgress) => void): () => void;
   onTranscriptProgress(listener: (progress: TranscriptProgress) => void): () => void;
-  /** Writes a problem the window met to the app's log, under a searchable event name. No file names or words of the
-   * person's: an error's kind and first line only. */
-  logProblem(event: string, error: unknown): void;
+  /** Writes a problem the window met to the app's log, under a searchable event name; `detail` is from src/problems.ts. */
+  logProblem(event: string, detail: string): void;
   /** The clip's edit and choices as they are now: saved about a second after the last change (electron/project-file.ts). */
   saveEdit(clipId: string, edit: Edit, choices: Choices): void;
   /** Makes the clip's clean voice, if it isn't made yet; its progress comes to onVoiceProgress. */
   cleanVoice(clipId: string): Promise<void>;
   onVoiceProgress(listener: (progress: VoiceProgress) => void): () => void;
+  /** The system's save dialog for an export; null when the person closed it. */
+  chooseExport(suggestedName: string): Promise<string | null>;
+  /** Starts an export to a destination the dialog gave; its number for the calls below. */
+  beginExport(destination: string): Promise<number>;
+  /** A piece of the encoded MP4 (the picture), at its place in the file. */
+  writeExport(exportId: number, position: number, data: Uint8Array): Promise<void>;
+  /** Adds the sound (`sound`: the kept stretches of the clip, and whether the clean voice plays) and writes the
+   * destination, with the captions file beside it when given; progress comes to onExportProgress. */
+  finishExport(exportId: number, clipId: string, sound: ExportSound, durationSeconds: number, captions: string | null): Promise<void>;
+  cancelExport(exportId: number): Promise<void>;
+  onExportProgress(listener: (exportId: number, fraction: number) => void): () => void;
+  /** Shows an exported file in the system's file manager. */
+  showExported(destination: string): Promise<void>;
+}
+
+export interface ExportSound {
+  stretches: { from: number; to: number }[]; // seconds of the clip, in the order they play
+  cleanVoice: boolean;
 }

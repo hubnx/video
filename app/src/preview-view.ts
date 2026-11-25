@@ -35,6 +35,7 @@ export interface Preview {
   /** Where in the clip the preview is, in seconds. */
   readonly time: number;
   togglePlay(): void;
+  pause(): void;
   /** Plays the sound of the file at `address` (the clean voice) in place of the clip's own, or the clip's own again with
    * null. */
   useSound(address: string | null): Promise<void>;
@@ -90,6 +91,7 @@ export async function previewView(address: string, duration: number): Promise<Pr
       return player.time;
     },
     togglePlay: () => (player.playing ? player.pause() : player.play()),
+    pause: () => player.pause(),
     useSound: async (other) => player.replaceClock(await soundOf(other ?? address)),
     playStretch: (seconds, until) => {
       void player.seek(seconds).then(() => {

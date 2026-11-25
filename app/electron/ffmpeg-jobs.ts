@@ -2,6 +2,7 @@
  * What the app makes from a clip, and FFmpeg's arguments for each (docs/research/engine-stack.md › 2, *Which file
  * plays*). Pure, so the tests check every choice without running FFmpeg.
  */
+import { steadyRate } from "../src/shared/frame-rate.ts";
 import type { ClipFacts, JobKind, VideoFacts } from "../src/shared/media.ts";
 
 /** The proxy's shorter side: small enough that every frame decodes at once on any computer, sharp enough to edit by. */
@@ -95,12 +96,9 @@ export function pictureFilters(video: VideoFacts, size: { shortSide: number | nu
   return filters.join(",");
 }
 
-/** A phone's varying rate made constant at the nearest common rate, so 29.94 fps averaged becomes 30000/1001. */
+/** FFmpeg's form of the steady rate a clip's copies use (src/shared/frame-rate.ts). */
 export function constantRate(average: number): string {
-  const common: [number, string][] = [[23.976, "24000/1001"], [24, "24"], [25, "25"], [29.97, "30000/1001"], [30, "30"],
-    [48, "48"], [50, "50"], [59.94, "60000/1001"], [60, "60"], [120, "120"]];
-  const nearest = common.reduce((best, each) => Math.abs(each[0] - average) < Math.abs(best[0] - average) ? each : best);
-  return Math.abs(nearest[0] - average) / nearest[0] < 0.02 ? nearest[1] : String(Math.round(average) || 30);
+  return steadyRate(average).ffmpeg;
 }
 
 function requiredVideo(facts: ClipFacts): VideoFacts {

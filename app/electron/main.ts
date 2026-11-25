@@ -5,7 +5,7 @@ import { app, BrowserWindow, dialog, ipcMain, nativeTheme, protocol, shell } fro
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { APP_NAME, CHANNELS, WEBSITE_PAGES, type OpenResult, type WebsitePage } from "../src/shared/app-api.ts";
+import { APP_NAME, CHANNELS, WEBSITE_PAGES, type ExportSound, type OpenResult, type WebsitePage } from "../src/shared/app-api.ts";
 import type { Clip, ClipFacts, JobKind, VoiceProgress } from "../src/shared/media.ts";
 import { PROJECT_FORMAT, PROJECT_VERSION } from "../src/shared/project.ts";
 import type { Stretch } from "../src/shared/cuts.ts";
@@ -20,6 +20,7 @@ import { JobRunner, writingPath } from "./jobs.ts";
 import { downloadModels, DPDFNET, modelsReady, PARAKEET_V3, SILERO_VAD } from "./models.ts";
 import { cleanVoice, transcribe } from "./speech/speech.ts";
 import { mediaResponse } from "./media-response.ts";
+import { Exports } from "./exports.ts";
 import { setMenu } from "./menu.ts";
 import { resolvePaths } from "./paths.ts";
 import { probeClip } from "./probe.ts";
@@ -212,6 +213,41 @@ async function start(): Promise<void> {
     if (typeof id !== "string" || !facts.has(id)) throw new Error("not a clip opened in this run");
     void cleanVoiceOf(id);
   });
+  // Exports: the destination comes only from the save dialog here, never from the window (exports.ts).
+  const exports = new Exports(paths.ffmpeg);
+  const chosenDestinations = new Set<string>();
+  ipcMain.handle(CHANNELS.chooseExport, async (_event, suggested: unknown) => {
+    const name = typeof suggested === "string" && suggested ? suggested.replace(/[\\/:*?"<>|]/g, " ").slice(0, 120) : "video";
+    const choice = await dialog.showSaveDialog({ defaultPath: path.join(app.getPath("videos"), `${name}.mp4`), filters: [{ name: "MP4 video", extensions: ["mp4"] }] });
+    if (choice.canceled || !choice.filePath) return null;
+    chosenDestinations.add(choice.filePath);
+    return choice.filePath;
+  });
+  ipcMain.handle(CHANNELS.beginExport, (_event, destination: unknown) => {
+    if (typeof destination !== "string" || !chosenDestinations.has(destination)) throw new Error("not a destination the save dialog gave");
+    return exports.begin(destination);
+  });
+  ipcMain.handle(CHANNELS.writeExport, (_event, id: unknown, position: unknown, data: unknown) => {
+    if (typeof id !== "number" || typeof position !== "number" || !(data instanceof Uint8Array)) throw new Error("not a piece of an export");
+    return exports.write(id, position, data);
+  });
+  ipcMain.handle(CHANNELS.finishExport, async (event, id: unknown, clipId: unknown, sound: unknown, durationSeconds: unknown, captions: unknown) => {
+    const plan = sound as ExportSound | null;
+    if (typeof id !== "number" || typeof clipId !== "string" || !facts.has(clipId) || typeof durationSeconds !== "number"
+      || !plan || !Array.isArray(plan.stretches) || !plan.stretches.every((each) => typeof each?.from === "number" && typeof each.to === "number" && each.from < each.to)
+      || typeof plan.cleanVoice !== "boolean" || (captions !== null && typeof captions !== "string")) throw new Error("not an export to finish");
+    const cleanVoice = clips.stored(clipId, "clean-voice.wav");
+    const source = plan.cleanVoice && existsSync(cleanVoice) ? cleanVoice : clips.original(clipId);
+    const destination = await exports.finish(id, { stretches: plan.stretches, source }, durationSeconds, captions,
+      (fraction) => event.sender.send(CHANNELS.exportProgress, [id, fraction]));
+    return destination;
+  });
+  ipcMain.handle(CHANNELS.cancelExport, (_event, id: unknown) => {
+    if (typeof id === "number") return exports.cancel(id);
+  });
+  ipcMain.handle(CHANNELS.showExported, (_event, destination: unknown) => {
+    if (typeof destination === "string" && chosenDestinations.has(destination)) shell.showItemInFolder(destination);
+  });
   ipcMain.handle(CHANNELS.cancelClip, (_event, id: unknown) => {
     if (typeof id === "string") jobs.cancel(id);
   });
@@ -219,7 +255,7 @@ async function start(): Promise<void> {
   ipcMain.handle(CHANNELS.logProblem, (_event, event: unknown, detail: unknown) => {
     if (typeof event === "string" && /^[a-z_]{1,60}$/.test(event)) logError(`window_${event}`, String(detail).slice(0, 300));
   });
-    ipcMain.handle(CHANNELS.appVersion, () => app.getVersion());
+  ipcMain.handle(CHANNELS.appVersion, () => app.getVersion());
   ipcMain.handle(CHANNELS.ffmpeg, () => findFfmpeg(paths.ffmpeg));
   ipcMain.handle(CHANNELS.openWebsite, (_event, page: WebsitePage) => {
     if (!Object.hasOwn(WEBSITE_PAGES, page)) throw new Error(`not one of the app's pages: ${String(page)}`);
