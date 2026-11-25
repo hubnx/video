@@ -59,7 +59,8 @@ try {
   if (!oursRunning()) throw new Error("WATCHED_NOTHING: macOS never listed our app as running, so the screen watch saw nothing");
   const screens = path.join(video, "local", "screens");
   mkdirSync(screens, { recursive: true });
-  await page.screenshot({ path: path.join(screens, `package-${name}.png`) });
+  // A picture, never the verdict: on GitHub's Ubuntu, drawing in software, the unseen window gives no frame to take.
+  await page.screenshot({ path: path.join(screens, `package-${name}.png`), timeout: 10_000 }).catch((error: unknown) => console.log(`no picture: ${String(error).split("\n")[0]}`));
   console.log(`opened from ${program}`);
 } catch (error) {
   failure = error instanceof Error ? error.message : String(error);
