@@ -251,8 +251,10 @@ async function start(): Promise<void> {
   });
   ipcMain.handle(CHANNELS.changeExportDestination, async (_event, clipId: unknown, current: unknown) => {
     if (typeof clipId !== "string" || !facts.has(clipId)) throw new Error("not an open clip");
-    const choice = await dialog.showSaveDialog({ defaultPath: typeof current === "string" && destinations.has(current) ? current : app.getPath("videos"),
-      filters: [{ name: "MP4 video", extensions: ["mp4"] }] });
+    // Attached to the window, so nothing behind it can be pressed while it's open.
+    const options = { defaultPath: typeof current === "string" && destinations.has(current) ? current : app.getPath("videos"),
+      filters: [{ name: "MP4 video", extensions: ["mp4"] }] };
+    const choice = await (window ? dialog.showSaveDialog(window, options) : dialog.showSaveDialog(options));
     if (choice.canceled || !choice.filePath) return null;
     return destinationOf(destinationFromChoice(choice.filePath, clips.original(clipId), disk, process.platform));
   });
@@ -267,12 +269,14 @@ async function start(): Promise<void> {
   ipcMain.handle(CHANNELS.finishExport, async (event, id: unknown, clipId: unknown, sound: unknown, durationSeconds: unknown, captions: unknown) => {
     const plan = sound as ExportSound | null;
     if (typeof id !== "number" || typeof clipId !== "string" || !facts.has(clipId) || typeof durationSeconds !== "number"
-      || !plan || !Array.isArray(plan.stretches) || !plan.stretches.every((each) => typeof each?.from === "number" && typeof each.to === "number" && each.from < each.to)
+      || !plan || !Array.isArray(plan.stretches) || plan.stretches.length === 0 || !plan.stretches.every((each) => typeof each?.from === "number" && typeof each.to === "number" && each.from < each.to)
       || typeof plan.cleanVoice !== "boolean" || (captions !== null && typeof captions !== "string")) throw new Error("not an export to finish");
     const cleanVoice = clips.stored(clipId, "clean-voice.wav");
-    const source = plan.cleanVoice && existsSync(cleanVoice) ? cleanVoice : clips.original(clipId);
+    const source = facts.get(clipId)?.audio == null ? null : plan.cleanVoice && existsSync(cleanVoice) ? cleanVoice : clips.original(clipId);
     const destination = await exports.finish(id, { stretches: plan.stretches, source }, durationSeconds, captions,
-      (fraction) => event.sender.send(CHANNELS.exportProgress, [id, fraction]));
+      (fraction) => {
+        if (!event.sender.isDestroyed()) event.sender.send(CHANNELS.exportProgress, [id, fraction]);
+      });
     return destination;
   });
   ipcMain.handle(CHANNELS.cancelExport, (_event, id: unknown) => {
@@ -344,7 +348,8 @@ async function start(): Promise<void> {
   app.on("before-quit", (event) => {
     if (flushedBeforeQuit) return;
     event.preventDefault();
-    Promise.all([...autosaves.values()].map((autosave) => autosave.flush().catch(() => undefined))).finally(() => {
+    // An export under way is stopped and its files beside the destination removed: nothing half-made is left behind.
+    Promise.all([...[...autosaves.values()].map((autosave) => autosave.flush().catch(() => undefined)), exports.cancelAll()]).finally(() => {
       flushedBeforeQuit = true;
       app.quit();
     });

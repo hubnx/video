@@ -7,6 +7,7 @@
 import { element } from "./dom.ts";
 import { logProblem } from "./problems.ts";
 import type { ClipEditor } from "./edit/clip-editor.ts";
+import { joinedSegments } from "./edit/timeline.ts";
 import { exportPicture } from "./export/export-video.ts";
 import { CAPTION_OUTPUTS, EXPORT_SIZES, exportBitrate, exportDimensions, sizesFor, type CaptionOutput, type ExportSize } from "./export/presets.ts";
 import { srt } from "./export/srt.ts";
@@ -22,7 +23,9 @@ import { words } from "./words.ts";
 export function exportView(clip: Clip, editor: ClipEditor,
   picture: (progress: (fraction: number, secondsLeft: number | null) => void) => Promise<string>): { element: HTMLDialogElement; open: () => void } {
   const video = clip.facts.video!;
-  const [uprightWidth, uprightHeight] = video.rotation % 180 === 0 ? [video.width, video.height] : [video.height, video.width];
+  // The picture's shape as shown: a clip of non-square pixels (HDV's 1440 × 1080) exports at its 16:9, as the preview shows it.
+  const shownWidth = Math.round(video.width * video.pixelAspect);
+  const [uprightWidth, uprightHeight] = video.rotation % 180 === 0 ? [shownWidth, video.height] : [video.height, shownWidth];
   const sizes = sizesFor(uprightWidth, uprightHeight);
   let size: ExportSize = sizes.at(-1)!; // the clip's own size, up to 4K
   let captions: CaptionOutput = "burnedIn";
@@ -85,8 +88,9 @@ export function exportView(clip: Clip, editor: ClipEditor,
     element("h2", { id: "export-heading", textContent: words.export.heading }), choices, status, bar,
     element("div", { className: "export-buttons" }, cancel, show, start));
 
+  // One export at a time, each with its own stop switch and number, so nothing of one run can reach another's.
   let running: AbortController | null = null;
-  let exportId: number | null = null;
+  let exported: ExportDestination | null = null; // the last finished export, for Show in folder
 
   cancel.addEventListener("click", () => {
     if (running) {
@@ -95,16 +99,22 @@ export function exportView(clip: Clip, editor: ClipEditor,
     }
     dialog.close();
   });
+  // Esc closes a dialog; mid-export it would hide a run still going, so there it does nothing and Cancel stops it.
+  dialog.addEventListener("cancel", (event) => {
+    if (running) event.preventDefault();
+  });
   show.addEventListener("click", () => {
-    if (destination) void window.video.showExported(destination.path);
+    if (exported) void window.video.showExported(exported.path);
   });
   start.addEventListener("click", () => void run());
 
   const run = async () => {
-    if (!destination) return;
+    if (!destination || running) return;
     const target = destination;
-    running = new AbortController();
-    const signal = running.signal;
+    const controller = new AbortController();
+    running = controller;
+    const signal = controller.signal;
+    let exportId: number | null = null;
     // The picture's loop sees the signal itself; the sound is FFmpeg's in the main process, which only this stops.
     signal.addEventListener("abort", () => {
       if (exportId !== null) void window.video.cancelExport(exportId);
@@ -112,7 +122,7 @@ export function exportView(clip: Clip, editor: ClipEditor,
     start.hidden = true;
     choices.hidden = true;
     bar.hidden = false;
-    const startedAt = performance.now();
+    let startedAt = performance.now();
     const say = (stage: string, fraction: number, scale: [number, number]) => {
       // Picture and sound share the bar: the picture its first nine-tenths, the sound and the final file the rest.
       const overall = scale[0] + fraction * (scale[1] - scale[0]);
@@ -126,16 +136,24 @@ export function exportView(clip: Clip, editor: ClipEditor,
       bar.value = 0;
       const stopped = new Promise<never>((_resolve, reject) => signal.addEventListener("abort", () => reject(new Error("EXPORT_CANCELLED"))));
       const address = await Promise.race([stopped, picture((fraction, secondsLeft) => {
+        if (signal.aborted) return; // a cancelled wait goes on hearing the edit copy, which goes on being made
         bar.value = fraction;
         status.textContent = secondsLeft === null ? words.export.preparing : `${words.export.preparing} ${words.clip.timeLeft(secondsLeft)}`;
       })]);
-      const segments = editor.segments;
+      // The edit as it is now, read once, so the picture, the sound and the captions file all agree.
+      const segments = joinedSegments(editor.segments);
+      if (segments.length === 0) throw new Error("EXPORT_NOTHING_LEFT");
+      const captionWords = editor.captionWords;
+      const lines = captionLines(captionWords);
+      const cleanVoice = editor.cleanVoice;
+      const style = editor.captionStyle;
       const dimensions = exportDimensions(uprightWidth, uprightHeight, size);
-      const lines = captionLines(editor.captionWords);
       exportId = await window.video.beginExport(target.path);
+      if (signal.aborted) throw new Error("EXPORT_CANCELLED"); // stopped while it began: its listener had no number yet
       const id = exportId;
+      startedAt = performance.now(); // time left counts from here, not from the wait for the edit copy
       await exportPicture({ address, segments, ...dimensions, frameRate, bitrate: exportBitrate(size, frameRate),
-        captions: captions === "burnedIn" && lines.length ? { lines, style: editor.captionStyle } : null },
+        captions: captions === "burnedIn" && lines.length ? { lines, style } : null },
       (position, data) => window.video.writeExport(id, position, data), (fraction) => say(words.export.picture, fraction, [0, 0.9]), signal);
       const stopListening = window.video.onExportProgress((progressId, fraction) => {
         if (progressId === id) say(words.export.sound, fraction, [0.9, 1]);
@@ -143,25 +161,26 @@ export function exportView(clip: Clip, editor: ClipEditor,
       try {
         await window.video.finishExport(id, clip.id, {
           stretches: segments.map((segment) => ({ from: secondsOf(segment.from), to: secondsOf(segment.to) })),
-          cleanVoice: editor.cleanVoice,
+          cleanVoice,
         }, segments.reduce((sum, segment) => sum + secondsOf(segment.to) - secondsOf(segment.from), 0),
-        captions === "file" ? srt(editor.captionWords, segments) : null);
+        captions === "file" ? srt(captionWords, segments) : null);
       } finally {
         stopListening();
       }
       // Done: the one thing left is to find the file, so Show in folder is the main button and the choices stay away.
+      exported = target;
       status.textContent = words.export.done(target.fileName);
       cancel.textContent = words.export.close;
       show.hidden = false;
     } catch (error) {
       if (exportId !== null) await window.video.cancelExport(exportId);
       const cancelled = signal.aborted;
-      if (!cancelled) logProblem("export_failed", error);
+      const nothingLeft = error instanceof Error && error.message === "EXPORT_NOTHING_LEFT";
+      if (!cancelled && !nothingLeft) logProblem("export_failed", error);
       showChoices();
-      status.textContent = cancelled ? words.export.cancelled : words.export.failed;
+      status.textContent = cancelled ? words.export.cancelled : nothingLeft ? words.export.nothingLeft : words.export.failed;
     } finally {
-      running = null;
-      exportId = null;
+      if (running === controller) running = null;
       bar.hidden = true;
     }
   };

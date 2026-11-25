@@ -31,6 +31,18 @@ export function segments(edit: Edit, clipId: string, duration: Flicks): Segment[
   });
 }
 
+/** The segments with each pair that touches joined into one: a split that took nothing out plays straight through, so
+ * an export reads it as one stretch, with no fade at a join nobody made (the export's fresh review, 2026-11-24). */
+export function joinedSegments(parts: readonly Segment[]): Segment[] {
+  const joined: Segment[] = [];
+  for (const part of parts) {
+    const last = joined.at(-1);
+    if (last && last.clipId === part.clipId && last.to === part.from) joined[joined.length - 1] = { ...last, to: part.to };
+    else joined.push({ ...part });
+  }
+  return joined;
+}
+
 export function timelineLength(parts: readonly Segment[]): Flicks {
   return parts.reduce((sum, segment) => sum + segment.to - segment.from, 0) as Flicks;
 }

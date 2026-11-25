@@ -7,7 +7,8 @@
  *   - frames from before and after the cut show the clip's frames they should (the bars read back);
  *   - the flash and the beep, now at 4 s, still within a frame of each other.
  * Then the talk clip is exported with its captions in the picture, and the captions are found in the file; and a minute of
- * 4K HEVC, a phone's, at 4K; and an HDR phone clip, whose export waits for its edit copy (SDR). Each export's time is recorded with this computer's processor in timings.json (docs/plan.md
+ * 4K HEVC, a phone's, at 4K; an HDR phone clip, whose export waits for its edit copy (SDR); a clip whose sound starts
+ * late, still in sync; and one with no sound. Each export's time is recorded with this computer's processor in timings.json (docs/plan.md
  * › Risks keeps them). Into video/local/export-check/, replaced each run. The clips come from check-preview.ts,
  * check-transcript.ts, check-import.ts and time-edit-copy.ts.
  *
@@ -31,6 +32,7 @@ const numbered = path.join(local, "preview-check", "numbered.mp4");
 const talk = path.join(local, "transcript-check", "talk-60s.mp4");
 const phone4k = path.join(local, "edit-copy-timing", "hevc-4k-1min.mov");
 const phoneHdr = path.join(local, "import-check", "clips", "iphone-hlg.mov");
+const noSound = path.join(local, "import-check", "clips", "varying-rate.mp4");
 const RATE = 30;
 const BITS = 12;
 const failures: string[] = [];
@@ -113,6 +115,22 @@ function barsOf(file: string, index: number): number {
   return number;
 }
 
+/** The frame of the numbered clip's white flash (the picture's lower part white), and the second its beep starts. */
+function flashAndBeep(file: string): { flash: number; beepAt: number } {
+  const grey = execFileSync(ffmpeg, ["-hide_banner", "-loglevel", "error", "-i", file, "-vf", "scale=16:9", "-f", "rawvideo", "-pix_fmt", "gray", "-"], { maxBuffer: 64 * 1024 * 1024 });
+  let flash = -1;
+  for (let index = 0; index * 144 < grey.length; index++) {
+    const lower = grey.subarray(index * 144 + 48, index * 144 + 144);
+    if (lower.reduce((sum, value) => sum + value, 0) / lower.length > 200) {
+      flash = index;
+      break;
+    }
+  }
+  const sound = execFileSync(ffmpeg, ["-hide_banner", "-loglevel", "error", "-i", file, "-ac", "1", "-ar", "48000", "-f", "f32le", "-"], { maxBuffer: 256 * 1024 * 1024 });
+  const samples = new Float32Array(sound.buffer, sound.byteOffset, Math.floor(sound.length / 4));
+  return { flash, beepAt: samples.findIndex((sample) => Math.abs(sample) > 0.1) / 48000 };
+}
+
 rmSync(folder, { recursive: true, force: true });
 mkdirSync(folder, { recursive: true });
 const cutOut = path.join(folder, "numbered-cut.mp4");
@@ -147,22 +165,33 @@ try {
     expect(read === original, `exported frame ${exported} shows the clip's frame ${original} (read ${read})`);
   }
 
-  // The flash (the picture's lower part white) and the beep, both at 4 s after the cut.
-  const grey = execFileSync(ffmpeg, ["-hide_banner", "-loglevel", "error", "-i", cutOut, "-vf", "scale=16:9", "-f", "rawvideo", "-pix_fmt", "gray", "-"], { maxBuffer: 64 * 1024 * 1024 });
-  let flash = -1;
-  for (let index = 0; index * 144 < grey.length; index++) {
-    const lower = grey.subarray(index * 144 + 48, index * 144 + 144);
-    if (lower.reduce((sum, value) => sum + value, 0) / lower.length > 200) {
-      flash = index;
-      break;
-    }
-  }
-  const sound = execFileSync(ffmpeg, ["-hide_banner", "-loglevel", "error", "-i", cutOut, "-ac", "1", "-ar", "48000", "-f", "f32le", "-"], { maxBuffer: 256 * 1024 * 1024 });
-  const samples = new Float32Array(sound.buffer, sound.byteOffset, Math.floor(sound.length / 4));
-  const beepAt = samples.findIndex((sample) => Math.abs(sample) > 0.1) / 48000;
-  const flashAt = flash / RATE;
-  expect(flash === 120, `the flash at exported frame ${flash} (120 expected: frame 150 less the 30 cut)`);
-  expect(Math.abs(beepAt - flashAt) <= 1 / RATE + 0.01, `the beep at ${beepAt.toFixed(3)} s and the flash at ${flashAt.toFixed(3)} s, within a frame`);
+  // The flash and the beep, both at 4 s after the cut.
+  const cutSync = flashAndBeep(cutOut);
+  expect(cutSync.flash === 120, `the flash at exported frame ${cutSync.flash} (120 expected: frame 150 less the 30 cut)`);
+  expect(Math.abs(cutSync.beepAt - cutSync.flash / RATE) <= 1 / RATE + 0.01, `the beep at ${cutSync.beepAt.toFixed(3)} s and the flash at ${(cutSync.flash / RATE).toFixed(3)} s, within a frame`);
+
+  // Sound that starts half a second after the picture (as some cameras record): laid on the clip's time, still in sync.
+  const late = path.join(folder, "late-sound.mp4");
+  // Trimmed with its times kept, so the MP4 starts its sound late (an edit list); -ss with -itsoffset cancels out.
+  execFileSync(ffmpeg, ["-hide_banner", "-loglevel", "error", "-i", numbered, "-filter_complex", "[0:a]atrim=start=0.5[a]",
+    "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", late]);
+  const lateStart = Number(execFileSync(ffprobe, ["-v", "error", "-select_streams", "a:0", "-show_entries", "stream=start_time", "-of", "csv=p=0", late], { encoding: "utf8" }));
+  expect(lateStart > 0.4, `the late-sound clip's sound starts ${lateStart.toFixed(3)} s in`);
+  const lateOut = path.join(folder, "late-sound-out.mp4");
+  await withClip(late, async (app, page) => {
+    timings.lateSound = await exportTo(app, page, late, lateOut, "None");
+  });
+  const lateSync = flashAndBeep(lateOut);
+  expect(lateSync.flash === 150 && Math.abs(lateSync.beepAt - lateSync.flash / RATE) <= 1 / RATE + 0.01,
+    `sound starting late: the beep at ${lateSync.beepAt.toFixed(3)} s and the flash at ${(lateSync.flash / RATE).toFixed(3)} s, within a frame`);
+
+  // A clip with no sound: the picture alone.
+  const silentOut = path.join(folder, "no-sound-out.mp4");
+  await withClip(noSound, async (app, page) => {
+    timings.noSound = await exportTo(app, page, noSound, silentOut, "None");
+  });
+  const silentStreams = execFileSync(ffprobe, ["-v", "error", "-show_entries", "stream=codec_type", "-of", "csv=p=0", silentOut], { encoding: "utf8" }).trim();
+  expect(silentStreams === "video", `a clip with no sound exports as the picture alone (${silentStreams.replaceAll("\n", ", ")})`);
 
   // Captions in the picture, from the talk clip, saved where the dialog offers: beside the clip (a copy, here).
   const talkCopy = path.join(folder, path.basename(talk));
@@ -176,6 +205,10 @@ try {
     const dialog = await openExportTo(app, page, talkCopy, stopped);
     await dialog.getByRole("button", { name: "Export", exact: true }).click();
     await dialog.locator(".export-status").filter({ hasText: /left/ }).waitFor({ timeout: 5 * 60_000 });
+    // Esc mid-export: the dialog stays, with the run, since only Cancel stops it.
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(300);
+    expect(await dialog.evaluate((element: HTMLDialogElement) => element.open), "Esc mid-export leaves the dialog and its run in place");
     await dialog.getByRole("button", { name: "Cancel" }).click();
     await dialog.locator(".export-status").filter({ hasText: /Stopped/ }).waitFor({ timeout: 60_000 });
     const left = readdirSync(folder).filter((name) => name.startsWith("talk-stopped"));

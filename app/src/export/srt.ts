@@ -24,11 +24,20 @@ export function srt(words: readonly Word[], segments: readonly Segment[]): strin
   for (const caption of captionLines(words)) {
     // Where its first and last words play; a caption whose words are all taken out has none.
     const starts = caption.words.map((word) => timelineAt(segments, word.start)).filter((time): time is Flicks => time !== null);
-    const ends = caption.words.map((word) => timelineAt(segments, (word.end - 1) as Flicks)).filter((time): time is Flicks => time !== null);
+    const ends = caption.words.map((word) => endOn(segments, word)).filter((time): time is Flicks => time !== null);
     if (!starts.length || !ends.length) continue;
     const start = secondsOf(Math.min(...starts) as Flicks);
     const end = secondsOf(Math.max(...ends) as Flicks);
     cues.push(`${cues.length + 1}\n${srtTime(start)} --> ${srtTime(Math.max(end, start + 0.2))}\n${captionText(caption).join("\n")}\n`);
   }
   return cues.join("\n");
+}
+
+/** Where a word stops playing: its own end, or, when a cut takes its tail (a word is kept by its middle), the end of the
+ * piece of the edit it starts in; null for a word that doesn't play. */
+function endOn(segments: readonly Segment[], word: Word): Flicks | null {
+  const own = timelineAt(segments, (word.end - 1) as Flicks);
+  if (own !== null) return own;
+  const piece = segments.find((segment) => segment.from <= word.start && word.start < segment.to);
+  return piece ? timelineAt(segments, (piece.to - 1) as Flicks) : null;
 }

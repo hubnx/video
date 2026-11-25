@@ -19,3 +19,10 @@ it("times each caption where it plays in the edit, a cut before it moving it ear
   const file = srt(words, segments(edit, "a", flicksOf(10)));
   expect(file).toBe("1\n00:00:01,000 --> 00:00:01,500\nHello.\n\n2\n00:00:03,000 --> 00:00:03,900\nSecond part.\n");
 });
+
+it("keeps a caption whose only word's tail a cut takes, ending it where its piece of the edit ends", () => {
+  const edit = emptyEdit();
+  remove(edit, { start: flicksOf(2.2), end: flicksOf(4), reason: "silence" });
+  const file = srt([word("Right.", 1.5, 2.4)], segments(edit, "a", flicksOf(10)));
+  expect(file).toContain("00:00:01,500 --> 00:00:02,200");
+});

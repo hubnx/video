@@ -31,13 +31,18 @@ const COMMON = ["-hide_banner", "-nostdin", "-y", "-progress", "pipe:1", "-nosta
 const FORGET_ROTATION = ["-display_rotation:v:0", "0"];
 
 /** The sound at 16 kHz, mono, 16-bit: what the speech models read, and what the waveform is drawn from. */
+/** A WAV starts at its first sample, so sound that starts after the picture (some cameras) is laid on the clip's own
+ * time first, a late start padded with silence and gaps filled: the words, the silences and the clean voice then line up
+ * with the picture, as the preview plays them and the export's sound does (export-sound.ts). */
+const ON_CLIP_TIME = ["-af", "aresample=async=1:first_pts=0"];
+
 export function speechArguments(input: string, output: string): string[] {
-  return [...COMMON, "-i", input, "-map", "0:a:0", "-vn", "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", "-f", "wav", output];
+  return [...COMMON, "-i", input, "-map", "0:a:0", "-vn", ...ON_CLIP_TIME, "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", "-f", "wav", output];
 }
 
 /** The sound at 48 kHz, mono, 16-bit: what voice clean-up (DPDFNet at 48 kHz) reads. */
 export function voiceSourceArguments(input: string, output: string): string[] {
-  return [...COMMON, "-i", input, "-map", "0:a:0", "-vn", "-ac", "1", "-ar", "48000", "-c:a", "pcm_s16le", "-f", "wav", output];
+  return [...COMMON, "-i", input, "-map", "0:a:0", "-vn", ...ON_CLIP_TIME, "-ac", "1", "-ar", "48000", "-c:a", "pcm_s16le", "-f", "wav", output];
 }
 
 /** A copy whose every frame is a keyframe (`-g 1 -bf 0`, as Kdenlive's and Shotcut's proxies), 720p, at a constant

@@ -169,7 +169,8 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
 
   // The keys an editor expects: space plays, S splits at the playhead, Delete takes out the piece under it, undo and redo.
   window.addEventListener("keydown", (event) => {
-    if ((event.target as Element).closest("input, textarea")) return;
+    // A dialog over the screen (export) keeps its keys: Space presses its button, nothing edits the clip behind it.
+    if ((event.target as Element).closest("input, textarea") || document.querySelector("dialog[open]")) return;
     const command = event.metaKey || event.ctrlKey;
     if (command && event.key.toLowerCase() === "z") {
       event.preventDefault();
@@ -249,15 +250,17 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
     details, ...(exporter ? [exporter.element] : []));
 }
 
-/** Whether this computer's window can decode the original, which decides the proxy and edit copy (ffmpeg-jobs.ts);
- * the jobs start once it's known. */
+/** Whether this computer's window can use the original, which decides the proxy and edit copy (ffmpeg-jobs.ts); the
+ * jobs start once it's known. Usable means decoded here and timed from zero: a camera's MPEG-TS (.mts) keeps its clock's
+ * own times, which the window reads as they are but FFmpeg starts at zero, so the picture would run a second or more
+ * behind the words and the sound (the export's fresh review, 2026-11-24). Such a clip plays and exports from its copies. */
 async function plan(clip: Clip): Promise<boolean> {
   let decodes = false;
   if (clip.facts.video) {
     const input = new Input({ source: new UrlSource(mediaAddress(clip.id, "original")), formats: ALL_FORMATS });
     try {
       const track = await input.getPrimaryVideoTrack();
-      decodes = track ? await track.canDecode() : false;
+      decodes = track ? (await track.canDecode()) && Math.abs(await input.getFirstTimestamp()) < 0.001 : false;
     } catch (error) {
       logProblem("clip_not_decodable", error); // a container the window can't read: an edit copy, then
       decodes = false;

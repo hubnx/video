@@ -118,6 +118,11 @@ export class Compositor {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
+  /** Gives the graphics context back now, rather than when it's collected: Chromium keeps about 16 and drops the oldest. */
+  release(): void {
+    this.gl.getExtension("WEBGL_lose_context")?.loseContext();
+  }
+
   /** The canvas's pixels match its size on screen, sharp on a high-density display; an export's canvas keeps its own. */
   private fitCanvas(): void {
     if (!(this.canvas instanceof HTMLCanvasElement)) return;

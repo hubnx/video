@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { constantRate, editCopyArguments, jobsFor, pictureFilters, proxyArguments, speechArguments } from "../electron/ffmpeg-jobs.ts";
 import type { ClipFacts, VideoFacts } from "../src/shared/media.ts";
 
-const hd: VideoFacts = { codec: "h264", width: 1920, height: 1080, rotation: 0, frameRate: 30, variableFrameRate: false, bitDepth: 8, dynamic: "sdr" };
+const hd: VideoFacts = { codec: "h264", width: 1920, height: 1080, pixelAspect: 1, rotation: 0, frameRate: 30, variableFrameRate: false, bitDepth: 8, dynamic: "sdr" };
 const clip = (video: Partial<VideoFacts> | null, audio = true): ClipFacts => ({
   durationSeconds: 60, container: "mov,mp4,m4a,3gp,3g2,mj2",
   video: video ? { ...hd, ...video } : null,
@@ -77,7 +77,7 @@ describe("turning and sizing the picture", () => {
 });
 
 it("gives the speech models 16 kHz mono 16-bit sound", () => {
-  expect(speechArguments("in.mov", "speech.wav").join(" ")).toContain("-map 0:a:0 -vn -ac 1 -ar 16000 -c:a pcm_s16le -f wav speech.wav");
+  expect(speechArguments("in.mov", "speech.wav").join(" ")).toContain("-map 0:a:0 -vn -af aresample=async=1:first_pts=0 -ac 1 -ar 16000 -c:a pcm_s16le -f wav speech.wav");
 });
 
 it("makes a varying rate constant at the nearest common rate, and keeps an unusual one", () => {

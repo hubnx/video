@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { History } from "../src/edit/history.ts";
-import { deleteSegment, emptyEdit, remove, restore, segments, sourceAt, split, timelineAt, timelineLength } from "../src/edit/timeline.ts";
+import { deleteSegment, emptyEdit, joinedSegments, remove, restore, segments, sourceAt, split, timelineAt, timelineLength } from "../src/edit/timeline.ts";
 import type { Edit } from "../src/shared/project.ts";
 import { flicksOf, secondsOf } from "../src/shared/time.ts";
 
@@ -81,4 +81,14 @@ describe("undo and redo", () => {
     history.change((edit) => split(edit, s(2)));
     expect(history.canRedo).toBe(false);
   });
+});
+
+it("joins pieces a split left touching, so an export doesn't fade at a join nobody made, but keeps real cuts apart", () => {
+  const edit = emptyEdit();
+  split(edit, flicksOf(3));
+  split(edit, flicksOf(5));
+  remove(edit, { start: flicksOf(6), end: flicksOf(7), reason: "deleted" });
+  const parts = segments(edit, "clip", flicksOf(10));
+  expect(parts.length).toBe(4);
+  expect(joinedSegments(parts).map((part) => [secondsOf(part.from), secondsOf(part.to)])).toEqual([[0, 6], [7, 10]]);
 });

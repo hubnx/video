@@ -27,29 +27,32 @@ export interface ExportPicture {
 export async function exportPicture(plan: ExportPicture, write: (position: number, data: Uint8Array) => Promise<void>,
   progress: (fraction: number) => void, signal: AbortSignal): Promise<void> {
   const input = new Input({ source: new UrlSource(plan.address), formats: ALL_FORMATS });
-  const track = await input.getPrimaryVideoTrack();
-  if (!track) throw new Error("EXPORT_NO_PICTURE");
-  const sink = new VideoSampleSink(track);
-  const canvas = new OffscreenCanvas(plan.width, plan.height);
-  const compositor = new Compositor(canvas);
-  const overlay = new OffscreenCanvas(plan.width, plan.height);
-  const overlayContext = overlay.getContext("2d")!;
-  // The window's writes come one after another, so the main process gets each piece in order and the queue stays short.
-  const output = new Output({
-    format: new Mp4OutputFormat(),
-    target: new StreamTarget(new WritableStream({ write: (chunk) => write(chunk.position, chunk.data) }), { chunked: true, chunkSize: 8 * 1024 * 1024 }),
-  });
-  const source = new CanvasSource(canvas, { codec: "avc", quality: new Quality({ bitrate: plan.bitrate, bitrateMode: "variable" }), keyFrameInterval: 2, hardwareAcceleration: "prefer-hardware" });
-  output.addVideoTrack(source, { frameRate: plan.frameRate });
-  await output.start();
-
-  const frameSeconds = 1 / plan.frameRate;
-  const totalSeconds = plan.segments.reduce((sum, segment) => sum + secondsOf(segment.to) - secondsOf(segment.from), 0);
-  const totalFrames = Math.max(1, Math.round(totalSeconds * plan.frameRate));
-  let frame = 0;
-  let segmentStart = 0; // the timeline's seconds at the segment's start
+  let compositor: Compositor | null = null;
+  let output: Output | null = null;
   let last: VideoSample | null = null;
   try {
+    const track = await input.getPrimaryVideoTrack();
+    if (!track) throw new Error("EXPORT_NO_PICTURE");
+    const sink = new VideoSampleSink(track);
+    const canvas = new OffscreenCanvas(plan.width, plan.height);
+    compositor = new Compositor(canvas);
+    const overlay = new OffscreenCanvas(plan.width, plan.height);
+    const overlayContext = overlay.getContext("2d")!;
+    // The window's writes come one after another, so the main process gets each piece in order and the queue stays short.
+    output = new Output({
+      format: new Mp4OutputFormat(),
+      target: new StreamTarget(new WritableStream({ write: (chunk) => write(chunk.position, chunk.data) }), { chunked: true, chunkSize: 8 * 1024 * 1024 }),
+    });
+    // A bitrate goes in as { bitrate }: a bare number is a 0-1 quality level (CLAUDE.md › Traps).
+    const source = new CanvasSource(canvas, { codec: "avc", quality: new Quality({ bitrate: plan.bitrate, bitrateMode: "variable" }), keyFrameInterval: 2, hardwareAcceleration: "prefer-hardware" });
+    output.addVideoTrack(source, { frameRate: plan.frameRate });
+    await output.start();
+
+    const frameSeconds = 1 / plan.frameRate;
+    const totalSeconds = plan.segments.reduce((sum, segment) => sum + secondsOf(segment.to) - secondsOf(segment.from), 0);
+    const totalFrames = Math.max(1, Math.round(totalSeconds * plan.frameRate));
+    let frame = 0;
+    let segmentStart = 0; // the timeline's seconds at the segment's start
     for (const segment of plan.segments) {
       const from = secondsOf(segment.from);
       const length = secondsOf(segment.to) - from;
@@ -58,7 +61,10 @@ export async function exportPicture(plan: ExportPicture, write: (position: numbe
       while (frame + frames.length < totalFrames && (frame + frames.length) * frameSeconds < segmentStart + length - 1e-9) frames.push(frame + frames.length);
       const sourceTimes = frames.map((index) => from + (index * frameSeconds - segmentStart) + 1e-6);
       for await (const sample of sink.samplesAtTimestamps(sourceTimes)) {
-        if (signal.aborted) throw new Error("EXPORT_CANCELLED");
+        if (signal.aborted) {
+          if (sample !== last) sample?.close();
+          throw new Error("EXPORT_CANCELLED");
+        }
         // A moment past the clip's last frame shows that last frame again.
         if (sample) {
           last?.close();
@@ -85,10 +91,11 @@ export async function exportPicture(plan: ExportPicture, write: (position: numbe
     }
     await output.finalize();
   } catch (error) {
-    await output.cancel();
+    await output?.cancel().catch(() => undefined);
     throw error;
   } finally {
     last?.close();
+    compositor?.release(); // a context per export would otherwise wait for collection, and Chromium drops the oldest: the preview's
     input.dispose();
   }
 }

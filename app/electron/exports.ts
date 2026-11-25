@@ -18,6 +18,7 @@ interface Session {
   handle: FileHandle;
   cancelled: boolean;
   child: ReturnType<typeof spawn> | null;
+  finishing: Promise<void> | null; // finish(), until its files are tidied away
 }
 
 export class Exports {
@@ -34,7 +35,7 @@ export class Exports {
     const video = `${destination}.picture.mp4`;
     const handle = await open(video, "w");
     const id = this.next++;
-    this.sessions.set(id, { destination, video, handle, cancelled: false, child: null });
+    this.sessions.set(id, { destination, video, handle, cancelled: false, child: null, finishing: null });
     return id;
   }
 
@@ -45,13 +46,18 @@ export class Exports {
   }
 
   /** Adds the sound and writes the destination; `progress` hears how far FFmpeg has got. */
-  async finish(id: number, plan: SoundPlan, durationSeconds: number, captions: string | null, progress: (fraction: number) => void): Promise<void> {
+  finish(id: number, plan: SoundPlan, durationSeconds: number, captions: string | null, progress: (fraction: number) => void): Promise<void> {
     const session = this.session(id);
+    session.finishing = this.mux(id, session, plan, durationSeconds, captions, progress);
+    return session.finishing;
+  }
+
+  private async mux(id: number, session: Session, plan: SoundPlan, durationSeconds: number, captions: string | null, progress: (fraction: number) => void): Promise<void> {
     await session.handle.close();
     const filter = `${session.destination}.sound-filter.txt`;
     const writing = `${session.destination.slice(0, -path.extname(session.destination).length)}.writing${path.extname(session.destination)}`;
     try {
-      await writeFile(filter, soundFilter(plan));
+      if (plan.source !== null) await writeFile(filter, soundFilter(plan));
       const code = await new Promise<number | null>((resolve) => {
         const child = spawn(this.ffmpeg, muxArguments(session.video, plan, filter, writing, process.platform), { windowsHide: true });
         session.child = child;
@@ -72,7 +78,7 @@ export class Exports {
       });
       if (session.cancelled) throw new Error("EXPORT_CANCELLED");
       if (code !== 0) throw new Error("EXPORT_MUX_FAILED");
-      await rename(writing, session.destination);
+      await renameSoon(writing, session.destination);
       if (captions !== null) await writeFile(captionsFileOf(session.destination), captions);
     } finally {
       await rm(writing, { force: true });
@@ -95,9 +101,31 @@ export class Exports {
     }
   }
 
+  /** Stops every export and waits until each has tidied its files away: the app is quitting. */
+  async cancelAll(): Promise<void> {
+    const finishing = [...this.sessions.values()].map((session) => session.finishing);
+    await Promise.all([...this.sessions.keys()].map((id) => this.cancel(id)));
+    await Promise.all(finishing.map((each) => each?.catch(() => undefined)));
+  }
+
   private session(id: number): Session {
     const session = this.sessions.get(id);
     if (!session || session.cancelled) throw new Error(`no export ${id} under way`);
     return session;
+  }
+}
+
+/** A rename that waits out a brief lock: on Windows an antivirus or the search indexer may hold a file FFmpeg has just
+ * written for a moment, and the export would otherwise fail at its last step. */
+async function renameSoon(from: string, to: string): Promise<void> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await rename(from, to);
+      return;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (attempt >= 10 || (code !== "EPERM" && code !== "EBUSY" && code !== "EACCES")) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 200 * attempt));
+    }
   }
 }

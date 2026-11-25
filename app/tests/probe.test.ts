@@ -26,6 +26,12 @@ describe("a phone video's facts", () => {
     expect(leftTurned.video?.rotation).toBe(270);
   });
 
+  it("reads non-square pixels, and square ones where ffprobe says none or 0:1", () => {
+    expect(clipFacts({ streams: [{ codec_type: "video", width: 1440, height: 1080, sample_aspect_ratio: "4:3" }] }, {}).video?.pixelAspect).toBeCloseTo(4 / 3);
+    expect(clipFacts({ streams: [{ codec_type: "video", sample_aspect_ratio: "0:1" }] }, {}).video?.pixelAspect).toBe(1);
+    expect(facts.video?.pixelAspect).toBe(1);
+  });
+
   it("reads an old rotate tag as clockwise, as it was written", () => {
     expect(clipFacts({ streams: [{ codec_type: "video", tags: { rotate: "90" } }] }, {}).video?.rotation).toBe(90);
   });

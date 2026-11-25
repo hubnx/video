@@ -124,6 +124,7 @@ export const words = {
     done: (file: string) => `Saved as ${file}.`,
     cancelled: "Stopped. Nothing was saved.",
     failed: "The export didn't finish. Nothing was saved.",
+    nothingLeft: "Everything is cut, so there's nothing to export. Undo to bring some back.",
   },
   preview: {
     label: "Preview",

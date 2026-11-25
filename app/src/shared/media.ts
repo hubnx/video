@@ -11,6 +11,9 @@ export interface VideoFacts {
   codec: string; // ffprobe's name: h264, hevc, prores…
   width: number; // as stored, before rotation
   height: number;
+  /** How wide each stored pixel is shown, against its height: 1 for square pixels (phones, webcams), 4/3 for HDV's and
+   * AVCHD's 1440 × 1080, which show at 16:9. */
+  pixelAspect: number;
   /** Clockwise degrees to turn the stored picture upright: 0, 90, 180 or 270. ffprobe reports counter-clockwise;
    * this is converted once, here, so nothing downstream turns it twice (engine-stack.md › Traps › Rotation). */
   rotation: 0 | 90 | 180 | 270;

@@ -26,6 +26,7 @@ interface ProbeStream {
   codec_name?: string;
   width?: number;
   height?: number;
+  sample_aspect_ratio?: string;
   avg_frame_rate?: string;
   r_frame_rate?: string;
   pix_fmt?: string;
@@ -63,6 +64,7 @@ function videoFacts(stream: ProbeStream, frames: NonNullable<FramesOutput["frame
     codec: stream.codec_name ?? "",
     width: stream.width ?? 0,
     height: stream.height ?? 0,
+    pixelAspect: ratio(stream.sample_aspect_ratio?.replace(":", "/")) || 1, // "0:1" or none: square
     rotation: clockwise(stream),
     frameRate: ratio(stream.avg_frame_rate) || ratio(stream.r_frame_rate),
     variableFrameRate: varies(frames.map((frame) => Number(frame.pts_time)).filter(Number.isFinite)),
