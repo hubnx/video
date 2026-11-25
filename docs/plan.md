@@ -204,7 +204,8 @@ post was removed for it, 2026-11-20).
 **Check-ins with `video assistant`** (agreed 2026-11-17): day 1's filler numbers; screenshots at phone, tablet and desktop width in both themes when each screen first
 works, before polish (day 4 transcript and caption styles, day 5 cleanup review, day 7 export dialog
 and presets, day 8 download page with the SmartScreen picture); release 1 passes its gate 3 review
-before it goes out.
+before it goes out. **Gate 3 approved 2026-11-25** with six fixes, all made the same day; public no earlier than
+11-27 08:00 PT, after the history is rewritten to the owner's name only (as Songbrew and Agent).
 
 ### Debt: shortcuts taken on purpose
 
