@@ -7,6 +7,7 @@ import { FeedbackForm, renderFeedbackForm } from "@hubnx/web-parts/feedback-form
 import { openFeedbackLinksAsPopup } from "@hubnx/web-parts/feedback-link";
 import { APP_NAME } from "../../app/src/shared/app-api.ts";
 import { FEEDBACK } from "./feedback.ts";
+import { visitorTarget } from "./visitor.ts";
 
 openFeedbackLinksAsPopup(FEEDBACK);
 
@@ -25,7 +26,19 @@ if (holder && done) {
   });
 }
 
-// The visitor's system, from what the browser says of itself: a hint on the card, never a choice made for them (a Mac's
-// browser doesn't say which chip it has, so both Mac cards are marked).
-const system = /Windows/.test(navigator.userAgent) ? "windows" : /Mac OS X|Macintosh/.test(navigator.userAgent) ? "mac" : /Linux|X11/.test(navigator.userAgent) ? "linux" : null;
-if (system) for (const card of document.querySelectorAll<HTMLElement>(`.download[data-system="${system}"] .yours`)) card.hidden = false;
+// The visitor's system, when the browser says which it is: its card marked, and the home page's button fetching its
+// file, with the other systems a link away. Unknown, nothing is marked and the button goes to the download page.
+const target = await visitorTarget();
+if (target) {
+  const tag = document.querySelector<HTMLElement>(`.download[data-target="${target}"] .yours`);
+  if (tag) tag.hidden = false;
+  const hero = document.querySelector<HTMLAnchorElement>("[data-download]");
+  const file = hero ? (JSON.parse(hero.dataset.download!) as Record<string, { href: string; label: string }>)[target] : undefined;
+  if (hero && file) {
+    hero.href = file.href;
+    hero.textContent = file.label;
+    hero.setAttribute("download", "");
+    document.querySelector<HTMLElement>("[data-download-systems]")!.hidden = true;
+    document.querySelector<HTMLElement>("[data-download-others]")!.hidden = false;
+  }
+}

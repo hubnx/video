@@ -42,6 +42,17 @@ a {
   color: var(--muted);
 }
 
+/* Centred words break into even lines, never one word alone on the last (`video assistant`, 2026-11-24). */
+.hero,
+.lead,
+.part > h2,
+.more p,
+.note,
+.smartscreen figcaption,
+.site-footer {
+  text-wrap: balance;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

@@ -9,7 +9,7 @@ import { openOutboundLinksInNewTab } from "@hubnx/web-parts/external-links";
 import { licensesPage } from "@hubnx/web-parts/licenses";
 import { defineConfig, type Plugin } from "vite";
 import { APP_NAME } from "../app/src/shared/app-api.ts";
-import { renderDownloads, VERSION, WINDOWS_INSTALLER } from "./src/downloads.ts";
+import { renderDownloads, renderHeroDownload, VERSION, WINDOWS_INSTALLER } from "./src/downloads.ts";
 import { renderFooter } from "./src/footer.ts";
 import { renderHeader } from "./src/header.ts";
 import { renderIconLinks } from "./src/icons.ts";
@@ -22,6 +22,7 @@ const PARTS: Record<string, () => string> = {
   icons: renderIconLinks,
   robots: robotsMeta,
   downloads: renderDownloads,
+  heroDownload: renderHeroDownload,
   moreOnHome: renderMoreOnHome,
   moreOnAbout: renderMoreOnAbout,
   // Left for the licenses plugin, which fills it once the bundle is complete.
