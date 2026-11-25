@@ -212,6 +212,7 @@ before it goes out.
 |---|---|---|
 | Export waits for the edit copy where the window can't use the original: HDR (every iPhone's default), and HEVC with no hardware decoder (2026-11-24) | The edit copy starts when the clip opens, so it's often done by export; if not, the dialog shows its progress. A 10-minute 4K iPhone HDR clip is ready about 15 min after opening on this Mac, up to about an hour on a 2-core machine (*Risks*) | HDR that decodes: tone-map in the compositor's shader and read the original. HEVC that doesn't: decode in FFmpeg, which needs the captions drawn there too (libass, not in our build today) |
 | The transcript is drawn again whole as each stretch of words arrives (day 4) | Grows with the clip's length; unnoticed at an hour, untested beyond | Append each stretch's paragraphs instead |
+| The updater is proved end to end on the Intel Mac only (`scripts/check-update.ts`, 2026-11-25: the newer version's strip after 8 s, installed and reopened in 20 s, signed, the screen never taken); Windows and Linux rest on Songbrew's identical updater, shipped through its 0.1.47 | A Windows or Linux copy that can't update would stay on its version until the person downloads again | Port the check to GitHub's Windows (the installer run with `--updated /S`) and Ubuntu (the AppImage replaced in place) before 1.1 |
 
 ## Where it ships
 
