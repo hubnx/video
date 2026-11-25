@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Download, free for Mac, Windows and Linux · %APP_NAME%</title>
+    <meta name="description" content="Download %APP_NAME%, a free video editor that captions your talk and cuts the long pauses, for Mac (Apple chip and Intel), Windows and Linux. No account." />
+    <link rel="canonical" href="%SITE_URL%/download/" />
+    <!--robots-->
+    <!--icons-->
+    <link rel="stylesheet" href="/src/styles.css" />
+    <script type="module" src="/src/page.ts"></script>
+  </head>
+  <body>
+    <!--header-->
+    <main>
+      <section class="hero">
+        <h1>Download %APP_NAME%</h1>
+        <p class="lead">Free, with no account. Version %VERSION%.</p>
+      </section>
+
+      <section class="part">
+        <div class="cards downloads">
+          <!--downloads-->
+        </div>
+        <p class="note">No account, and nothing is uploaded: your videos stay on your computer. The first time you open a video, the app downloads its speech model, about 670 MB, once.</p>
+      </section>
+
+      <section id="windows" class="part">
+        <h2>Opening it on Windows</h2>
+        <p>The installer isn't signed with a paid certificate yet, so Windows may stop it the first time with <em>Windows protected your PC</em>. Choose <strong>More info</strong>, then <strong>Run anyway</strong>. It doesn't ask again for this installer.</p>
+        <figure class="smartscreen" aria-label="A drawing of Windows' warning, with the two choices to press marked">
+          <div class="smartscreen-steps">
+            <div class="smartscreen-window">
+              <p class="smartscreen-title">Windows protected your PC</p>
+              <p class="smartscreen-text">Microsoft Defender SmartScreen prevented an unrecognized app from starting.</p>
+              <p><span class="smartscreen-press">More info</span></p>
+              <p class="smartscreen-buttons"><span class="smartscreen-button">Don't run</span></p>
+            </div>
+            <div class="smartscreen-window">
+              <p class="smartscreen-title">Windows protected your PC</p>
+              <p class="smartscreen-text">App: %INSTALLER%</p>
+              <p class="smartscreen-buttons"><span class="smartscreen-button smartscreen-press">Run anyway</span> <span class="smartscreen-button">Don't run</span></p>
+            </div>
+          </div>
+          <figcaption>1. Choose <strong>More info</strong>. 2. Choose <strong>Run anyway</strong>.</figcaption>
+        </figure>
+      </section>
+
+      <section class="part">
+        <h2>The source code</h2>
+        <p>%APP_NAME% is open source under the AGPL-3.0. Its code, and every release's files, are on <a href="https://github.com/hubnx/video">GitHub</a>.</p>
+      </section>
+    </main>
+    <!--footer-->
+  </body>
+</html>

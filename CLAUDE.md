@@ -35,7 +35,8 @@ heavy runs go through `taskpolicy -b`, after `uptime` shows a 1-minute load unde
 | The 4K HEVC proxy and edit-copy times (`local/edit-copy-timing/`); GitHub's Windows and Ubuntu with `gh workflow run edit-copy-timing.yml` | `pnpm exec node scripts/time-edit-copy.ts ../local/edit-copy-timing/hevc-4k-10min.mov 60` |
 | Package (unsigned for checks; `--signed` signs and notarizes the Macs), into `local/release/<target>/` | `pnpm build && pnpm package mac-x64` |
 | Open a package behind and check FFmpeg runs inside it; GitHub's Windows, Ubuntu (and Apple-chip Mac with `-f mac=true`) with `gh workflow run package-check.yml` | `pnpm check-package mac-x64` |
-| Redraw `build-resources/icon.png` from `../brand/icon.svg` | `pnpm exec node scripts/render-icons.ts` |
+| Redraw `build-resources/icon.png` and the site's icons (`site/public/`) from `../brand/icon.svg` | `pnpm exec node scripts/render-icons.ts` |
+| **The website** (`site/`, its own pnpm package): build, its tests, and every page at phone, tablet, laptop and wide sizes in both themes into `local/site-screens/` (headless Chrome, the server stopped after) | from `site/`: `pnpm build` · `pnpm test` · `pnpm build && pnpm screens` |
 
 ## How it's built
 
@@ -45,6 +46,7 @@ Dependencies point one way: window → preload → main process → FFmpeg.
 |---|---|
 | Window (Vite, plain TypeScript) | `app/src/`: `main.ts` picks the screen; `start-view.ts`, `clip-view.ts`, `preview-view.ts`; `preview/` (`frames.ts` Mediabunny's frames by timestamp, `clock.ts` the sound's clock, `compositor.ts` WebGL2, `player.ts`); `export-view.ts` and `export/` (the picture encoded by WebCodecs through the preview's own compositor and captions, presets, the captions file); `problems.ts` (the window's errors to the log); `words.ts` holds **every word shown**; `shared/` the types both sides use (`app-api.ts`, `media.ts`, `time.ts` in flicks) |
 | Main process (Electron) | `app/electron/`: `main.ts` (the window, its messages, `media://`), `clips.ts` (opened files and what's made from them), `probe.ts` (ffprobe's facts), `ffmpeg-jobs.ts` (which copies a clip needs, and FFmpeg's arguments), `jobs.ts` (one FFmpeg at a time, below normal priority), `exports.ts` and `export-sound.ts` (the window's picture written to disk, then FFmpeg adds the cut sound at YouTube's loudness), `media-response.ts` (byte ranges), `paths.ts`, `targets.ts`, `preload.ts` (the only bridge) |
+| Website | `site/`: static pages with their shared parts written in at build time (`vite.config.ts`, `src/header.ts`, `src/footer.ts`, `src/downloads.ts` from `app/scripts/release-files.ts`); links, feedback and the licenses list from the public `@hubnx/web-parts` pinned by commit; colours from `brand/colors.css`, as the app's. Out of search (`src/site.ts` › `INDEXED`) until release 1's files are served |
 | FFmpeg | `ffmpeg/build.sh` (pinned FFmpeg 9.0.2, x264, zimg; GPLv3, no x265 or nonfree), `ffmpeg/builds.json` (each build's SHA-256), the release `ffmpeg-9.0.2-1` (the builds and their sources: GPL's source offer) |
 
 ## Traps
@@ -80,4 +82,4 @@ Dependencies point one way: window → preload → main process → FFmpeg.
 | [docs/product.md](docs/product.md) | **The product manager's** (`video assistant`): who it's for, the scoreboard of rivals, the gap register, what we lead with, the last retro |
 | [docs/research/](docs/research/) | Competitors' workflows, features, prices and users' complaints; the AI models and online services; the engine's building blocks (2026-11-17) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | For contributors: the contributor agreement, build and test |
-| `local/` (not in git) | Outputs kept for later or for an audit, one folder per tool: `probe/`, `edit-copy-timing/` (the clip and the times), `filler-check/` (the measured set, its source and licence, every detector's output), `import-check/`, `preview-check/`, `export-check/` (the exports and their times), `screens/`, `release/`, `release-logs/`, `ffmpeg-build/` (sources, logs, builds), `ffmpeg-for-app/`, `icon-options/` (the icon decision's sheet), `research/` |
+| `local/` (not in git) | Outputs kept for later or for an audit, one folder per tool: `probe/`, `edit-copy-timing/` (the clip and the times), `filler-check/` (the measured set, its source and licence, every detector's output), `import-check/`, `preview-check/`, `export-check/` (the exports and their times), `site-screens/`, `voice-speed/`, `screens/`, `release/`, `release-logs/`, `ffmpeg-build/` (sources, logs, builds), `ffmpeg-for-app/`, `icon-options/` (the icon decision's sheet), `research/` |

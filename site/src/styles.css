@@ -1,0 +1,403 @@
+/* video.hubnx.com: the brand's colours (../../brand/colors.css, the one source the app's window shares), the shared
+   parts' styles, then the site's own. Centred and width-capped at every size, one alignment per group. */
+@import "../../brand/colors.css";
+@import "@hubnx/web-parts/web-parts.css";
+
+:root {
+  /* The shared parts' names for the brand's colours. */
+  --ink: var(--text);
+  --wrong: var(--danger);
+  --radius: 12px;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+  --content: 1080px;
+  --reading: 720px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.55;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--text);
+}
+
+a {
+  color: var(--accent-text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Header and footer: the same width as the content, so their edges line up with it. */
+.site-header,
+.site-footer,
+main {
+  width: min(var(--content), 100% - 32px);
+  margin-inline: auto;
+}
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: 16px 0;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  font-weight: 650;
+  font-size: 1.1rem;
+  text-decoration: none;
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+}
+
+.site-nav a {
+  color: var(--text);
+  text-decoration: none;
+  padding: 10px 0; /* about 44 px to tap */
+}
+
+.site-nav a:hover {
+  color: var(--accent-text);
+}
+
+.site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 20px;
+  padding: 32px 0 40px;
+  border-top: 1px solid var(--line);
+  margin-top: 56px;
+}
+
+.site-footer a {
+  color: var(--muted);
+  padding: 10px 0;
+}
+
+/* The home page's opening: one centred stack, every line in it centred. */
+.hero {
+  text-align: center;
+  padding: 48px 0 16px;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.15;
+  margin: 0 0 16px;
+}
+
+.lead {
+  font-size: 1.15rem;
+  max-width: var(--reading);
+  margin: 0 auto 24px;
+  color: var(--muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 16px;
+}
+
+/* One button look for links and buttons alike; .button-primary and .segmented are the names the shared feedback form
+   uses too (@hubnx/web-parts' README). */
+.button {
+  display: inline-block;
+  font: inherit;
+  cursor: pointer;
+  padding: 12px 22px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--button);
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.button-primary,
+.download .button {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.button-primary:hover,
+.download .button:hover {
+  background: var(--accent-hover);
+}
+
+/* A choice of one, as joined buttons with the chosen one filled. */
+.segmented {
+  display: inline-flex;
+}
+
+.segmented button {
+  font: inherit;
+  padding: 8px 16px;
+  margin-left: -1px;
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  background: var(--button);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.segmented button:first-child {
+  margin-left: 0;
+  border-radius: 10px 0 0 10px;
+}
+
+.segmented button:last-child {
+  border-radius: 0 10px 10px 0;
+}
+
+.segmented [aria-pressed="true"] {
+  position: relative;
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* The feedback page's form spans its column, edge to edge with the words above it. */
+.document .feedback-form {
+  max-width: none;
+}
+
+.part {
+  padding-top: 48px;
+}
+
+.part > h2 {
+  font-size: 1.6rem;
+  margin: 0 0 20px;
+  text-align: center;
+}
+
+/* Cards side by side share height and edges. */
+.cards {
+  display: grid;
+  gap: 20px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.cards.three {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.card {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.card h3,
+.card h2 {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+}
+
+.card p {
+  margin: 0;
+}
+
+.steps {
+  counter-reset: step;
+}
+
+.steps .card h3::before {
+  counter-increment: step;
+  content: counter(step) ". ";
+  color: var(--accent-text);
+}
+
+.questions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 8px 40px;
+}
+
+.questions h3 {
+  font-size: 1.05rem;
+  margin: 16px 0 4px;
+}
+
+.questions p {
+  margin: 0;
+}
+
+.more {
+  text-align: center;
+}
+
+.more p {
+  margin: 6px 0;
+}
+
+/* The download page: one card per system. Each card's parts sit on rows shared across its row of cards (subgrid), so
+   titles, buttons and notes line up whatever their length. */
+.downloads {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  row-gap: 28px;
+}
+
+.download {
+  position: relative;
+  display: grid;
+  grid-row: span 5;
+  grid-template-rows: subgrid;
+  gap: 10px;
+}
+
+.download .needs {
+  color: var(--muted);
+}
+
+/* The visitor's own system: outlined, its tag on the card's top edge, where it moves nothing. */
+.download:has(.yours:not([hidden])) {
+  border-color: var(--accent);
+}
+
+.download .button {
+  text-align: center;
+}
+
+.download .file,
+.download .first-open {
+  font-size: 0.9rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.yours {
+  position: absolute;
+  top: -11px;
+  left: 20px;
+  padding: 1px 10px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.note {
+  max-width: var(--reading);
+  margin: 20px auto 0;
+  text-align: center;
+  color: var(--muted);
+}
+
+#windows p,
+.part > p {
+  max-width: var(--reading);
+  margin-inline: auto;
+}
+
+/* A drawing of Windows' warning, to show which words to press: not a copy of Microsoft's screen. */
+.smartscreen {
+  max-width: var(--reading);
+  margin: 20px auto 0;
+}
+
+.smartscreen-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.smartscreen-window {
+  padding: 18px;
+  border-radius: 6px;
+  background: #1f5aa6;
+  color: #ffffff;
+  font-size: 0.9rem;
+}
+
+.smartscreen-window p {
+  margin: 0 0 10px;
+}
+
+.smartscreen-title {
+  font-size: 1.15rem;
+}
+
+.smartscreen-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.smartscreen-button {
+  padding: 4px 14px;
+  border: 1px solid #ffffff;
+}
+
+.smartscreen-press {
+  outline: 3px solid #fde047;
+  outline-offset: 3px;
+  text-decoration: underline;
+}
+
+.smartscreen figcaption {
+  margin-top: 12px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* Pages of reading: one column at a reading width, centred. */
+.document {
+  max-width: var(--reading);
+  margin: 0 auto;
+  padding-top: 32px;
+}
+
+.document h1 {
+  font-size: 2rem;
+  margin: 0 0 8px;
+}
+
+.document h2 {
+  font-size: 1.2rem;
+  margin: 28px 0 6px;
+}
