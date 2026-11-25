@@ -137,6 +137,7 @@ button:disabled {
 /* An opened video: the status line, then the preview and the transcript side by side on a wide window and one over
    the other on a narrow one, each job's detail folded away under them. */
 .clip {
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -174,39 +175,64 @@ button:disabled {
 }
 
 /* The preview: the picture at the video's own shape, as large as the column allows, the controls in one row under it. */
-.clip {
-  max-width: 1400px;
-}
 
+/* What's being got ready: its words, then its bar under them across the column, one group (gate on day 4). */
 .clip-status {
   display: grid;
-  grid-template-columns: 1fr minmax(120px, 30%);
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 12px;
+  gap: 6px;
+  margin-bottom: 16px;
   color: var(--muted);
 }
 
 .clip-status progress {
   width: 100%;
+  height: 6px;
   accent-color: var(--accent);
 }
 
+/* The preview column sets the row's height; the side column is exactly as tall, its transcript scrolling inside it, so
+   the two boxes share their top and bottom edges at every size (gate on day 4). Below 900 px, one column, one scroll. */
 .clip-body {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
   gap: var(--gap);
-  align-items: start;
+}
+
+.clip-side {
+  position: relative;
+  min-height: 320px;
+}
+
+.clip-side-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 @media (max-width: 900px) {
   .clip-body {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .clip-side {
+    min-height: 0;
+  }
+
+  .clip-side-inner {
+    position: static;
+  }
+
+  .transcript {
+    overflow: visible !important;
+    flex: none !important;
+  }
 }
 
 .transcript {
-  max-height: 70vh;
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   padding: 12px 16px;
   border: 1px solid var(--line);
@@ -218,9 +244,9 @@ button:disabled {
   color: var(--muted);
 }
 
-.transcript-line {
-  margin: 0 0 8px;
-  line-height: 1.6;
+.transcript-paragraph {
+  margin: 0 0 10px;
+  line-height: 1.7;
 }
 
 .word {
@@ -237,16 +263,124 @@ button:disabled {
   color: var(--on-accent);
 }
 
-.caption-styles {
-  display: flex;
+/* A possible "um": lightly underlined, to cut with one press (English only). */
+.word.filler {
+  text-decoration: underline dotted var(--muted);
+  text-underline-offset: 3px;
+}
+
+.word.removed {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+/* A proposed silence between words: outlined; once cut, filled and struck, a click putting it back. */
+.pause {
+  padding: 0 6px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.pause.cut {
+  border-style: solid;
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  text-decoration: line-through;
+}
+
+/* The clean-up panel above the transcript. */
+.cleanup {
+  display: grid;
   gap: 8px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.cleanup-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.cleanup-saved,
+.cleanup-fillers,
+.cleanup-none,
+.label {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.cleanup .history button {
+  padding: 4px 12px;
+  font-size: 0.9rem;
+}
+
+/* A choice of one, as joined buttons with the chosen one filled (gate on day 4). */
+.segmented {
+  display: inline-flex;
+}
+
+.segmented button {
+  border-radius: 0;
+  margin-left: -1px;
+}
+
+.segmented button:first-child {
+  border-radius: 8px 0 0 8px;
+  margin-left: 0;
+}
+
+.segmented button:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+.segmented [aria-checked="true"] {
+  position: relative;
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.caption-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
   margin-top: 12px;
 }
 
-.caption-styles [aria-checked="true"] {
-  border-color: var(--accent);
-  color: var(--accent-text);
-  font-weight: 600;
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.switch input {
+  accent-color: var(--accent);
+}
+
+.timeline {
+  margin-top: 12px;
+}
+
+.timeline-canvas {
+  --timeline-piece: var(--line-strong);
+  display: block;
+  width: 100%;
+  height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
 }
 
 .clip-details {
@@ -258,12 +392,9 @@ button:disabled {
   color: var(--muted);
 }
 
+/* The preview: the picture at the video's own shape, as large as the column allows, the controls in one row under it. */
 .preview-place:empty {
   display: none;
-}
-
-.preview {
-  margin-top: 16px;
 }
 
 .preview-canvas {

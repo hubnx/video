@@ -183,6 +183,8 @@ async function start(): Promise<void> {
       contextIsolation: true,
       sandbox: true,
       nodeIntegration: false,
+      // The checks' window is unseen but must play at full pace, as a person's does in front.
+      backgroundThrottling: !BEHIND,
     },
   });
   const shown = window;

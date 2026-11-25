@@ -11,9 +11,9 @@ import type { Frames } from "./frames.ts";
 /** Frames decoded ahead while playing: enough to ride over a slow one, few enough to hold little memory at 4K. */
 const AHEAD = 4;
 
-/** What's laid over each frame (the captions), given its moment in seconds and the size in pixels the picture fills;
- * null for nothing. */
-export type Overlay = (seconds: number, size: { width: number; height: number }) => TexImageSource | null;
+/** What's laid over each frame (the captions), given the frame's time on screen in seconds and the size in pixels the
+ * picture fills; null for nothing. */
+export type Overlay = (shown: { start: number; end: number }, size: { width: number; height: number }) => TexImageSource | null;
 
 export class Player {
   private readonly frames: Frames;
@@ -24,9 +24,15 @@ export class Player {
   private seekGeneration = 0;
   private playGeneration = 0;
   private queue: VideoSample[] = [];
+  /** Wakes the decoder when the queue has room again: event-driven, as a polling timer is slowed to once a second in a
+   * window Chromium thinks is hidden, and playing stalled (the clean-up check, 2026-11-24). */
+  private queueRoom: (() => void) | null = null;
   /** The frame on the canvas, kept so it can be drawn again under a changed overlay while paused. */
   private shown: VideoSample | null = null;
   private overlay: Overlay | null = null;
+  /** Stretches of the clip taken out, in seconds, sorted: playing jumps over them (the edit, src/edit/timeline.ts). A
+   * jump in the preview; export joins the pieces with a short crossfade (day 7). */
+  private skips: { start: number; end: number }[] = [];
   /** The timestamp of the frame on the canvas: the checks compare it with the clock (scripts/check-preview.ts). */
   drawnTimestamp: number | null = null;
 
@@ -36,6 +42,10 @@ export class Player {
     this.compositor = compositor;
     this.duration = duration;
     this.changed = changed;
+  }
+
+  setSkips(skips: { start: number; end: number }[]): void {
+    this.skips = [...skips].sort((one, other) => one.start - other.start);
   }
 
   /** Sets what's laid over each frame, and draws the frame showing again under it. */
@@ -77,6 +87,12 @@ export class Player {
     void this.decodeAhead(from, generation);
     const tick = () => {
       if (generation !== this.playGeneration) return;
+      const now = this.clock.now();
+      const skip = this.skips.find((each) => now >= each.start && now < each.end);
+      if (skip) {
+        void this.seek(skip.end); // keeps playing from there
+        return;
+      }
       this.showFrameForNow();
       if (this.clock.now() >= this.duration) {
         this.pause();
@@ -117,6 +133,7 @@ export class Player {
       due?.close();
       due = this.queue.shift()!;
     }
+    if (due) this.wakeDecoder();
     if (due) {
       this.show(due);
       this.changed();
@@ -130,7 +147,7 @@ export class Player {
         return;
       }
       this.queue.push(sample);
-      while (generation === this.playGeneration && this.queue.length >= AHEAD) await new Promise((resolve) => setTimeout(resolve, 5));
+      while (generation === this.playGeneration && this.queue.length >= AHEAD) await new Promise<void>((resolve) => (this.queueRoom = resolve));
     }
   }
 
@@ -138,14 +155,20 @@ export class Player {
     this.playGeneration++;
     for (const sample of this.queue) sample.close();
     this.queue = [];
+    this.wakeDecoder(); // so a decoder waiting for room sees it's been stopped
+  }
+
+  private wakeDecoder(): void {
+    const wake = this.queueRoom;
+    this.queueRoom = null;
+    wake?.();
   }
 
   private draw(sample: VideoSample): void {
     const frame = sample.toVideoFrame();
     try {
       this.compositor.draw(frame, sample.squarePixelWidth, sample.squarePixelHeight, (sample.rotation / 90) as QuarterTurns);
-      // The frame's middle: a word that starts while the frame shows is the word lit on it, paused or playing.
-      const over = this.overlay?.(sample.timestamp + sample.duration / 2, this.compositor.pictureSize);
+      const over = this.overlay?.({ start: sample.timestamp, end: sample.timestamp + sample.duration }, this.compositor.pictureSize);
       if (over) this.compositor.drawOverlay(over);
       this.drawnTimestamp = sample.timestamp;
     } finally {

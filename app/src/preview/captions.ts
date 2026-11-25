@@ -13,9 +13,17 @@ export type CaptionStyle = (typeof CAPTION_STYLES)[number];
 /** The lit word's colour: a warm yellow that reads on any picture under the outline. */
 const LIT = "#ffd84d";
 
-/** Draws `caption` (null: none showing) on a transparent canvas `width` × `height`, as it looks at `now`. */
+/** A frame's time on screen: from its start to the next frame's. */
+export interface FrameTime {
+  start: Flicks;
+  end: Flicks;
+}
+
+/** Draws `caption` (null: none showing) on a transparent canvas `width` × `height`, as it looks on the frame `shown`. The
+ * word lit is the last one said while that frame shows, so a word clicked in the transcript, which starts partway into a
+ * frame, is the word lit on it (gate on day 4: export equals preview, and paused they agree). */
 export function drawCaption(context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, width: number, height: number,
-  caption: CaptionLine | null, now: Flicks, style: CaptionStyle): void {
+  caption: CaptionLine | null, shown: FrameTime, style: CaptionStyle): void {
   context.clearRect(0, 0, width, height);
   if (!caption) return;
   const size = Math.round(Math.min(height * 0.055, width * 0.045));
@@ -27,6 +35,7 @@ export function drawCaption(context: CanvasRenderingContext2D | OffscreenCanvasR
   const lines = captionText(caption);
   const lineHeight = size * 1.3;
   const bottom = height - size * 1.2;
+  const litIndex = style === "wordByWord" ? caption.words.findLastIndex((word) => word.start < shown.end && word.end > shown.start) : -1;
   // Each line's words in order, so a word can be lit where it sits.
   let wordIndex = 0;
   lines.forEach((line, lineIndex) => {
@@ -36,8 +45,7 @@ export function drawCaption(context: CanvasRenderingContext2D | OffscreenCanvasR
     const widths = words.map((word) => context.measureText(word).width);
     let x = (width - (widths.reduce((sum, each) => sum + each, 0) + space * (words.length - 1))) / 2;
     words.forEach((word, index) => {
-      const said = caption.words[wordIndex];
-      const lit = style === "wordByWord" && said !== undefined && now >= said.start && now < said.end;
+      const lit = wordIndex === litIndex;
       context.strokeText(word, x, y);
       context.fillStyle = lit ? LIT : "#ffffff";
       context.fillText(word, x, y);

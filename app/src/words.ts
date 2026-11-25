@@ -6,6 +6,7 @@
 import { APP_NAME, type OpenRefusal } from "./shared/app-api.ts";
 import type { JobKind } from "./shared/media.ts";
 import type { CaptionStyle } from "./preview/captions.ts";
+import type { Spacing } from "./edit/cleanup.ts";
 
 export const words = {
   appName: APP_NAME,
@@ -55,11 +56,35 @@ export const words = {
   },
   transcript: {
     label: "Transcript",
-    waiting: "The words appear here as they're heard.",
+    waiting: "Words appear here as they're heard.",
+    pause: (seconds: string) => `${seconds} s pause`,
+    cutPause: "Cut this pause",
+    putBack: "Cut. Click to put it back",
+    // Possible, not certain: the filler check found 70% of these are real (gate on day 1's numbers).
+    cutFiller: "Possible um: click to cut it",
   },
   captions: {
+    label: "Captions:",
     style: "Caption style",
     styles: { subtitles: "Subtitles", wordByWord: "Word by word" } satisfies Record<CaptionStyle, string>,
+    hideFillers: "Hide ums in captions",
+  },
+  cleanup: {
+    label: "Clean up",
+    cleanUp: (count: number) => `Clean up: ${count} ${count === 1 ? "silence" : "silences"}`,
+    putBackAll: "Put all the silences back",
+    wouldSave: (seconds: number) => `${duration(seconds)} shorter`,
+    shorter: (seconds: number) => `Cut · ${duration(seconds)} shorter`,
+    none: "No long pauses to cut.",
+    spacingLabel: "Pauses:",
+    spacing: "Pause spacing",
+    spacings: { tight: "Tight", natural: "Natural", relaxed: "Relaxed" } satisfies Record<Spacing, string>,
+    possibleFillers: (count: number) => `${count} possible ${count === 1 ? "um" : "ums"} marked in the transcript`,
+    undo: "Undo",
+    redo: "Redo",
+  },
+  timeline: {
+    label: "Timeline",
   },
   preview: {
     label: "Preview",
@@ -68,6 +93,13 @@ export const words = {
     pause: "Pause",
   },
 } as const;
+
+/** "0.5 s", "45 s" or "1 min 40 s": a tenth of a second under 10 s, so it agrees with the pauses marked in the transcript. */
+function duration(seconds: number): string {
+  if (seconds < 10) return `${seconds.toFixed(1)} s`;
+  const whole = Math.round(seconds);
+  return whole < 60 ? `${whole} s` : `${Math.floor(whole / 60)} min${whole % 60 ? ` ${whole % 60} s` : ""}`;
+}
 
 export function refusalWords(refusal: OpenRefusal): string {
   return words.start.refused[refusal];

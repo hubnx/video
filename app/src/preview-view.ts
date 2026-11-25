@@ -28,6 +28,13 @@ export interface Preview {
   setCaptions(captions: readonly CaptionLine[], style: CaptionStyle): void;
   /** Called with the clip's time at each frame drawn and each seek. */
   onTime(listener: (seconds: number) => void): void;
+  /** The stretches taken out, which playing jumps over. */
+  setSkips(skips: { start: number; end: number }[]): void;
+  /** Plays from `seconds` to `until`, then stops: to hear a cut just made. */
+  playStretch(seconds: number, until: number): void;
+  /** Where in the clip the preview is, in seconds. */
+  readonly time: number;
+  togglePlay(): void;
 }
 
 /** The preview of the file at `address`, or null when this computer can't decode its picture. */
@@ -49,7 +56,7 @@ export async function previewView(address: string, duration: number): Promise<Pr
     if (document.activeElement !== bar) bar.value = String(player.time);
     canvas.dataset.drawn = String(player.drawnTimestamp ?? "");
     canvas.dataset.clock = String(player.time);
-    for (const listener of timeListeners) listener(player.time);
+    for (const listener of [...timeListeners]) listener(player.time); // a copy: a listener may remove itself
   };
   const player = new Player(frames, clock, compositor, duration, update);
   playButton.addEventListener("click", () => (player.playing ? player.pause() : player.play()));
@@ -59,10 +66,11 @@ export async function previewView(address: string, duration: number): Promise<Pr
   const overlay = new OffscreenCanvas(1, 1);
   const overlayContext = overlay.getContext("2d")!;
   const setCaptions = (captions: readonly CaptionLine[], style: CaptionStyle) => {
-    player.setOverlay(captions.length ? (seconds, size) => {
+    player.setOverlay(captions.length ? (shown, size) => {
       if (overlay.width !== size.width || overlay.height !== size.height) [overlay.width, overlay.height] = [size.width, size.height];
-      const now = flicksOf(seconds);
-      drawCaption(overlayContext, overlay.width, overlay.height, captionAt(captions, now), now, style);
+      const frame = { start: flicksOf(shown.start), end: flicksOf(shown.end) };
+      // The caption showing at the frame's middle; its lit word, the last said while the frame shows.
+      drawCaption(overlayContext, overlay.width, overlay.height, captionAt(captions, flicksOf((shown.start + shown.end) / 2)), frame, style);
       return overlay;
     } : null);
   };
@@ -73,5 +81,22 @@ export async function previewView(address: string, duration: number): Promise<Pr
     seek: (seconds) => void player.seek(seconds),
     setCaptions,
     onTime: (listener) => timeListeners.push(listener),
+    setSkips: (skips) => player.setSkips(skips),
+    get time() {
+      return player.time;
+    },
+    togglePlay: () => (player.playing ? player.pause() : player.play()),
+    playStretch: (seconds, until) => {
+      void player.seek(seconds).then(() => {
+        player.play();
+        const stopAt = (now: number) => {
+          if (now < until && player.playing) return;
+          // Gone before pausing: pausing tells every listener the time, and this one would pause again, without end.
+          timeListeners.splice(timeListeners.indexOf(stopAt), 1);
+          player.pause();
+        };
+        timeListeners.push(stopAt);
+      });
+    },
   };
 }

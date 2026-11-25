@@ -57,6 +57,9 @@ Dependencies point one way: window → preload → main process → FFmpeg.
 - **GitHub's artifact storage for hubnx fills up**: workflows read results from logs and upload to releases.
 - **Never hide a build's output** (`> /dev/null`): a failed build leaves the last good one, and checks pass on old code.
 - **Backticks inside a shader's comment end its template string**: the build fails, and the old code keeps running.
+- **At background priority the sound clock runs slow**: under `taskpolicy -b`, as checks run here, the preview's clock
+  ran at a third to half real time (2026-11-24); at normal priority it's real time. A check waits on the clock's time,
+  never on wall time.
 - **Electron refuses a native add-on's own memory** ("External buffers are not allowed"): sherpa-onnx's `readWave` and
   `Vad.front(true)` hand it over, so the transcriber reads the WAV itself and asks for copies (`front(false)`).
 

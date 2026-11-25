@@ -56,7 +56,8 @@ describe("possible ums", () => {
   it("cuts from the filler to the next word, at the quietest point near each edge, leaving 80 ms each side", () => {
     const words = [word("So", 0, 0.4), word("um", 1.0, 1.2), word("today", 1.8, 2.2)];
     const map = sound(3, [[0.42, 0.98], [1.22, 1.78]]);
-    const [cut] = fillerCuts(words, map);
+    const [{ word: marked, cut } = { word: undefined, cut: undefined }] = fillerCuts(words, map);
+    expect(marked?.text).toBe("um");
     expect(cut!.kind).toBe("filler");
     expect(secondsOf(cut!.start)).toBeGreaterThan(0.95);
     expect(secondsOf(cut!.end)).toBeLessThan(1.8 - 0.08 + 0.01);

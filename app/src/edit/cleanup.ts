@@ -46,16 +46,23 @@ const SEARCH_SECONDS = 0.1;
 const MARGIN_SECONDS = 0.08;
 const SHORTEST_FILLER_CUT_SECONDS = 0.1;
 
+/** A possible "um" and the cut it would make. */
+export interface FillerCut {
+  word: Word;
+  cut: Cut;
+}
+
 /** The cut each possible "um" would make: from the filler to the next word's start (Parakeet gives a filler a token's
- * length; a drawn-out "uhhh" runs on), each edge moved to the quietest 20 ms nearby, then 80 ms left uncut each side. */
-export function fillerCuts(words: readonly Word[], sound: SoundMap): Cut[] {
-  const cuts: Cut[] = [];
+ * length; a drawn-out "uhhh" runs on), each edge moved to the quietest 20 ms nearby, then 80 ms left uncut each side.
+ * Each carries its word, so the transcript marks that word, not one its padded cut happens to touch. */
+export function fillerCuts(words: readonly Word[], sound: SoundMap): FillerCut[] {
+  const cuts: FillerCut[] = [];
   words.forEach((word, index) => {
     if (!isFiller(word.text)) return;
     const next = words[index + 1];
     const start = quietestNear(sound.levels, secondsOf(word.start)) + MARGIN_SECONDS;
     const end = quietestNear(sound.levels, secondsOf(next ? next.start : word.end)) - MARGIN_SECONDS;
-    if (end - start >= SHORTEST_FILLER_CUT_SECONDS) cuts.push({ kind: "filler", start: flicksOf(start), end: flicksOf(end) });
+    if (end - start >= SHORTEST_FILLER_CUT_SECONDS) cuts.push({ word, cut: { kind: "filler", start: flicksOf(start), end: flicksOf(end) } });
   });
   return cuts;
 }

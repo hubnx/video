@@ -29,7 +29,7 @@ try {
   const started = Date.now();
   await page.getByRole("button", { name: "Choose a video" }).click();
   // The first words, while the rest are still being heard; or the app's own word for what went wrong, at once.
-  await page.locator(".transcript-line").or(page.locator(".clip-problem:not([hidden])")).first().waitFor({ timeout: 30 * 60_000 });
+  await page.locator(".transcript-paragraph").or(page.locator(".clip-problem:not([hidden])")).first().waitFor({ timeout: 10 * 60_000 });
   if (await page.locator(".clip-problem").isVisible()) throw new Error(`the app said: ${await page.locator(".clip-problem").innerText()}`);
   const firstWordsAfter = (Date.now() - started) / 1000;
   const whileHearing = await page.locator(".clip-status").isVisible();
@@ -53,11 +53,19 @@ try {
     context.drawImage(canvas, 0, 0);
     const band = context.getImageData(0, Math.floor(canvas.height * 0.8), canvas.width, Math.floor(canvas.height * 0.15)).data;
     let white = 0;
-    for (let index = 0; index < band.length; index += 4) if (band[index]! > 230 && band[index + 1]! > 230 && band[index + 2]! > 230) white++;
-    return white;
+    let lit = 0; // the lit word's yellow (captions.ts › LIT)
+    for (let index = 0; index < band.length; index += 4) {
+      const [red, green, blue] = [band[index]!, band[index + 1]!, band[index + 2]!];
+      if (red > 230 && green > 230 && blue > 230) white++;
+      if (red > 230 && green > 190 && blue < 120) lit++;
+    }
+    return { white, lit };
   });
-  console.log(`caption pixels in the picture's lower band: ${captionPixels}`);
-  if (captionPixels < 200) failures.push("no caption drawn on the picture after a word was clicked");
+  console.log(`caption pixels in the picture's lower band: ${captionPixels.white} white, ${captionPixels.lit} lit`);
+  if (captionPixels.white < 200) failures.push("no caption drawn on the picture after a word was clicked");
+  // Paused on a clicked word, the caption lights a word as the transcript does (gate on day 4: export equals preview).
+  if (captionPixels.lit < 50) failures.push("paused on a clicked word, the caption lit no word while the transcript lit one");
+  if ((await page.locator(".word.said").count()) !== 1) failures.push("the transcript didn't light the clicked word");
   for (const theme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: theme });
     await app.evaluate(({ nativeTheme }, chosen) => {
