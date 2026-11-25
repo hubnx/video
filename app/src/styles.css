@@ -426,3 +426,9 @@ button:disabled {
 .play {
   min-width: 80px;
 }
+
+/* The timeline takes the keyboard (S, Delete): its focus ring in the brand's colour, as every button's is. */
+.timeline-canvas:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
