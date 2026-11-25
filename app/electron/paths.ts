@@ -22,6 +22,13 @@ export interface Paths {
 export function resolvePaths(): Paths {
   app.setName(APP_NAME);
   if (app.isPackaged) {
+    // The fresh-install check's own folder (scripts/check-fresh-install.ts), so a check on this Mac never reads or writes
+    // the owner's. Never set in a person's copy.
+    const checkFolder = process.env.VIDEO_CHECK_DATA;
+    if (checkFolder) {
+      app.setPath("userData", checkFolder);
+      return withData(checkFolder, path.join(process.resourcesPath, "bin"));
+    }
     app.setPath("userData", path.join(app.getPath("appData"), DATA_FOLDER_NAME));
     // Linux's big files go where freedesktop.org says data goes (~/.local/share), not ~/.config, which people back
     // up and sync: the models and edit copies run to gigabytes.

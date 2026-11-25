@@ -30,6 +30,10 @@ const APPLE = {
   apiIssuer: "1406f232-2ba0-4ad9-97ea-c6181f48c887",
 };
 
+/** sherpa-onnx's package for each system, by its own names, and which one each target carries. */
+const SHERPA_SYSTEMS = ["darwin-arm64", "darwin-x64", "linux-arm64", "linux-x64", "win-arm64", "win-x64", "win-ia32"] as const;
+const SHERPA_SYSTEM: Record<Target, (typeof SHERPA_SYSTEMS)[number]> = { "mac-arm64": "darwin-arm64", "mac-x64": "darwin-x64", "win-x64": "win-x64", "linux-x64": "linux-x64" };
+
 export interface PackageOptions {
   signed: boolean;
   /** package.json's unless given. */
@@ -58,7 +62,9 @@ export async function packageApp(target: Target, options: PackageOptions): Promi
       // homepage: a .deb must name one. desktopName: what Linux desktops match the running window to its launcher by.
       extraMetadata: { version, homepage: WEBSITE_PAGES.home, desktopName: `${INSTALLED_NAME}.desktop` },
       directories: { output, buildResources: "build-resources" },
-      files: ["dist/**", "package.json"],
+      // The window and main process, and only this system's speech engine: every system's is installed here
+      // (pnpm-workspace.yaml), each 22 to 38 MB.
+      files: ["dist/**", "package.json", ...SHERPA_SYSTEMS.filter((system) => system !== SHERPA_SYSTEM[target]).map((system) => `!**/node_modules/sherpa-onnx-${system}{,/**}`)],
       // FFmpeg as its own programs beside the app, never inside the archive: the app runs them, and GPL's text and
       // their build's sources list travel with them (../ffmpeg/build.sh).
       extraResources: [{ from: ffmpeg, to: "bin", filter: ["ffmpeg", "ffprobe", "ffmpeg.exe", "ffprobe.exe", "COPYING.GPLv3", "BUILD.txt"] }],

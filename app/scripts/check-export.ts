@@ -21,6 +21,7 @@ import path from "node:path";
 import { _electron as electron, type ElectronApplication, type Page } from "playwright-core";
 import { programName, targetOf } from "../electron/targets.ts";
 import { appFolder, electronEnvironment, electronProgram, watchFrontmost } from "./start.ts";
+import { flashAndBeep } from "./sync-clip.ts";
 
 const stillBehind = watchFrontmost();
 const local = path.resolve(appFolder, "..", "local");
@@ -115,22 +116,6 @@ function barsOf(file: string, index: number): number {
   return number;
 }
 
-/** The frame of the numbered clip's white flash (the picture's lower part white), and the second its beep starts. */
-function flashAndBeep(file: string): { flash: number; beepAt: number } {
-  const grey = execFileSync(ffmpeg, ["-hide_banner", "-loglevel", "error", "-i", file, "-vf", "scale=16:9", "-f", "rawvideo", "-pix_fmt", "gray", "-"], { maxBuffer: 64 * 1024 * 1024 });
-  let flash = -1;
-  for (let index = 0; index * 144 < grey.length; index++) {
-    const lower = grey.subarray(index * 144 + 48, index * 144 + 144);
-    if (lower.reduce((sum, value) => sum + value, 0) / lower.length > 200) {
-      flash = index;
-      break;
-    }
-  }
-  const sound = execFileSync(ffmpeg, ["-hide_banner", "-loglevel", "error", "-i", file, "-ac", "1", "-ar", "48000", "-f", "f32le", "-"], { maxBuffer: 256 * 1024 * 1024 });
-  const samples = new Float32Array(sound.buffer, sound.byteOffset, Math.floor(sound.length / 4));
-  return { flash, beepAt: samples.findIndex((sample) => Math.abs(sample) > 0.1) / 48000 };
-}
-
 rmSync(folder, { recursive: true, force: true });
 mkdirSync(folder, { recursive: true });
 const cutOut = path.join(folder, "numbered-cut.mp4");
@@ -145,6 +130,16 @@ try {
     await seekTo(page, 2.5);
     await page.keyboard.press("Delete");
     timings.numbered = await exportTo(app, page, numbered, cutOut, "None");
+    // The day-7 check-in's one ask, after this first export that worked, with exactly its numbers; answered, it's gone
+    // for good (docs/plan.md › Keep or stop › The check-in).
+    const ask = page.locator("dialog.export .check-in");
+    await ask.filter({ hasText: "Videos exported: 1" }).waitFor({ timeout: 10_000 })
+      .then(() => expect(true, "after the first export, the check-in is asked once, its numbers shown"), () => expect(false, "after the first export, the check-in is asked once, its numbers shown"));
+    await page.screenshot({ path: path.join(local, "screens", "8-check-in-laptop-light.png") });
+    await ask.getByRole("button", { name: "No, thanks" }).click();
+    await ask.getByText("You can change this in Settings").waitFor();
+    const state = await page.evaluate(() => window.video.checkIn());
+    expect(state.answer === "no" && state.counts.videosExported === 1, `the answer is kept (${state.answer}, ${state.counts.videosExported} exported)`);
   });
 
   const facts = JSON.parse(execFileSync(ffprobe, ["-v", "error", "-show_streams", "-show_format", "-of", "json", cutOut], { encoding: "utf8" })) as {
@@ -166,7 +161,7 @@ try {
   }
 
   // The flash and the beep, both at 4 s after the cut.
-  const cutSync = flashAndBeep(cutOut);
+  const cutSync = flashAndBeep(ffmpeg, cutOut);
   expect(cutSync.flash === 120, `the flash at exported frame ${cutSync.flash} (120 expected: frame 150 less the 30 cut)`);
   expect(Math.abs(cutSync.beepAt - cutSync.flash / RATE) <= 1 / RATE + 0.01, `the beep at ${cutSync.beepAt.toFixed(3)} s and the flash at ${(cutSync.flash / RATE).toFixed(3)} s, within a frame`);
 
@@ -181,7 +176,7 @@ try {
   await withClip(late, async (app, page) => {
     timings.lateSound = await exportTo(app, page, late, lateOut, "None");
   });
-  const lateSync = flashAndBeep(lateOut);
+  const lateSync = flashAndBeep(ffmpeg, lateOut);
   expect(lateSync.flash === 150 && Math.abs(lateSync.beepAt - lateSync.flash / RATE) <= 1 / RATE + 0.01,
     `sound starting late: the beep at ${lateSync.beepAt.toFixed(3)} s and the flash at ${(lateSync.flash / RATE).toFixed(3)} s, within a frame`);
 

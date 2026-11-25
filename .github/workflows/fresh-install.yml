@@ -1,0 +1,129 @@
+# Before every release: the release's own packages, installed as a person installs them on GitHub's Windows, Ubuntu and
+# Apple-chip Mac, each opened with nothing on the computer yet, then a talk clip captioned (the speech model downloaded),
+# cleaned up and exported, with the flash and the beep still in sync on that system's own AAC encoder
+# (app/scripts/check-fresh-install.ts). The Mac's package must also be notarized and stapled. Each run's minutes to
+# first export are in its log's FRESH_INSTALL_RESULT line (docs/plan.md › Keep or stop). The Intel Mac's is checked on
+# the owner's Mac. Started by hand: Windows minutes count twice and Mac minutes ten times against the free plan's.
+name: Fresh install
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The release to check (its packages are on it), such as v1.0.0
+        required: true
+      mac:
+        description: Also check the Apple-chip Mac (ten times the minutes)
+        type: boolean
+        default: true
+
+env:
+  # The sentence each system's own voice says in the clip; the captions must hear most of its longer words.
+  SAID: Hello and welcome. This short video shows how captions appear while you speak, and how the long pauses get cut.
+  GH_TOKEN: ${{ github.token }} # reads this repo's releases while it's private
+  ELECTRON_SKIP_BINARY_DOWNLOAD: "1" # the check runs the installed app, never Electron from node_modules
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-24.04, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Only the Mac when asked
+        id: run
+        run: echo "go=${{ matrix.os != 'macos-15' || inputs.mac }}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+        if: steps.run.outputs.go == 'true'
+
+      - uses: actions/setup-node@v7
+        if: steps.run.outputs.go == 'true'
+        with:
+          node-version: 24
+
+      - name: The check's own packages
+        if: steps.run.outputs.go == 'true'
+        working-directory: app
+        run: corepack enable && corepack prepare pnpm@12.15.0 --activate && pnpm install --frozen-lockfile
+
+      - name: Download the release's package
+        if: steps.run.outputs.go == 'true'
+        run: |
+          version="${{ inputs.tag }}"; version="${version#v}"
+          case "${{ runner.os }}" in
+            Windows) patterns=("hubnx-Video-Setup-$version.exe") ;;
+            Linux) patterns=("hubnx-Video-$version-x86_64.AppImage" "hubnx-Video-$version-amd64.deb") ;;
+            macOS) patterns=("hubnx-Video-$version-arm64.dmg") ;;
+          esac
+          for pattern in "${patterns[@]}"; do gh release download "${{ inputs.tag }}" -R "$GITHUB_REPOSITORY" -p "$pattern" -D "$RUNNER_TEMP/download"; done
+          ls -la "$RUNNER_TEMP/download"
+
+      - name: Install it (Windows), and its voice says the sentence
+        if: steps.run.outputs.go == 'true' && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem "$env:RUNNER_TEMP\download\*.exe" | Select-Object -First 1
+          Start-Process -Wait -FilePath $setup.FullName -ArgumentList '/S'
+          $program = Get-ChildItem "$env:LOCALAPPDATA\Programs" -Recurse -Filter hubnx-video.exe | Select-Object -First 1
+          if (-not $program) { throw "INSTALL_FAILED: no hubnx-video.exe under $env:LOCALAPPDATA\Programs" }
+          "PROGRAM=$($program.FullName)" >> $env:GITHUB_ENV
+          Add-Type -AssemblyName System.Speech
+          $voice = New-Object System.Speech.Synthesis.SpeechSynthesizer
+          $voice.SetOutputToWaveFile("$env:RUNNER_TEMP\speech.wav")
+          $voice.Speak($env:SAID)
+          $voice.Dispose()
+
+      - name: Install it (Ubuntu), and a voice says the sentence
+        if: steps.run.outputs.go == 'true' && runner.os == 'Linux'
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q xvfb libttspico-utils || sudo apt-get install -y -q xvfb espeak-ng
+          # The .deb, as a package manager installs it (its FFmpeg makes and reads the clip), and the AppImage, which
+          # most people download and which updates itself: the flow runs on the AppImage.
+          sudo apt-get install -y -q "$RUNNER_TEMP"/download/*.deb
+          echo "DEB_FFMPEG=$(dpkg -L hubnx-video | grep '/resources/bin/ffmpeg$')" >> "$GITHUB_ENV"
+          echo "DEB_PROGRAM=$(dpkg -L hubnx-video | grep '/hubnx-video$' | head -1)" >> "$GITHUB_ENV"
+          image=$(ls "$RUNNER_TEMP"/download/*.AppImage); chmod +x "$image"
+          echo "PROGRAM=$image" >> "$GITHUB_ENV"
+          if command -v pico2wave >/dev/null; then pico2wave -l en-US -w "$RUNNER_TEMP/speech.wav" "$SAID"; else espeak-ng -s 150 -w "$RUNNER_TEMP/speech.wav" "$SAID"; fi
+
+      - name: Install it (Mac), check Apple notarized it, and its voice says the sentence
+        if: steps.run.outputs.go == 'true' && runner.os == 'macOS'
+        run: |
+          image=$(ls "$RUNNER_TEMP"/download/*.dmg)
+          xcrun stapler validate "$image"
+          hdiutil attach "$image" -nobrowse -mountpoint "$RUNNER_TEMP/volume"
+          mkdir -p "$HOME/Applications" && cp -R "$RUNNER_TEMP/volume/hubnx Video.app" "$HOME/Applications/"
+          hdiutil detach "$RUNNER_TEMP/volume"
+          spctl --assess --type execute -vvv "$HOME/Applications/hubnx Video.app" 2>&1 | tee "$RUNNER_TEMP/spctl.txt"
+          grep -q "source=Notarized Developer ID" "$RUNNER_TEMP/spctl.txt"
+          echo "PROGRAM=$HOME/Applications/hubnx Video.app/Contents/MacOS/hubnx Video" >> "$GITHUB_ENV"
+          say -o "$RUNNER_TEMP/speech.aiff" "$SAID"
+          "$HOME/Applications/hubnx Video.app/Contents/Resources/bin/ffmpeg" -hide_banner -loglevel error -i "$RUNNER_TEMP/speech.aiff" -ar 48000 -ac 1 "$RUNNER_TEMP/speech.wav"
+
+      - name: Fresh install to export
+        if: steps.run.outputs.go == 'true'
+        working-directory: app
+        run: |
+          check=(pnpm exec node scripts/check-fresh-install.ts --program "$PROGRAM" --speech "$RUNNER_TEMP/speech.wav" --said "$SAID")
+          if [ "${{ runner.os }}" = Linux ]; then
+            xvfb-run -a --server-args="-screen 0 1920x1080x24" "${check[@]}" --ffmpeg "$DEB_FFMPEG"
+            # The .deb's copy opens too, its FFmpeg running inside it.
+            xvfb-run -a --server-args="-screen 0 1920x1080x24" pnpm check-package --program "$DEB_PROGRAM"
+          else
+            "${check[@]}"
+          fi
+
+      # The pictures, when the organisation's artifact storage has room (it fills up): never the check's verdict.
+      - uses: actions/upload-artifact@v7
+        if: always() && steps.run.outputs.go == 'true'
+        continue-on-error: true
+        with:
+          name: fresh-install-${{ matrix.os }}
+          path: local/fresh-install/*.png
+          retention-days: 7
