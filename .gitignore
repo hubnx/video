@@ -3,3 +3,5 @@
 node_modules/
 dist/
 .DS_Store
+# The private hubnx/video-ops repo, cloned here: the site's stack, deploy and download counter (docs/plan.md › Where it ships).
+/ops/
