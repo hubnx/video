@@ -15,7 +15,7 @@
  *     [--ffmpeg <an FFmpeg to make and read the clip>] [--out <folder>]
  */
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { cpus } from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
@@ -126,6 +126,9 @@ const result = { measured: new Date().toISOString(), system: `${process.platform
 writeFileSync(path.join(out, "result.json"), JSON.stringify(result, null, 1));
 console.log(`FRESH_INSTALL_RESULT ${JSON.stringify(result)}`);
 if (failures.length) {
+  // GitHub's runs keep only their logs, so the app's own log goes there too: what the window and the main process met.
+  const appLog = path.join(out, "data", "logs", "app.log");
+  if (existsSync(appLog)) console.error(`--- the app's log:\n${readFileSync(appLog, "utf8").split("\n").slice(-60).join("\n")}`);
   console.error(`FRESH_INSTALL_FAILED:\n${failures.join("\n")}`);
   process.exit(1);
 }
