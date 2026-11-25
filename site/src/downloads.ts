@@ -3,7 +3,7 @@
  * (app/scripts/release-files.ts), which the deploy uploads under /download/ and the live check confirms are served
  * before the site goes out (day 8). The version is the app's own.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { LINUX_DEB, RELEASE_FILES } from "../../app/scripts/release-files.ts";
 import type { Target } from "../../app/electron/targets.ts";
 
@@ -30,15 +30,22 @@ const DOWNLOADS: Download[] = [
     firstOpen: "Allow the AppImage to run as a program, in its Properties, then open it." },
 ];
 
+/** A package's size as the card says it ("160 MB"), read from the release built on this Mac (app/scripts/package.ts),
+ * which a release's deploy uploads; nothing when the site is built without it, as a pages-only deploy is. */
+function sizeOf(target: Target, file: string): string {
+  const built = new URL(`../../local/release/${target}/${file}`, import.meta.url);
+  return existsSync(built) ? ` · ${Math.round(statSync(built).size / 1_000_000)} MB` : "";
+}
+
 export function renderDownloads(): string {
   return DOWNLOADS.map((download) => {
     const file = RELEASE_FILES[download.target](VERSION);
-    const also = download.also ? ` · <a href="/download/${download.also.file}" download>${download.also.label}</a>` : "";
+    const also = download.also ? ` · <a href="/download/${download.also.file}" download>${download.also.label}</a>${sizeOf(download.target, download.also.file)}` : "";
     return `<section class="card download" data-target="${download.target}">
             <h2>${download.title}<span class="yours" hidden>This computer</span></h2>
             <p class="needs">${download.needs}</p>
             <a class="button" href="/download/${file}" download aria-label="Download for ${download.title}">Download</a>
-            <p class="file">${file}${also}</p>
+            <p class="file">${file}${sizeOf(download.target, file)}${also}</p>
             <p class="first-open">${download.firstOpen}</p>
           </section>`;
   }).join("\n          ");
