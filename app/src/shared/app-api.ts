@@ -54,6 +54,7 @@ export const CHANNELS = {
   saveEdit: "clip:save-edit",
   cleanVoice: "clip:clean-voice",
   voiceProgress: "clip:voice-progress",
+  voiceEstimate: "voice:estimate",
   exportDestination: "export:destination",
   changeExportDestination: "export:change-destination",
   beginExport: "export:begin",
@@ -102,6 +103,8 @@ export interface VideoApi {
   /** Makes the clip's clean voice, if it isn't made yet; its progress comes to onVoiceProgress. */
   cleanVoice(clipId: string): Promise<void>;
   onVoiceProgress(listener: (progress: VoiceProgress) => void): () => void;
+  /** About how many seconds the clip's clean voice will take on this computer, or null when it's already made. */
+  voiceEstimate(clipId: string): Promise<number | null>;
   /** Where the clip's export goes unless the person changes it (electron/export-destination.ts), asked afresh each time. */
   exportDestination(clipId: string): Promise<ExportDestination>;
   /** The system's save dialog, starting from `current`; null when the person closed it. */

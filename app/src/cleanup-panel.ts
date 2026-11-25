@@ -9,8 +9,10 @@ import { SPACINGS, type Spacing } from "./edit/cleanup.ts";
 import { secondsSaved } from "./shared/cuts.ts";
 import { words } from "./words.ts";
 
-/** The panel; `voice` shows how the clean voice is coming along (null when there's nothing to say). */
-export function cleanupPanel(editor: ClipEditor): { element: HTMLElement; render: () => void; voice: (status: string | null) => void } {
+/** The panel; `voice` shows how the clean voice is coming along, and `voiceTime` how long it would take, on the switch
+ * (null for nothing to say). */
+export function cleanupPanel(editor: ClipEditor): { element: HTMLElement; render: () => void; voice: (status: string | null) => void;
+  voiceTime: (time: string | null) => void } {
   const action = element("button", { type: "button", className: "primary" });
   const saved = element("span", { className: "cleanup-saved" });
   const spacing = element("div", { className: "segmented", attributes: { role: "radiogroup", "aria-label": words.cleanup.spacing } },
@@ -22,10 +24,11 @@ export function cleanupPanel(editor: ClipEditor): { element: HTMLElement; render
   // Voice clean-up as one switch (docs/plan.md › Release 1), off by default: it takes its time (Choices › cleanVoice).
   const cleanVoice = element("input", { type: "checkbox", onchange: () => editor.setCleanVoice(cleanVoice.checked) });
   const voiceStatus = element("span", { className: "cleanup-voice", attributes: { role: "status" } });
+  const voiceTime = element("span", { className: "cleanup-voice-time" });
   const panel = element("section", { className: "cleanup", attributes: { "aria-label": words.cleanup.label } },
     element("div", { className: "cleanup-row" }, action, saved),
     element("div", { className: "cleanup-row" }, element("span", { className: "label", textContent: words.cleanup.spacingLabel }), spacing),
-    element("div", { className: "cleanup-row" }, element("label", { className: "switch" }, cleanVoice, words.cleanup.cleanVoice), voiceStatus),
+    element("div", { className: "cleanup-row" }, element("label", { className: "switch" }, cleanVoice, words.cleanup.cleanVoice, voiceTime), voiceStatus),
     fillers, element("div", { className: "cleanup-row history" }, undo, redo));
 
   action.addEventListener("click", () => {
@@ -53,5 +56,6 @@ export function cleanupPanel(editor: ClipEditor): { element: HTMLElement; render
     cleanVoice.checked = editor.cleanVoice;
   };
   render();
-  return { element: panel, render, voice: (status) => (voiceStatus.textContent = status ?? "") };
+  return { element: panel, render, voice: (status) => (voiceStatus.textContent = status ?? ""),
+    voiceTime: (time) => (voiceTime.textContent = time === null ? "" : `(${time})`) };
 }

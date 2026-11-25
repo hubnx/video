@@ -30,6 +30,7 @@ heavy runs go through `taskpolicy -b`, after `uptime` shows a 1-minute load unde
 | Day 7's export check: a cut clip's frames and sound in sync, a cancelled export leaving nothing, captions in the picture, a minute of 4K HEVC at 4K, an HDR clip through its edit copy; times per computer in `local/export-check/timings.json` | `pnpm build && pnpm exec node scripts/check-export.ts` |
 | **Guards, run on any change to the speech engine, the voice detector or the cut code, their numbers logged in `docs/plan.md` › Risks** (local only: the AMI audio never goes in git): the silence cuts against AMI's words, and the filler detectors | `pnpm exec node scripts/check-silences.ts`; the filler check's scripts in `local/filler-check/scripts/` (`results.md` says how) |
 | Screenshots of every screen, four window sizes, light and dark, into `local/screens/` | `pnpm build && pnpm exec node scripts/screens.ts` |
+| Voice clean-up's speed, for the estimate on its switch (`src/shared/voice-speed.ts`): here at normal priority, and GitHub's three with `gh workflow run voice-speed.yml` | `pnpm exec node scripts/time-voice.ts` |
 | WebCodecs' encoders and decoders at 1080p and 4K, here (`local/probe/`); GitHub's three with `gh workflow run probe.yml` | `pnpm probe` |
 | The 4K HEVC proxy and edit-copy times (`local/edit-copy-timing/`); GitHub's Windows and Ubuntu with `gh workflow run edit-copy-timing.yml` | `pnpm exec node scripts/time-edit-copy.ts ../local/edit-copy-timing/hevc-4k-10min.mov 60` |
 | Package (unsigned for checks; `--signed` signs and notarizes the Macs), into `local/release/<target>/` | `pnpm build && pnpm package mac-x64` |
@@ -58,9 +59,10 @@ Dependencies point one way: window → preload → main process → FFmpeg.
 - **GitHub's artifact storage for hubnx fills up**: workflows read results from logs and upload to releases.
 - **Never hide a build's output** (`> /dev/null`): a failed build leaves the last good one, and checks pass on old code.
 - **Backticks inside a shader's comment end its template string**: the build fails, and the old code keeps running.
-- **At background priority the sound clock runs slow**: under `taskpolicy -b`, as checks run here, the preview's clock
-  ran at a third to half real time (2026-11-24); at normal priority it's real time. A check waits on the clock's time,
-  never on wall time.
+- **At background priority everything timed runs slow**: under `taskpolicy -b`, as checks run here, the preview's clock
+  ran at a third to half real time, and voice clean-up took 41.7 s a minute against 24 s at normal priority
+  (2026-11-24). A check waits on the clock's time, never on wall time; a speed that goes into the app or the plan is
+  timed at normal priority (`scripts/time-voice.ts`), or on GitHub.
 - **Mediabunny's `new Quality(number)` is a 0–1 quality level, not a bitrate**: a bitrate goes in
   `new Quality({ bitrate })`. Its typing accepts any object as a `Quality`, so the type check doesn't catch it, and a
   bitrate taken as a level asks for quantizer mode at level 6.2, which this Mac's hardware encoder refuses ("Encoder

@@ -10,6 +10,7 @@ import type { Clip, ClipFacts, JobKind, VoiceProgress } from "../src/shared/medi
 import { PROJECT_FORMAT, PROJECT_VERSION } from "../src/shared/project.ts";
 import type { Stretch } from "../src/shared/cuts.ts";
 import { loudness } from "../src/shared/quiet.ts";
+import { expectedSecondsPerMinute, voiceSeconds } from "../src/shared/voice-speed.ts";
 import type { SoundMap, Transcript, TranscriptProgress } from "../src/shared/transcript.ts";
 import { speechSamples } from "./quiet.ts";
 import { errorName, logError, startAppLog } from "./app-log.ts";
@@ -129,8 +130,14 @@ async function start(): Promise<void> {
       if (!modelsReady(paths.models, [DPDFNET])) {
         await downloadModels(paths.models, [DPDFNET], (done, total) => sendVoice({ clipId: id, state: "downloading", fraction: done / total }), controller.signal);
       }
+      const started = performance.now();
       await cleanVoice(workers, clips.made(id, "voiceSource"), output, paths.models, (fraction) => sendVoice({ clipId: id, state: "cleaning", fraction }), controller.signal);
       sendVoice({ clipId: id, state: "ready" });
+      // This computer's own speed, for the next estimate; a short clip's time is mostly starting up, so it isn't kept.
+      if (found.durationSeconds >= 60) {
+        const perMinute = (performance.now() - started) / 1000 / (found.durationSeconds / 60);
+        saveSettings({ voiceSecondsPerMinute: Math.round(perMinute * 10) / 10 }).catch((error: unknown) => logError("settings_unsaved", errorName(error)));
+      }
     } catch (error) {
       logError("voice_uncleaned", errorName(error), error instanceof Error ? error.message.slice(0, 200) : "");
       sendVoice({ clipId: id, state: "failed", error: error instanceof Error ? error.message.split(":")[0]! : "VOICE_FAILED" });
@@ -138,6 +145,12 @@ async function start(): Promise<void> {
       voices.delete(id);
     }
   };
+  ipcMain.handle(CHANNELS.voiceEstimate, (_event, clipId: unknown) => {
+    const found = typeof clipId === "string" ? facts.get(clipId) : undefined;
+    if (!found || typeof clipId !== "string") throw new Error("not an open clip");
+    if (existsSync(clips.stored(clipId, "clean-voice.wav"))) return null;
+    return voiceSeconds(found.durationSeconds, expectedSecondsPerMinute(process.platform, process.arch, settings.voiceSecondsPerMinute));
+  });
   const jobs: JobRunner = new JobRunner(paths.ffmpeg, paths.logs, (progress) => {
     window?.webContents.send(CHANNELS.jobProgress, progress);
     if (progress.kind === "speech" && progress.state === "done") void transcribeClip(progress.clipId);

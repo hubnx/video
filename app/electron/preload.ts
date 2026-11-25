@@ -25,6 +25,7 @@ const api: VideoApi = {
   saveEdit: (clipId, edit, choices) => void ipcRenderer.invoke(CHANNELS.saveEdit, clipId, edit, choices),
   cleanVoice: (clipId) => ipcRenderer.invoke(CHANNELS.cleanVoice, clipId),
   onVoiceProgress: (listener) => subscribe(CHANNELS.voiceProgress, listener),
+  voiceEstimate: (clipId) => ipcRenderer.invoke(CHANNELS.voiceEstimate, clipId),
   exportDestination: (clipId) => ipcRenderer.invoke(CHANNELS.exportDestination, clipId),
   changeExportDestination: (clipId, current) => ipcRenderer.invoke(CHANNELS.changeExportDestination, clipId, current),
   beginExport: (destination) => ipcRenderer.invoke(CHANNELS.beginExport, destination),

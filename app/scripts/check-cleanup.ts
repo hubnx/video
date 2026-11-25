@@ -134,6 +134,9 @@ try {
 
   // Voice clean-up as one switch: made in the background with its progress said, then played in the preview.
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1280, 800));
+  // Before it's on, the switch says how long it would take (a minute of talk here: under a minute).
+  const estimate = await page.locator(".cleanup-voice-time").innerText();
+  expect(/^\((under a minute|about \d+ min) for this video\)$/.test(estimate), `the switch says how long it would take ("${estimate}")`);
   await page.getByRole("checkbox", { name: "Clean voice" }).check();
   const ready = page.locator(".cleanup [role=status]").filter({ hasText: /Background noise removed|couldn't be cleaned/ });
   await ready.waitFor({ timeout: 10 * 60_000 });
@@ -141,6 +144,7 @@ try {
   const made = existsSync(path.join(local, "app-data", "clips", (await page.locator(".clip").getAttribute("data-clip"))!, "clean-voice.wav"));
   expect(voiceSaid.includes("Background noise removed") && made, `the voice was cleaned and kept with the clip ("${voiceSaid}")`);
   await page.screenshot({ path: path.join(local, "screens", "6-clean-voice-laptop-light.png") });
+  expect((await page.locator(".cleanup-voice-time").innerText()) === "", "the estimate goes once the voice is made");
 
   // Undo until there's nothing left: nothing taken out.
   const undo = page.getByRole("button", { name: "Undo", exact: true });

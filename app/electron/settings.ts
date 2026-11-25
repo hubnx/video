@@ -5,6 +5,9 @@ import { errorName, logError } from "./app-log.ts";
 export interface Settings {
   // When this copy first opened: the day-7 check-in counts from it (docs/plan.md › Keep or stop › The check-in).
   firstOpenedAt?: string;
+  // This computer's voice clean-up speed, seconds per minute of sound, from its last clean-up of a minute or more: the
+  // estimate on the switch (src/shared/voice-speed.ts).
+  voiceSecondsPerMinute?: number;
 }
 
 export async function readSettings(file: string): Promise<Settings> {

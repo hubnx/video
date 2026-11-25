@@ -91,7 +91,15 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
     void preview.useSound(wanted ? mediaAddress(clip.id, "cleanVoice") : null);
   };
   let voiceAsked = false;
+  // How long it would take, on the switch while it's off and the clean voice isn't made: it's minutes for a long talk.
+  let voiceEstimate: number | null = null;
+  const showVoiceTime = () => panel.voiceTime(voiceEstimate !== null && !editor.cleanVoice && !voiceReady ? words.cleanup.voiceTime(voiceEstimate) : null);
+  window.video.voiceEstimate(clip.id).then((seconds) => {
+    voiceEstimate = seconds;
+    showVoiceTime();
+  }, (error: unknown) => logProblem("voice_estimate_unknown", error));
   editor.onChange(() => {
+    showVoiceTime();
     if (editor.cleanVoice && !voiceAsked) {
       voiceAsked = true;
       void window.video.cleanVoice(clip.id);
@@ -106,6 +114,7 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
     if (progress.state === "preparing" || progress.state === "downloading" || progress.state === "cleaning") panel.voice(words.cleanup.voice[progress.state](percent));
     if (progress.state === "ready") {
       voiceReady = true;
+      showVoiceTime();
       panel.voice(editor.cleanVoice ? words.cleanup.voice.ready : null);
       playCleanVoiceIfChosen();
     }

@@ -88,6 +88,8 @@ export const words = {
     redo: "Redo",
     cleanVoice: "Clean voice",
     // What the switch is doing, as the person sees it (src/shared/media.ts › VoiceProgress).
+    // On the switch before it's on: "Clean voice (about 14 min for this video)".
+    voiceTime: (seconds: number) => (seconds < 60 ? "under a minute for this video" : `about ${Math.round(seconds / 60)} min for this video`),
     voice: {
       preparing: (percent: number) => `Getting the sound ready… ${percent}%`,
       downloading: (percent: number) => `Getting the voice model ready (first time only)… ${percent}%`,
