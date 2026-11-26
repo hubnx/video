@@ -126,6 +126,17 @@ main {
   padding: 48px 0 16px;
 }
 
+/* The app's own screen under the opening: as wide as the content, its corners and edge in the site's card style. */
+.hero-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 36px auto 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
 .hero h1 {
   font-size: clamp(2rem, 5vw, 3rem);
   line-height: 1.15;
