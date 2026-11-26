@@ -1,10 +1,10 @@
 # video: how we decide and keep winning
 
 The product manager's file: the rhythm, where users' reviews come from, the scoreboard of rivals and
-the gap register. `video` builds (how to build, `CLAUDE.md`, `plan.md`, `research/*`); `video
-assistant` is the product manager and, since 2026-11-20, the app's contact for the owner and other
-chats (`video` reaches others through it): researches, decides what isn't money, writes it here,
-challenges each step of the build, keeps the owner's steps, and tells the owner in plain words.
+the gap register. Since 2026-11-25 one chat, `video`, builds, is the product manager and is the app's
+contact for the owner and other chats (the owner closed `video assistant`, which held this file from
+2026-11-17): it researches, decides what isn't money, writes it here, holds each step of the build to
+the gates below as a reviewer would, keeps the owner's steps, and tells the owner in plain words.
 
 ## The owner's brief (2026-11-17)
 
@@ -39,20 +39,22 @@ Decided 2026-11-17, agreed with `video`.
 | **When something happens** | At once | A rival's launch, price change or shutdown; a release of ours; a spike in reviews or issues | A plain message to the owner and to `video` |
 
 **Four gates for every feature:**
-1. **Before building**: a brief from `video` (the problem and its evidence, the best rival's way, options with trade-offs, a recommendation, how we'll know it worked); the PM replies with critical feedback before code starts.
+1. **Before building**: a brief (the problem and its evidence, the best rival's way, options with trade-offs, a recommendation, how we'll know it worked), written into the feature's design file (`design/`) and read back critically before code starts; a fresh reviewer agent replies with critical feedback before code starts.
 2. **Mid-build**: a review of the flow and screens against the brief (the clarity check in `../../docs/brand.md`, the edge cases).
 3. **Before release**: the result against the brief, in screenshots at phone, tablet and desktop width and both themes, walked as a user beside the best rival's flow.
 4. **One to two weeks after**: did the number move? Keep, change or cut, written in the feature's own file.
 
-**How it runs:** session crons, which die with the session; recurring ones expire after 7 days. The
-Monday pass schedules the next Monday and Friday one-shots and re-creates the daily scan. After a
-restart or compaction, run CronList and re-create whatever is missing from the prompts below.
+**How it runs:** session crons, which die with the session; a recurring one expires (7 days before Claude Code's update of
+2026-11-25, 30 days after; the result of creating one says which). The Monday pass schedules the next Monday and Friday
+one-shots and re-creates the daily scan. After a restart or compaction, run CronList and re-create whatever is missing,
+word for word from the prompts below (the job list shows only a prompt's first line). Since 2026-11-25 `video` runs them
+(it took over `video assistant`'s role); the status file they name is the running chat's own.
 
 | Job | Cron | Prompt |
 |---|---|---|
-| Daily scan | `51 8 * * 2-5`, recurring | VIDEO DAILY SCAN: run `zsh video/local/pm/rivals.sh` (prints only what changed on GitHub), one news search for the closed rivals and new launches, `git log` of `video` since the last scan; act only on a change (this file, a critical point to `video`, the owner only if it matters); then rewrite `hubnx-apps/local/sessions/video-assistant.md` (template in that folder's README). No progress-only messages |
-| Market and plan | `37 9 <next Monday> *`, one-shot | VIDEO WEEKLY PASS: the *Market and plan* row; then the Monday housekeeping (cleanup of my own files and memory, token review, schedule check) in the status file's *Weekly* line; schedule the next Monday and Friday one-shots and re-create the daily scan |
-| Retro | `23 16 <next Friday> *`, one-shot | VIDEO RETRO: the *Retro* row; then schedule the next Friday |
+| Daily scan | `51 8 * * 2-5`, recurring | VIDEO DAILY SCAN: run `zsh video/local/pm/rivals.sh` (prints only what changed on GitHub), one news search for the closed rivals and new launches, `git log` of `video` since the last scan; act only on a change (video/docs/product.md, a critical point to `video`, the owner only if it matters); then rewrite `hubnx-apps/local/sessions/video-assistant.md` (template in that folder's README). No progress-only messages. |
+| Market and plan | `37 9 <next Monday> *`, one-shot | VIDEO WEEKLY PASS: do the *Market and plan* row of video/docs/product.md › Rhythm (every rival re-checked, reviews on every source, each current and just-launched feature against the best rival, gaps given a call, new feature ideas, new launches in the last 30 days, Search Console and the download count once live, notes cleaned, plan re-ranked with `video`); commit product.md by path; the Monday housekeeping (cleanup of my own files and memory, token review, schedule check) in hubnx-apps/local/sessions/video-assistant.md's Weekly line; one short pulse to the owner; then schedule the next Monday (37 9) and Friday (23 16) one-shots and re-create the daily scan (51 8 * * 2-5) per product.md's prompts table, deleting duplicates found by CronList. |
+| Retro | `23 16 <next Friday> *`, one-shot | VIDEO RETRO: do the *Retro* row of video/docs/product.md › Rhythm (what shipped, what moved, what we got wrong, what to change, next week's plan, agreed with `video`); update product.md and commit by path; tell the owner each decision that needs them, in plain words; then schedule the next Friday's retro (23 16 <date> *, one-shot). |
 
 ## Last retro: week of 2026-11-17
 
