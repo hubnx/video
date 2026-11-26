@@ -21,3 +21,8 @@ it("never lets a word run into the next one", () => {
 it("takes punctuation at the very start as a word of its own rather than losing it", () => {
   expect(wordsOf({ tokens: ["¿", " Qué"], timestamps: [0, 0.1], durations: [0.08, 0.2] }, 0).map((word) => word.text)).toEqual(["¿", "Qué"]);
 });
+
+it("starts a number as its own word after Parakeet's bare space token, its digits joined", () => {
+  const words = wordsOf({ tokens: [" in", " ", "2", "0", " minutes", "."], timestamps: [0, 0.3, 0.3, 0.4, 0.6, 1], durations: [0.2, 0, 0.1, 0.1, 0.3, 0] }, 0);
+  expect(words.map((word) => word.text)).toEqual(["in", "20", "minutes."]);
+});

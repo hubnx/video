@@ -314,16 +314,19 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
 }
 
 /** Whether this computer's window can use the original, which decides the proxy and edit copy (ffmpeg-jobs.ts); the
- * jobs start once it's known. Usable means decoded here and timed from zero: a camera's MPEG-TS (.mts) keeps its clock's
- * own times, which the window reads as they are but FFmpeg starts at zero, so the picture would run a second or more
- * behind the words and the sound (the export's fresh review, 2026-11-24). Such a clip plays and exports from its copies. */
+ * jobs start once it's known. Usable means decoded here and its picture timed from zero: a camera's MPEG-TS (.mts)
+ * keeps its clock's own times, which the window reads as they are but FFmpeg starts at zero, so the picture would run a
+ * second or more behind the words and the sound (the export's fresh review, 2026-11-24). Such a clip plays and exports
+ * from its copies. The picture's own first moment, never the file's: AAC sound starts 21 ms early in every MP4 from a
+ * phone, OBS or a camera (the encoder's lead-in), and taking the earliest track made every one of them wait for copies
+ * it didn't need (found by the demo's film, 2026-11-26). */
 async function plan(clip: Clip): Promise<boolean> {
   let decodes = false;
   if (clip.facts.video) {
     const input = new Input({ source: new UrlSource(mediaAddress(clip.id, "original")), formats: ALL_FORMATS });
     try {
       const track = await input.getPrimaryVideoTrack();
-      decodes = track ? (await track.canDecode()) && Math.abs(await input.getFirstTimestamp()) < 0.001 : false;
+      decodes = track ? (await track.canDecode()) && Math.abs(await track.getFirstTimestamp()) < 0.001 : false;
     } catch (error) {
       logProblem("clip_not_decodable", error); // a container the window can't read: an edit copy, then
       decodes = false;
