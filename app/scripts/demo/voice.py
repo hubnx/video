@@ -16,7 +16,17 @@ from kokoro_onnx import Kokoro
 from misaki import en
 
 VOICE = os.path.expanduser("~/Workspace/repo/hubnx/local/brand/remotion/voice")
-lines = json.load(open(sys.argv[1], encoding="utf-8"))
+# Words the dictionary lacks, said another way ("hubnx" as "hub N X"): the channel's own list, read only.
+SAY = {k: v for k, v in json.load(open(os.path.join(VOICE, "say.json"), encoding="utf-8")).items() if not k.startswith("_")}
+
+
+def spoken(text):
+    for word, said in SAY.items():
+        text = text.replace(word, said)
+    return text
+
+
+lines = [spoken(line) for line in json.load(open(sys.argv[1], encoding="utf-8"))]
 out = sys.argv[2]
 os.makedirs(out, exist_ok=True)
 g2p = en.G2P(trf=False, british=False, fallback=None)

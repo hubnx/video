@@ -1,0 +1,10 @@
+[
+  { "at": "title", "text": "This is hubnx Video, a free editor for talking videos." },
+  { "at": "drop", "text": "Drop in a video. Nothing is uploaded, and you don't need an account." },
+  { "at": "captions", "text": "It writes the captions as it listens, right on your computer." },
+  { "at": "cleanUp", "text": "It finds every long pause. One click cuts all {silences}, and you can put any of them back." },
+  { "at": "cleanVoice", "text": "One switch takes the hum and the room noise out from under your voice." },
+  { "at": "short", "text": "Turn on Short, and the same video is ready for YouTube Shorts, TikTok and Reels." },
+  { "at": "export", "text": "Then export it, up to 4K, with no watermark." },
+  { "at": "end", "text": "hubnx Video. It's free, at video dot hubnx dot com." }
+]
