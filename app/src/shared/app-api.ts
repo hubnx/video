@@ -2,6 +2,7 @@
  * What the window may ask of the app (electron/preload.ts exposes exactly this as window.video), and the shapes it
  * gets back. The window never touches files or processes itself.
  */
+import type { ClipFaces } from "./faces.ts";
 import type { Clip, JobProgress, VoiceProgress } from "./media.ts";
 import type { Choices, Edit } from "./project.ts";
 import type { TranscriptProgress } from "./transcript.ts";
@@ -80,6 +81,8 @@ export const CHANNELS = {
   openChromiumNotices: "licenses:open-chromium",
   checkIn: "check-in:state",
   answerCheckIn: "check-in:answer",
+  faces: "clip:faces",
+  saveFaces: "clip:save-faces",
 } as const;
 
 /** Where hubnx.com takes reports and check-ins (its `/api/feedback`; the contract: @hubnx/web-parts › feedback-report and
@@ -186,6 +189,10 @@ export interface VideoApi {
   logProblem(event: string, detail: string): void;
   /** The clip's edit and choices as they are now: saved about a second after the last change (electron/project-file.ts). */
   saveEdit(clipId: string, edit: Edit, choices: Choices): void;
+  /** The faces found in the clip before (shared/faces.ts), or null when they're still to find. */
+  faces(clipId: string): Promise<ClipFaces | null>;
+  /** Keeps the faces found in the clip, so they're found once. */
+  saveFaces(clipId: string, faces: ClipFaces): Promise<void>;
   /** Makes the clip's clean voice, if it isn't made yet; its progress comes to onVoiceProgress. */
   cleanVoice(clipId: string): Promise<void>;
   onVoiceProgress(listener: (progress: VoiceProgress) => void): () => void;

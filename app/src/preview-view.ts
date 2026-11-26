@@ -4,11 +4,11 @@
  * the clock's as data, which the preview check reads (scripts/check-preview.ts).
  */
 import { element } from "./dom.ts";
-import { captionAt, drawCaption, type CaptionStyle } from "./preview/captions.ts";
+import { captionAt, drawCaption, type CaptionLook, type CaptionStyle } from "./preview/captions.ts";
 import { SoundClock, SteadyClock } from "./preview/clock.ts";
 import { Compositor } from "./preview/compositor.ts";
 import { Frames } from "./preview/frames.ts";
-import { Player } from "./preview/player.ts";
+import { Player, type ViewAt } from "./preview/player.ts";
 import type { CaptionLine } from "./shared/transcript.ts";
 import { flicksOf } from "./shared/time.ts";
 import { words } from "./words.ts";
@@ -24,8 +24,10 @@ export function clockTime(seconds: number): string {
 export interface Preview {
   element: HTMLElement;
   seek(seconds: number): void;
-  /** The captions to draw, and their style; an empty list draws none. */
-  setCaptions(captions: readonly CaptionLine[], style: CaptionStyle): void;
+  /** The captions to draw, their style and look; an empty list draws none. */
+  setCaptions(captions: readonly CaptionLine[], style: CaptionStyle, look: CaptionLook): void;
+  /** The part of the picture shown at each moment (shorts/framing.ts); null for all of it. */
+  setView(viewAt: ViewAt): void;
   /** Called with the clip's time at each frame drawn and each seek. */
   onTime(listener: (seconds: number) => void): void;
   /** The stretches taken out, which playing jumps over. */
@@ -61,6 +63,7 @@ export async function previewView(address: string, duration: number): Promise<Pr
     if (document.activeElement !== bar) bar.value = String(player.time);
     canvas.dataset.drawn = String(player.drawnTimestamp ?? "");
     canvas.dataset.clock = String(player.time);
+    canvas.dataset.view = player.drawnView ? JSON.stringify(player.drawnView) : "";
     for (const listener of [...timeListeners]) listener(player.time); // a copy: a listener may remove itself
   };
   const player = new Player(frames, clock, compositor, duration, update);
@@ -70,12 +73,12 @@ export async function previewView(address: string, duration: number): Promise<Pr
   // The captions' own canvas, the picture's size, laid over each frame (compositor.ts › drawOverlay).
   const overlay = new OffscreenCanvas(1, 1);
   const overlayContext = overlay.getContext("2d")!;
-  const setCaptions = (captions: readonly CaptionLine[], style: CaptionStyle) => {
+  const setCaptions = (captions: readonly CaptionLine[], style: CaptionStyle, look: CaptionLook) => {
     player.setOverlay(captions.length ? (shown, size) => {
       if (overlay.width !== size.width || overlay.height !== size.height) [overlay.width, overlay.height] = [size.width, size.height];
       const frame = { start: flicksOf(shown.start), end: flicksOf(shown.end) };
       // The caption showing at the frame's middle; its lit word, the last said while the frame shows.
-      drawCaption(overlayContext, overlay.width, overlay.height, captionAt(captions, flicksOf((shown.start + shown.end) / 2)), frame, style);
+      drawCaption(overlayContext, overlay.width, overlay.height, captionAt(captions, flicksOf((shown.start + shown.end) / 2)), frame, style, look);
       return overlay;
     } : null);
   };
@@ -85,6 +88,7 @@ export async function previewView(address: string, duration: number): Promise<Pr
     element: element("div", { className: "preview" }, canvas, element("div", { className: "preview-controls" }, playButton, bar, time)),
     seek: (seconds) => void player.seek(seconds),
     setCaptions,
+    setView: (viewAt) => player.setView(viewAt),
     onTime: (listener) => timeListeners.push(listener),
     setSkips: (skips) => player.setSkips(skips),
     get time() {

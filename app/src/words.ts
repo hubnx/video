@@ -73,6 +73,13 @@ export const words = {
     styles: { subtitles: "Subtitles", wordByWord: "Word by word" } satisfies Record<CaptionStyle, string>,
     hideFillers: "Hide ums in captions",
   },
+  shorts: {
+    switch: "Short (9:16)",
+    finding: (percent: number) => `Finding the speaker… ${percent}%`,
+    noFace: "No face found, so the short stays centred.",
+    failed: "The speaker couldn't be found, so the short stays centred.",
+    job: "Finding the speaker for shorts",
+  },
   cleanup: {
     label: "Clean up",
     cleanUp: (count: number) => `Clean up: ${count} ${count === 1 ? "silence" : "silences"}`,
@@ -87,6 +94,13 @@ export const words = {
     undo: "Undo",
     redo: "Redo",
     cleanVoice: "Clean voice",
+    smoothCuts: "Smooth jump cuts",
+    // Said beside the switch: what it will do, or what it's waiting for.
+    smoothCutsWaiting: (percent: number) => `(finding the speaker… ${percent}%)`,
+    smoothCutsNoFace: "(no face found)",
+    punchIns: (count: number, cutsMade: boolean) => count
+      ? `${count} ${count === 1 ? "punch-in" : "punch-ins"}, on the timeline`
+      : cutsMade ? "No cut with a face to punch in on" : "Punches in at the cuts Clean up makes",
     // What the switch is doing, as the person sees it (src/shared/media.ts › VoiceProgress).
     // On the switch before it's on: "Clean voice (about 14 min for this video)".
     voiceTime: (seconds: number) => (seconds < 60 ? "under a minute for this video" : `about ${Math.round(seconds / 60)} min for this video`),
@@ -100,14 +114,21 @@ export const words = {
   },
   timeline: {
     label: "Timeline",
+    zooms: "Punch-ins: drag an end to shorten one, or select it and press Delete",
   },
   export: {
     open: "Export",
     heading: "Export",
+    for: "For:",
+    destinations: { video: "YouTube", shorts: "Shorts" } satisfies Record<"video" | "shorts", string>,
     size: "Size:",
     captions: "Captions:",
     captionOutputs: { burnedIn: "In the video", file: "As a file (.srt)", none: "None" } satisfies Record<CaptionOutput, string>,
     youtube: "Ready for YouTube: the format and loudness YouTube recommends.",
+    shortsNote: "Ready for YouTube Shorts, TikTok and Reels: 9:16, following the speaker.",
+    // YouTube Shorts and Instagram Reels take up to 3 minutes (both since 2024-25); TikTok takes 10 in the app.
+    tooLong: (length: string) => `This edit runs ${length}. YouTube Shorts and Reels take up to 3 minutes; TikTok takes longer.`,
+    findingSpeaker: "Finding the speaker…",
     details: "Details",
     detailsText: (width: number, height: number, frameRate: number, megabits: number) =>
       `H.264 video, ${width} × ${height} at ${Number(frameRate.toFixed(2))} frames a second and ${megabits} Mb/s; AAC sound at 192 kb/s, evened to −14 LUFS, YouTube's loudness.`,

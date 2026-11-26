@@ -4,7 +4,8 @@
  * - the packages each Vite build reads (the window, the main process, the preload, the two speech workers), the
  *   packages electron-builder packs (package.json's dependencies, with theirs), Electron and Chromium;
  * - what no bundle shows: FFmpeg, with x264 and zimg inside it, and GPL's offer of their sources; ONNX Runtime inside
- *   sherpa-onnx; the three models the app downloads; and the app itself, under the AGPL-3.0.
+ *   sherpa-onnx; the face detector's model the app carries and the three models it downloads; and the app itself, under
+ *   the AGPL-3.0.
  * Written to dist/licenses-list.html, which the in-app view shows (electron/licenses.ts) and the website's /licenses/
  * page carries (site/vite.config.ts). A package under a copyleft license with no decision below stops the build, so
  * none ships unseen.
@@ -63,6 +64,8 @@ const extras = [
   { name: "ONNX Runtime, inside sherpa-onnx", license: "MIT", source: "https://github.com/microsoft/onnxruntime", text: read("onnxruntime", "LICENSE") },
   modelNotice(`NVIDIA Parakeet TDT 0.6B v3, downloaded at first use (${PARAKEET_V3.id})`, PARAKEET_V3.licence, "https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3",
     "The speech model, NVIDIA's Parakeet TDT 0.6B v3 (https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3), as converted to ONNX and quantized to int8 for sherpa-onnx by its maintainers (https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8), under the Creative Commons Attribution 4.0 International License (https://creativecommons.org/licenses/by/4.0/). Changed by the converter: converted to ONNX and quantized to int8. Not changed by us."),
+  modelNotice("MediaPipe BlazeFace (short range), the face detector shorts follow the speaker with, in the app", "Apache-2.0",
+    "https://ai.google.dev/edge/mediapipe/solutions/vision/face_detector", read("models", "blaze-face-short-range.LICENSE")),
   modelNotice(`Silero VAD, downloaded at first use (${SILERO_VAD.id})`, SILERO_VAD.licence, "https://github.com/snakers4/silero-vad", read("models", "silero-vad.LICENSE")),
   modelNotice(`DPDFNet-2, downloaded when the voice is first cleaned (${DPDFNET.id})`, DPDFNET.licence, "https://github.com/ceva-ip/DPDFNet",
     `Ceva's DPDFNet-2 speech enhancement model, in sherpa-onnx's ONNX form, under the Apache License 2.0:\n\n${read("models", "dpdfnet.LICENSE")}`),

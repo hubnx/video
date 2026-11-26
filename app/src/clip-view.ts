@@ -8,7 +8,7 @@
 import { ALL_FORMATS, Input, UrlSource } from "mediabunny";
 import { mediaAddress } from "./shared/app-api.ts";
 import type { Cut } from "./shared/cuts.ts";
-import type { Clip, JobKind, JobProgress } from "./shared/media.ts";
+import { uprightSize, type Clip, type JobKind, type JobProgress } from "./shared/media.ts";
 import { flicksOf, secondsOf } from "./shared/time.ts";
 import { captionLines, type TranscriptProgress, type Word } from "./shared/transcript.ts";
 import { element } from "./dom.ts";
@@ -16,8 +16,10 @@ import { openFeedback } from "./feedback-view.ts";
 import { logProblem } from "./problems.ts";
 import { cleanupPanel } from "./cleanup-panel.ts";
 import { ClipEditor } from "./edit/clip-editor.ts";
-import { sourceAt, timelineAt } from "./edit/timeline.ts";
-import { CAPTION_STYLES } from "./preview/captions.ts";
+import { joinedSegments, sourceAt, timelineAt } from "./edit/timeline.ts";
+import { CAPTION_STYLES, captionShape, type CaptionLook } from "./preview/captions.ts";
+import { framing } from "./shorts/framing.ts";
+import { SpeakerSearch } from "./shorts/speaker-search.ts";
 import type { Choices, Edit } from "./shared/project.ts";
 import { previewView, type Preview } from "./preview-view.ts";
 import { exportView } from "./export-view.ts";
@@ -28,10 +30,15 @@ import { words } from "./words.ts";
 /** How much is played either side of a possible "um" just cut, so the person hears the join (gate on day 1). */
 const HEAR_AROUND_SECONDS = 1;
 
+
+
+
 /** The view of one video, opened with its project as last saved (null the first time); it lives as long as the window
  * does. Every change is saved about a second later (electron/project-file.ts). */
 export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | null): HTMLElement {
   const editor = new ClipEditor(clip.id, flicksOf(clip.facts.durationSeconds), saved);
+  // A clip with no picture never frames anything; its size only keeps the types simple.
+  const picture = clip.facts.video ? uprightSize(clip.facts.video) : { width: 16, height: 9 };
   editor.onChange(() => window.video.saveEdit(clip.id, editor.edit, editor.choices));
   const status = element("div", { className: "clip-status", attributes: { role: "status" } });
   const statusText = element("span", { className: "clip-status-text" });
@@ -46,16 +53,27 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
     // Heard at once: a second before the cut to a second after, with Undo in view in the clean-up panel.
     preview?.playStretch(Math.max(0, secondsOf(cut.start) - HEAR_AROUND_SECONDS), secondsOf(cut.end) + HEAR_AROUND_SECONDS);
   };
+  // The speaker's face through the clip (shorts/speaker-search.ts): whatever asks for a short (the switch here, the
+  // export's *For* row, a project saved as one) starts the search at once.
+  const previewAddress = Promise.withResolvers<string>();
+  const search = new SpeakerSearch(clip.id, clip.facts.durationSeconds, previewAddress.promise, (faces) => editor.setFaces(faces));
+  editor.onChange(() => {
+    if (editor.shorts) void search.start();
+  });
   const transcript = transcriptView(editor, seek, cutFiller);
-  const panel = cleanupPanel(editor);
+  const panel = cleanupPanel(editor, () => search.state);
   const timeline = timelineView(editor, seek);
   const styleButtons = element("div", { className: "segmented", attributes: { role: "radiogroup", "aria-label": words.captions.style } },
     ...CAPTION_STYLES.map((each) => element("button", { type: "button", textContent: words.captions.styles[each], dataset: { style: each },
       attributes: { role: "radio" }, onclick: () => editor.setCaptionStyle(each) })));
   const hideFillers = element("input", { type: "checkbox", checked: editor.hideFillersInCaptions, onchange: () => editor.setHideFillers(hideFillers.checked) });
   const hideFillersLabel = element("label", { className: "switch", hidden: true }, hideFillers, words.captions.hideFillers);
+  // A short beside the captions: the preview shows the 9:16 frame at once, so what exports is what was seen.
+  const shortsSwitch = element("input", { type: "checkbox", checked: editor.shorts, onchange: () => editor.setShorts(shortsSwitch.checked) });
+  const shortsStatus = element("span", { className: "shorts-status", attributes: { role: "status" } });
   const captionControls = element("div", { className: "caption-controls" },
-    element("span", { className: "label", textContent: words.captions.label }), styleButtons, hideFillersLabel);
+    element("span", { className: "label", textContent: words.captions.label }), styleButtons, hideFillersLabel,
+    element("span", { className: "shorts-control" }, element("label", { className: "switch" }, shortsSwitch, words.shorts.switch), shortsStatus));
   const jobs = element("ul", { className: "jobs" });
   const details = element("details", { className: "clip-details" }, element("summary", { textContent: words.clip.details }), jobs);
 
@@ -78,10 +96,32 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
     timeline.render();
     hideFillersLabel.hidden = !editor.english;
     for (const button of styleButtons.querySelectorAll<HTMLElement>("button")) button.setAttribute("aria-checked", String(button.dataset.style === editor.captionStyle));
-    preview?.setCaptions(captionLines(editor.captionWords), editor.captionStyle);
+    shortsSwitch.checked = editor.shorts;
+    showSearch();
+    const look: CaptionLook = editor.shorts ? "shorts" : "video";
+    preview?.setCaptions(captionLines(editor.captionWords, captionShape(look)), editor.captionStyle, look);
+    preview?.setView(framing({ picture, shorts: editor.shorts, speaker: editor.speaker, parts: joinedSegments(editor.segments), zooms: editor.edit.zooms }));
     preview?.setSkips(editor.edit.removed.map((stretch) => ({ start: secondsOf(stretch.start), end: secondsOf(stretch.end) })));
   };
   editor.onChange(showEdit);
+
+  search.onChange(() => showSearch());
+  const facesRow = element("li", { className: "job", hidden: true });
+  jobs.append(facesRow);
+  /** The search's words: on the Short switch, in the clean-up panel and under Details. */
+  function showSearch(): void {
+    const found = search.state;
+    shortsStatus.dataset.search = found.state; // what the shorts check waits on
+    const percent = found.state === "finding" ? Math.round(found.fraction * 100) : 0;
+    shortsStatus.textContent = !editor.shorts ? ""
+      : found.state === "finding" ? words.shorts.finding(percent)
+        : found.state === "failed" ? words.shorts.failed
+          : found.state === "found" && !found.anyFace ? words.shorts.noFace : "";
+    facesRow.hidden = found.state === "waiting";
+    facesRow.replaceChildren(element("span", { textContent: words.shorts.job }), element("span", { className: "job-state",
+      textContent: found.state === "finding" ? `${percent}%` : found.state === "failed" ? words.clip.failed : words.clip.done }));
+    panel.render();
+  }
   // The clean voice: asked for when switched on (made once, then kept with the clip), played in the preview once ready.
   let voiceReady = false;
   let soundIsClean = false;
@@ -162,6 +202,7 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
     }
     if (progress.state === "done") editor.setHeard(progress.transcript.words, progress.sound);
     if (progress.state === "failed") showProblem(words.clip.transcriptFailed, `transcript_failed: ${progress.error}`);
+    if (progress.state === "done" || progress.state === "failed") void search.start();
     showStatus();
   });
   // What didn't work, in its own sentence, with the way to tell us (gate 2: *Send a problem report*).
@@ -195,6 +236,7 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
     } else if (event.key.toLowerCase() === "s") {
       editor.splitAt(at);
     } else if (event.key === "Delete" || event.key === "Backspace") {
+      if (timeline.deleteSelectedZoom()) return; // a selected punch-in goes first, not the piece under the playhead
       const parts = editor.segments;
       const position = timelineAt(parts, at);
       const under = position === null ? null : sourceAt(parts, position);
@@ -216,7 +258,20 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
     }
     return mediaAddress(clip.id, "editCopy");
   };
-  const exporter = clip.facts.video ? exportView(clip, editor, pictureForExport) : null;
+  // A short waits for the speaker before its export starts, with the search's progress shown.
+  const speakerForExport = async (progress: (fraction: number) => void) => {
+    if (!editor.shorts) return;
+    const listen = () => {
+      if (search.state.state === "finding") progress(search.state.fraction);
+    };
+    const stopListening = search.onChange(listen);
+    try {
+      await search.start();
+    } finally {
+      stopListening();
+    }
+  };
+  const exporter = clip.facts.video ? exportView(clip, editor, pictureForExport, speakerForExport) : null;
   const exportButton = element("button", { type: "button", className: "primary", textContent: words.export.open, hidden: !exporter,
     onclick: () => {
       preview?.pause();
@@ -227,6 +282,7 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
   decodesOriginal.then(async (decodes) => {
     if (!clip.facts.video) return;
     if (!decodes) await proxyReady;
+    previewAddress.resolve(mediaAddress(clip.id, decodes ? "original" : "proxy"));
     preview = await previewView(mediaAddress(clip.id, decodes ? "original" : "proxy"), clip.facts.durationSeconds);
     if (!preview) return;
     preview.onTime((seconds) => {

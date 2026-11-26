@@ -26,6 +26,13 @@ export interface VideoFacts {
   dynamic: Dynamic;
 }
 
+/** The picture's size as shown upright, in square pixels: HDV's 1440 × 1080 shows at 1920 × 1080, a phone's sideways
+ * 1920 × 1080 at 1080 × 1920. Export sizes, a short's window and a punch-in are all worked out from this. */
+export function uprightSize(video: VideoFacts): { width: number; height: number } {
+  const shownWidth = Math.round(video.width * video.pixelAspect);
+  return video.rotation % 180 === 0 ? { width: shownWidth, height: video.height } : { width: video.height, height: shownWidth };
+}
+
 export interface AudioFacts {
   codec: string;
   sampleRate: number;

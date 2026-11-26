@@ -6,6 +6,7 @@ import { accessSync, constants, existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { APP_NAME, CHANNELS, draftRefusal, releaseNotesUrl, WEBSITE_PAGES, type AboutFacts, type ExportDestination, type ExportSound, type FeedbackDraft, type MenuCommand, type OpenResult, type WebsitePage } from "../src/shared/app-api.ts";
+import { facesFrom } from "../src/shared/faces.ts";
 import type { Clip, ClipFacts, JobKind, VoiceProgress } from "../src/shared/media.ts";
 import { PROJECT_FORMAT, PROJECT_VERSION } from "../src/shared/project.ts";
 import type { Stretch } from "../src/shared/cuts.ts";
@@ -238,6 +239,21 @@ async function start(): Promise<void> {
     }
     autosave.changed({ format: PROJECT_FORMAT, version: PROJECT_VERSION, clips: [{ id, path: clips.original(id), name: path.basename(clips.original(id)), facts: found }], edit, choices });
   });
+  // The faces found in a clip (src/shorts/find-faces.ts), kept with it so they're found once; checked both ways, as a
+  // stored file may come from an older detector or be cut short.
+  ipcMain.handle(CHANNELS.faces, async (_event, id: unknown) => {
+    if (typeof id !== "string" || !facts.has(id)) throw new Error("not a clip opened in this run");
+    try {
+      return facesFrom(JSON.parse(await readFile(clips.stored(id, "faces.json"), "utf8")));
+    } catch {
+      return null; // not found yet
+    }
+  });
+  ipcMain.handle(CHANNELS.saveFaces, async (_event, id: unknown, faces: unknown) => {
+    const found = facesFrom(faces);
+    if (typeof id !== "string" || !facts.has(id) || !found) throw new Error("not faces of a clip opened in this run");
+    await writeFile(clips.stored(id, "faces.json"), JSON.stringify(found));
+  });
   ipcMain.handle(CHANNELS.cleanVoice, (_event, id: unknown) => {
     if (typeof id !== "string" || !facts.has(id)) throw new Error("not a clip opened in this run");
     void cleanVoiceOf(id);
@@ -397,6 +413,14 @@ async function start(): Promise<void> {
   // The window is the app, never a browser: it opens no other page, and links go to the browser through openWebsite.
   // A video dropped outside the drop area would otherwise open as a page.
   shown.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  // The window never reaches the web, so nothing it runs can send what the app doesn't name (src/shorts/face-finder.ts:
+  // MediaPipe posts usage numbers to Google). Its CSP refuses first; this is the second lock, and logs what got past.
+  // The main process's own requests (updates, feedback) carry no window and pass.
+  shown.webContents.session.webRequest.onBeforeRequest({ urls: ["http://*/*", "https://*/*", "ws://*/*", "wss://*/*"] }, (details, callback) => {
+    const fromWindow = details.webContentsId === shown.webContents.id;
+    if (fromWindow) logError("window_request_blocked", new URL(details.url).host);
+    callback({ cancel: fromWindow });
+  });
   shown.webContents.on("will-navigate", (event) => event.preventDefault());
   shown.on("closed", () => {
     window = null;

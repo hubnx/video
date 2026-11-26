@@ -27,6 +27,14 @@ export function exportBitrate(size: ExportSize, frameRate: number): number {
   return Math.round(MEGABITS[size] * (frameRate > 31 ? 1.5 : 1) * 1_000_000);
 }
 
+/** A short's size: YouTube Shorts, TikTok and Reels all ask for 1080 × 1920. A smaller clip's window is enlarged to it,
+ * as every shorts tool does, since the platforms show anything smaller enlarged anyway. */
+export const SHORTS_DIMENSIONS = { width: 1080, height: 1920 } as const;
+
+/** The longest short YouTube Shorts and Instagram Reels take (both 3 minutes since 2024-25); a longer edit still exports,
+ * and the dialog says so. */
+export const SHORTS_LONGEST_SECONDS = 180;
+
 /** How captions go out with the export: drawn into the picture, as an .srt file beside it, or not at all. */
 export const CAPTION_OUTPUTS = ["burnedIn", "file", "none"] as const;
 export type CaptionOutput = (typeof CAPTION_OUTPUTS)[number];

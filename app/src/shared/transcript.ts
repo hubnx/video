@@ -46,9 +46,15 @@ export interface CaptionShape {
   lines: number;
   longestSeconds: number;
   pauseSeconds: number;
+  /** At most this many words a caption, where a look calls for it (a short's). */
+  wordsPerCaption?: number;
 }
 
 export const SUBTITLES: CaptionShape = { charactersPerLine: 42, lines: 2, longestSeconds: 7, pauseSeconds: 0.6 };
+
+/** A short's captions: two or three big words at a time on one line, a new caption at every short pause, the look
+ * people come to CapCut and Opus Clip for (docs/design/1.1-shorts.md). */
+export const SHORTS_CAPTIONS: CaptionShape = { charactersPerLine: 18, lines: 1, longestSeconds: 2.5, pauseSeconds: 0.35, wordsPerCaption: 3 };
 
 /** The words cut into captions, in order, each word in exactly one. */
 export function captionLines(words: readonly Word[], shape: CaptionShape = SUBTITLES): CaptionLine[] {
@@ -67,7 +73,8 @@ export function captionLines(words: readonly Word[], shape: CaptionShape = SUBTI
     const added = (characters ? 1 : 0) + word.text.length;
     const tooLong = current.length > 0 && (word.end - current[0]!.start) / FLICKS_PER_SECOND > shape.longestSeconds;
     const paused = last !== undefined && (word.start - last.end) / FLICKS_PER_SECOND >= shape.pauseSeconds;
-    if (current.length && (characters + added > room || tooLong || paused)) close();
+    const full = shape.wordsPerCaption !== undefined && current.length >= shape.wordsPerCaption;
+    if (current.length && (characters + added > room || tooLong || paused || full)) close();
     current.push(word);
     characters += (characters ? 1 : 0) + word.text.length;
     if (/[.!?…]["”’)]?$/.test(word.text)) close(); // a sentence's end ends its caption

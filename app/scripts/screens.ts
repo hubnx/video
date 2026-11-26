@@ -1,7 +1,8 @@
 /**
  * Screenshots of every screen at window sizes from the smallest the app allows to a wide monitor, light and dark, into
  * video/local/screens/<screen>-<size>-<theme>.png (each run replaces the pictures it takes). Look at each before anyone
- * else does (../../docs/brand.md › Clarity check), then send them to `video assistant` (docs/plan.md › Check-ins).
+ * else does (../../docs/brand.md › Clarity check), then hand them to a fresh reviewer at the feature's gate
+ * (docs/product.md › Four gates).
  * The app runs behind, never taking the screen. Run after `pnpm build`:
  *
  *   pnpm exec node scripts/screens.ts

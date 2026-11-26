@@ -10,7 +10,7 @@ import type { Edit, Removed, Segment } from "../shared/project.ts";
 import type { Flicks } from "../shared/time.ts";
 
 export function emptyEdit(): Edit {
-  return { removed: [], splits: [] };
+  return { removed: [], splits: [], zooms: [] };
 }
 
 /** What plays, in order: the clip minus every removed stretch, split at the splits. */

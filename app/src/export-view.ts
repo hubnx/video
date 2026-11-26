@@ -10,23 +10,28 @@ import { logProblem } from "./problems.ts";
 import type { ClipEditor } from "./edit/clip-editor.ts";
 import { joinedSegments } from "./edit/timeline.ts";
 import { exportPicture } from "./export/export-video.ts";
-import { CAPTION_OUTPUTS, EXPORT_SIZES, exportBitrate, exportDimensions, sizesFor, type CaptionOutput, type ExportSize } from "./export/presets.ts";
+import { CAPTION_OUTPUTS, EXPORT_SIZES, exportBitrate, exportDimensions, SHORTS_DIMENSIONS, SHORTS_LONGEST_SECONDS, sizesFor, type CaptionOutput, type ExportSize } from "./export/presets.ts";
+import { captionShape, type CaptionLook } from "./preview/captions.ts";
+import { clockTime } from "./preview-view.ts";
+import { framing } from "./shorts/framing.ts";
 import { srt } from "./export/srt.ts";
 import type { ExportDestination } from "./shared/app-api.ts";
-import type { Clip } from "./shared/media.ts";
+import { uprightSize, type Clip } from "./shared/media.ts";
 import { steadyRate } from "./shared/frame-rate.ts";
 import { secondsOf } from "./shared/time.ts";
 import { captionLines } from "./shared/transcript.ts";
 import { words } from "./words.ts";
 
 /** The dialog, opened by `open()`. `picture` gives the address the picture is read from once it's ready (the original,
- * or its edit copy when this computer can't use the original), telling `progress` how the wait is going. */
+ * or its edit copy when this computer can't use the original), telling `progress` how the wait is going; `speaker`
+ * settles once the speaker's face has been looked for, which a short waits on. */
 export function exportView(clip: Clip, editor: ClipEditor,
-  picture: (progress: (fraction: number, secondsLeft: number | null) => void) => Promise<string>): { element: HTMLDialogElement; open: () => void } {
+  picture: (progress: (fraction: number, secondsLeft: number | null) => void) => Promise<string>,
+  speaker: (progress: (fraction: number) => void) => Promise<void>): { element: HTMLDialogElement; open: () => void } {
   const video = clip.facts.video!;
   // The picture's shape as shown: a clip of non-square pixels (HDV's 1440 × 1080) exports at its 16:9, as the preview shows it.
-  const shownWidth = Math.round(video.width * video.pixelAspect);
-  const [uprightWidth, uprightHeight] = video.rotation % 180 === 0 ? [shownWidth, video.height] : [video.height, shownWidth];
+  const upright = uprightSize(video);
+  const [uprightWidth, uprightHeight] = [upright.width, upright.height];
   const sizes = sizesFor(uprightWidth, uprightHeight);
   let size: ExportSize = sizes.at(-1)!; // the clip's own size, up to 4K
   let captions: CaptionOutput = "burnedIn";
@@ -66,19 +71,36 @@ export function exportView(clip: Clip, editor: ClipEditor,
     start.disabled = !shown;
     change.disabled = !shown;
   };
+  // The output's size and rate: a short's 1080 × 1920 at the 1080p rate, or the size chosen in the clip's own shape.
+  const output = () => editor.shorts
+    ? { ...SHORTS_DIMENSIONS, bitrate: exportBitrate("1080p", frameRate) }
+    : { ...exportDimensions(uprightWidth, uprightHeight, size), bitrate: exportBitrate(size, frameRate) };
   // The format's facts, for whoever wants them, out of everyone else's way.
   const detailsText = element("p");
+  // What the destination decides: the size row (a short has one size), the note under the choices, and a short's length.
+  const sizeRow = sizes.length > 1
+    ? choice(words.export.size, sizes, Object.fromEntries((Object.keys(EXPORT_SIZES) as ExportSize[]).map((each) => [each, each])) as Record<ExportSize, string>, () => size, (value) => (size = value))
+    : onlySize();
+  const shortsSizeRow = row(words.export.size, element("span", { textContent: `${SHORTS_DIMENSIONS.width} × ${SHORTS_DIMENSIONS.height}` }));
+  const note = element("p", { className: "export-note" });
+  const lengthNote = element("p", { className: "export-note" });
   const showDetails = () => {
-    const dimensions = exportDimensions(uprightWidth, uprightHeight, size);
-    detailsText.textContent = words.export.detailsText(dimensions.width, dimensions.height, frameRate, exportBitrate(size, frameRate) / 1_000_000);
+    const { width, height, bitrate } = output();
+    detailsText.textContent = words.export.detailsText(width, height, frameRate, bitrate / 1_000_000);
+    sizeRow.hidden = editor.shorts;
+    shortsSizeRow.hidden = !editor.shorts;
+    note.textContent = editor.shorts ? words.export.shortsNote : words.export.youtube;
+    const seconds = editor.segments.reduce((sum, segment) => sum + secondsOf(segment.to) - secondsOf(segment.from), 0);
+    lengthNote.hidden = !editor.shorts || seconds <= SHORTS_LONGEST_SECONDS;
+    lengthNote.textContent = words.export.tooLong(clockTime(seconds));
   };
   const choices = element("div", { className: "export-choices" },
-    sizes.length > 1
-      ? choice(words.export.size, sizes, Object.fromEntries((Object.keys(EXPORT_SIZES) as ExportSize[]).map((each) => [each, each])) as Record<ExportSize, string>, () => size, (value) => (size = value))
-      : onlySize(),
+    choice(words.export.for, ["video", "shorts"] as const, words.export.destinations, () => (editor.shorts ? "shorts" : "video"),
+      (value) => editor.setShorts(value === "shorts")),
+    sizeRow, shortsSizeRow,
     choice(words.export.captions, CAPTION_OUTPUTS, words.export.captionOutputs, () => captions, (value) => (captions = value)),
     row(words.export.savesTo, element("span", { className: "export-place" }, placeName, change)),
-    element("p", { className: "export-note", textContent: words.export.youtube }),
+    note, lengthNote,
     element("details", { className: "dialog-details" }, element("summary", { textContent: words.export.details }), detailsText));
   const status = element("p", { className: "dialog-status", attributes: { role: "status" } });
   const bar = element("progress", { max: 1, value: 0, hidden: true });
@@ -146,17 +168,26 @@ export function exportView(clip: Clip, editor: ClipEditor,
       // The edit as it is now, read once, so the picture, the sound and the captions file all agree.
       const segments = joinedSegments(editor.segments);
       if (segments.length === 0) throw new Error("EXPORT_NOTHING_LEFT");
+      // A short follows the speaker, so it waits for their face to have been looked for, with that progress shown.
+      if (editor.shorts) {
+        status.textContent = words.export.findingSpeaker;
+        await Promise.race([stopped, speaker((fraction) => {
+          if (!signal.aborted) bar.value = fraction;
+        })]);
+      }
       const captionWords = editor.captionWords;
-      const lines = captionLines(captionWords);
+      const look: CaptionLook = editor.shorts ? "shorts" : "video";
+      const lines = captionLines(captionWords, captionShape(look));
       const cleanVoice = editor.cleanVoice;
       const style = editor.captionStyle;
-      const dimensions = exportDimensions(uprightWidth, uprightHeight, size);
+      const { bitrate, ...dimensions } = output();
+      const view = framing({ picture: upright, shorts: editor.shorts, speaker: editor.speaker, parts: segments, zooms: editor.edit.zooms });
       exportId = await window.video.beginExport(target.path);
       if (signal.aborted) throw new Error("EXPORT_CANCELLED"); // stopped while it began: its listener had no number yet
       const id = exportId;
       startedAt = performance.now(); // time left counts from here, not from the wait for the edit copy
-      await exportPicture({ address, segments, ...dimensions, frameRate, bitrate: exportBitrate(size, frameRate),
-        captions: captions === "burnedIn" && lines.length ? { lines, style } : null },
+      await exportPicture({ address, segments, ...dimensions, frameRate, bitrate,
+        captions: captions === "burnedIn" && lines.length ? { lines, style, look } : null, view },
       (position, data) => window.video.writeExport(id, position, data), (fraction) => say(words.export.picture, fraction, [0, 0.9]), signal);
       const stopListening = window.video.onExportProgress((progressId, fraction) => {
         if (progressId === id) say(words.export.sound, fraction, [0.9, 1]);

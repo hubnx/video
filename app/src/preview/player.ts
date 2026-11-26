@@ -5,7 +5,7 @@
  */
 import type { VideoSample } from "mediabunny";
 import type { Clock } from "./clock.ts";
-import type { Compositor, QuarterTurns } from "./compositor.ts";
+import type { Compositor, QuarterTurns, View } from "./compositor.ts";
 import type { Frames } from "./frames.ts";
 
 /** Frames decoded ahead while playing: enough to ride over a slow one, few enough to hold little memory at 4K. */
@@ -14,6 +14,9 @@ const AHEAD = 4;
 /** What's laid over each frame (the captions), given the frame's time on screen in seconds and the size in pixels the
  * picture fills; null for nothing. */
 export type Overlay = (shown: { start: number; end: number }, size: { width: number; height: number }) => TexImageSource | null;
+
+/** The part of the picture shown at a moment of the clip, in seconds (a short's window, a punch-in); null shows it all. */
+export type ViewAt = ((seconds: number) => View) | null;
 
 export class Player {
   private readonly frames: Frames;
@@ -30,11 +33,14 @@ export class Player {
   /** The frame on the canvas, kept so it can be drawn again under a changed overlay while paused. */
   private shown: VideoSample | null = null;
   private overlay: Overlay | null = null;
+  private viewAt: ViewAt = null;
   /** Stretches of the clip taken out, in seconds, sorted: playing jumps over them (the edit, src/edit/timeline.ts). A
    * jump in the preview; export joins the pieces with a short crossfade (day 7). */
   private skips: { start: number; end: number }[] = [];
   /** The timestamp of the frame on the canvas: the checks compare it with the clock (scripts/check-preview.ts). */
   drawnTimestamp: number | null = null;
+  /** The part of the picture that frame shows: the shorts check follows the speaker with it (scripts/check-shorts.ts). */
+  drawnView: View | null = null;
 
   constructor(frames: Frames, clock: Clock, compositor: Compositor, duration: number, changed: () => void) {
     this.frames = frames;
@@ -59,6 +65,15 @@ export class Player {
 
   setSkips(skips: { start: number; end: number }[]): void {
     this.skips = [...skips].sort((one, other) => one.start - other.start);
+  }
+
+  /** Sets the part of the picture shown at each moment, and draws the frame showing again in it. */
+  setView(viewAt: ViewAt): void {
+    this.viewAt = viewAt;
+    if (this.shown && !this.clock.playing) {
+      this.draw(this.shown);
+      this.changed();
+    }
   }
 
   /** Sets what's laid over each frame, and draws the frame showing again under it. */
@@ -180,7 +195,8 @@ export class Player {
   private draw(sample: VideoSample): void {
     const frame = sample.toVideoFrame();
     try {
-      this.compositor.draw(frame, sample.squarePixelWidth, sample.squarePixelHeight, (sample.rotation / 90) as QuarterTurns);
+      this.drawnView = this.viewAt?.(sample.timestamp + sample.duration / 2) ?? null;
+      this.compositor.draw(frame, sample.squarePixelWidth, sample.squarePixelHeight, (sample.rotation / 90) as QuarterTurns, this.drawnView ?? undefined);
       const over = this.overlay?.({ start: sample.timestamp, end: sample.timestamp + sample.duration }, this.compositor.pictureSize);
       if (over) this.compositor.drawOverlay(over);
       this.drawnTimestamp = sample.timestamp;

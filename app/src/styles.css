@@ -389,6 +389,20 @@ button:disabled {
   accent-color: var(--accent);
 }
 
+/* The Short switch closes the captions row, at its right end, and wraps under it in a narrow window. */
+.shorts-control {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-left: auto;
+}
+
+.shorts-status {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 .timeline {
   margin-top: 12px;
 }

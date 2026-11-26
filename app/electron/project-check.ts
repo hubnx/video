@@ -14,7 +14,14 @@ export function isEdit(value: unknown): value is Edit {
   const edit = value as Partial<Edit> | null;
   return typeof edit === "object" && edit !== null && Array.isArray(edit.removed) && Array.isArray(edit.splits)
     && edit.removed.every((stretch) => isTime(stretch?.start) && isTime(stretch?.end) && stretch.start < stretch.end && REASONS.has(stretch.reason))
-    && edit.splits.every(isTime);
+    && edit.splits.every(isTime)
+    && Array.isArray(edit.zooms) && edit.zooms.every((zoom) => isTime(zoom?.start) && isTime(zoom?.end) && zoom.start < zoom.end
+      && Number.isFinite(zoom.scale) && zoom.scale >= 1 && zoom.scale <= 2 && isPoint(zoom.centre));
+}
+
+function isPoint(value: unknown): boolean {
+  const point = value as { x?: unknown; y?: unknown } | null;
+  return typeof point === "object" && point !== null && Number.isFinite(point.x) && Number.isFinite(point.y);
 }
 
 export function isChoices(value: unknown): value is Choices {
@@ -23,5 +30,7 @@ export function isChoices(value: unknown): value is Choices {
     && ["tight", "natural", "relaxed"].includes(choices.spacing as string)
     && ["subtitles", "wordByWord"].includes(choices.captionStyle as string)
     && typeof choices.hideFillersInCaptions === "boolean"
-    && typeof choices.cleanVoice === "boolean";
+    && typeof choices.cleanVoice === "boolean"
+    && typeof choices.shorts === "boolean"
+    && typeof choices.smoothCuts === "boolean";
 }

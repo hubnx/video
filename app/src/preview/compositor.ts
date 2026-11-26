@@ -1,17 +1,20 @@
 /**
- * Draws a frame on the preview's canvas with WebGL2: upright (the clip's clockwise rotation, applied here once), fitted
- * inside the canvas with black bars where the shapes differ. One quad today; captions, the 9:16 frame and pictures over
- * the video join it as layers (docs/plan.md › What each release has).
+ * Draws a frame on the preview's canvas with WebGL2: upright (the clip's clockwise rotation, applied here once), the part
+ * of it in view (all of it, a short's 9:16 window, a punch-in: shorts/view.ts), fitted inside the canvas with black bars
+ * where the shapes differ, and the captions laid over it. The preview and the export draw through the same code, so
+ * the export is what the preview showed.
  */
 const VERTEX = `#version 300 es
 in vec2 position;
 uniform vec2 scale;     // the picture's share of the canvas, after fitting
 uniform int quarterTurns; // clockwise
+uniform vec4 view;      // the part shown, in the upright picture with y up: left, bottom, width, height
 out vec2 place; // where in the picture this corner reads (not named texture: that is GLSL's own function)
 void main() {
-  // The shown corner (x right, y up) maps to the stored picture's corner it must show. Turned a quarter clockwise, the
-  // shown top-left is the stored bottom-left: stored x = 1 - shown y, stored y = shown x.
-  vec2 corner = position * 0.5 + 0.5;
+  // The shown corner (x right, y up) is first placed in the upright picture's part in view; that maps to the stored
+  // picture's point it must show. Turned a quarter clockwise, the upright top-left is the stored bottom-left: stored
+  // x = 1 - upright y, stored y = upright x.
+  vec2 corner = view.xy + (position * 0.5 + 0.5) * view.zw;
   vec2 stored = corner;
   if (quarterTurns == 1) stored = vec2(1.0 - corner.y, corner.x);
   if (quarterTurns == 2) stored = vec2(1.0 - corner.x, 1.0 - corner.y);
@@ -31,10 +34,21 @@ void main() {
 
 export type QuarterTurns = 0 | 1 | 2 | 3;
 
+/** A rectangle of the upright picture, as fractions of it, from the top-left corner: the part shown. */
+export interface View {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+export const WHOLE: View = { left: 0, top: 0, width: 1, height: 1 };
+
 export class Compositor {
   private readonly gl: WebGL2RenderingContext;
   private readonly scaleAt: WebGLUniformLocation | null;
   private readonly turnsAt: WebGLUniformLocation | null;
+  private readonly viewAt: WebGLUniformLocation | null;
   private readonly pictureTexture: WebGLTexture;
   private readonly overlayTexture: WebGLTexture;
   /** The last picture's share of the canvas: an overlay covers exactly the picture, not the black bars. */
@@ -81,10 +95,12 @@ export class Compositor {
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
     this.scaleAt = gl.getUniformLocation(program, "scale");
     this.turnsAt = gl.getUniformLocation(program, "quarterTurns");
+    this.viewAt = gl.getUniformLocation(program, "view");
   }
 
-  /** Draws `picture` (stored `width` × `height`, to be turned `turns` quarter turns clockwise) fitted to the canvas. */
-  draw(picture: TexImageSource, width: number, height: number, turns: QuarterTurns): void {
+  /** Draws `picture` (stored `width` × `height`, to be turned `turns` quarter turns clockwise), the part `view` of it as
+   * it shows upright, fitted to the canvas. */
+  draw(picture: TexImageSource, width: number, height: number, turns: QuarterTurns, view: View = WHOLE): void {
     const gl = this.gl;
     this.fitCanvas();
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
@@ -94,11 +110,12 @@ export class Compositor {
     gl.bindTexture(gl.TEXTURE_2D, this.pictureTexture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, picture);
     const [uprightWidth, uprightHeight] = turns % 2 === 0 ? [width, height] : [height, width];
-    const picturesShape = uprightWidth / uprightHeight;
+    const picturesShape = (uprightWidth * view.width) / (uprightHeight * view.height);
     const canvasShape = this.canvas.width / this.canvas.height;
     this.scale = picturesShape > canvasShape ? [1, canvasShape / picturesShape] : [picturesShape / canvasShape, 1];
     gl.uniform2f(this.scaleAt, this.scale[0], this.scale[1]);
     gl.uniform1i(this.turnsAt, turns);
+    gl.uniform4f(this.viewAt, view.left, 1 - view.top - view.height, view.width, view.height);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
@@ -115,6 +132,7 @@ export class Compositor {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, overlay);
     gl.uniform2f(this.scaleAt, this.scale[0], this.scale[1]);
     gl.uniform1i(this.turnsAt, 0);
+    gl.uniform4f(this.viewAt, 0, 0, 1, 1);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 

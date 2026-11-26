@@ -30,6 +30,22 @@ window.video.onMenuCommand((command) => {
   if (!document.querySelector("dialog[open]")) commands[command]();
 });
 
+// What the window's CSP refused, by address only: the record that a library's attempt to reach the web was stopped
+// (shorts/face-finder.ts), which the shorts check reads.
+document.addEventListener("securitypolicyviolation", (event) => {
+  window.video.logProblem("csp_refused", `${event.effectiveDirective} ${hostOf(event.blockedURI)}`);
+});
+
+/** The host refused, or only the scheme for a file (whose path could name the person) or an inline source. */
+function hostOf(address: string): string {
+  try {
+    const url = new URL(address);
+    return url.host || url.protocol;
+  } catch {
+    return address.split(/[:/]/)[0]!.slice(0, 20); // "inline", "eval"
+  }
+}
+
 const screen = required("#screen");
 // A file dropped anywhere outside the drop area would otherwise be opened by Chromium as a page.
 for (const kind of ["dragover", "drop"] as const) document.addEventListener(kind, (event) => event.preventDefault());

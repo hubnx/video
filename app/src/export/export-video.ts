@@ -6,8 +6,9 @@
  * varying frame rate lands on the steady one without drift.
  */
 import { ALL_FORMATS, canEncodeVideo, CanvasSource, Input, Mp4OutputFormat, Output, Quality, StreamTarget, UrlSource, VideoSampleSink, type VideoSample } from "mediabunny";
-import { captionAt, drawCaption, type CaptionStyle } from "../preview/captions.ts";
+import { captionAt, drawCaption, type CaptionLook, type CaptionStyle } from "../preview/captions.ts";
 import { Compositor, type QuarterTurns } from "../preview/compositor.ts";
+import type { ViewAt } from "../preview/player.ts";
 import type { Segment } from "../shared/project.ts";
 import { flicksOf, secondsOf } from "../shared/time.ts";
 import type { CaptionLine } from "../shared/transcript.ts";
@@ -20,7 +21,9 @@ export interface ExportPicture {
   frameRate: number;
   bitrate: number;
   /** Captions burned into the picture, or null for none (an SRT file beside it instead, or nothing). */
-  captions: { lines: readonly CaptionLine[]; style: CaptionStyle } | null;
+  captions: { lines: readonly CaptionLine[]; style: CaptionStyle; look: CaptionLook } | null;
+  /** The part of the picture shown at each moment, as the preview showed it (a short's window, a punch-in). */
+  view: ViewAt;
 }
 
 /** Writes the picture; `write` takes each piece of the MP4 at its place, `progress` how far it's got. */
@@ -75,13 +78,14 @@ export async function exportPicture(plan: ExportPicture, write: (position: numbe
         if (last) {
           const picture = last.toVideoFrame();
           try {
-            compositor.draw(picture, last.squarePixelWidth, last.squarePixelHeight, (last.rotation / 90) as QuarterTurns);
+            compositor.draw(picture, last.squarePixelWidth, last.squarePixelHeight, (last.rotation / 90) as QuarterTurns,
+              plan.view?.(last.timestamp + last.duration / 2) ?? undefined);
           } finally {
             picture.close();
           }
           if (plan.captions) {
             const shown = { start: flicksOf(last.timestamp), end: flicksOf(last.timestamp + last.duration) };
-            drawCaption(overlayContext, overlay.width, overlay.height, captionAt(plan.captions.lines, flicksOf(last.timestamp + last.duration / 2)), shown, plan.captions.style);
+            drawCaption(overlayContext, overlay.width, overlay.height, captionAt(plan.captions.lines, flicksOf(last.timestamp + last.duration / 2)), shown, plan.captions.style, plan.captions.look);
             compositor.drawOverlay(overlay);
           }
         }

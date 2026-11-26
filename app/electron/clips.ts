@@ -42,7 +42,7 @@ export class Clips {
 
   /** Where the app keeps what it learned and what the person did with a clip: its transcript, where the voice detector
    * heard speech, and its project (the edit, autosaved). */
-  stored(id: string, name: "transcript.json" | "voice.json" | "project.hubnxvideo" | "clean-voice.wav"): string {
+  stored(id: string, name: "transcript.json" | "voice.json" | "project.hubnxvideo" | "clean-voice.wav" | "faces.json"): string {
     if (!/^[0-9a-f]{20}$/.test(id)) throw new Error(`not a clip id: ${id}`);
     return path.join(this.folder, id, name);
   }
