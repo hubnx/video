@@ -6,7 +6,12 @@
  * noise and mains hum sit under the voice, for the clean voice to take away. The board in Inter (OFL-1.1), drawn by
  * headless Chrome.
  *
- *   pnpm exec node scripts/demo/make-talk.ts      (after voice.py has spoken local/demo/voice/lines.json)
+ *   ~/Workspace/repo/hubnx/local/brand/remotion/voice/.venv/bin/python scripts/demo/voice.py \
+ *     scripts/demo/talk-lines.json ../local/demo/voice
+ *   pnpm exec node scripts/demo/make-talk.ts
+ *
+ * The lines (talk-lines.json) are worded so the app hears every word as written (2026-11-26: "twenty" said quickly was
+ * heard "2", "too" as "two", "teaches" as "teach"): the demo shows the app's real transcript, so it must be right.
  *
  * Into video/local/demo/talk/: talk.mp4 (1920 × 1080, 30 frames a second, H.264 and AAC) and timing.json (when each
  * line is said), which the demo's film reads.
