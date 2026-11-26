@@ -1,10 +1,11 @@
 /**
  * The demo's cut (local/launch/youtube-demo.md › Script): the film of the app (film.ts) in steps, each step's waits
  * sped up, each with its line of words on screen and its line of narration, between a title card and an end card. The
- * narrator is the channel's (Kokoro-82M, af_heart: voice.py), and every film on the channel has a soft music bed under
- * it (the owner, 2026-11-26, through Apps HQ): hubnx media chooses the one bed and its licence, kept at
- * local/demo/music/bed.<wav|mp3|m4a>; until it's there the cut has the narration alone. Text in Inter (OFL-1.1), drawn by
- * headless Chrome, as the FFmpeg here has no text filter.
+ * narrator is the channel's (Kokoro-82M, af_heart: voice.py), over hubnx's own theme, as every film on the channel is (the
+ * owner, 2026-11-26; hubnx docs/operations.md › YouTube › Sound): its intro, its 16-bar body looped in whole bars, its
+ * outro (local/demo/music/, ORIGIN.txt), at 0.45 between lines and 0.08 while the voice speaks, faded in and out; then
+ * hubnx's own two-pass normaliser brings the film to -16 LUFS / -1.5 dBTP. Text in Inter (OFL-1.1), drawn by headless
+ * Chrome, as the FFmpeg here has no text filter.
  *
  *   pnpm exec node scripts/demo/compose.ts      (after film.ts)
  *
@@ -12,7 +13,7 @@
  * captions, which the channel asks of every spoken film), thumbnail.jpg (1280 × 720) and the pictures it's made from.
  */
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { chromium } from "playwright-core";
@@ -137,8 +138,21 @@ const pictureInputs = ["-i", path.join(film, "raw.webm"), "-loop", "1", "-t", TI
   "-loop", "1", "-t", END.toFixed(2), "-i", path.join(out, "end.png"), ...planned.flatMap((step) => ["-i", path.join(out, `words-${words.indexOf(step.words)}.png`)])];
 const firstSound = pictureInputs.filter((part) => part === "-i").length;
 const voices = starts.map(({ at }) => path.join(narrationFolder, `${lineOf(at).index}.wav`));
-const bed = existsSync(path.join(local, "music")) ? readdirSync(path.join(local, "music")).find((name) => /^bed\.(wav|mp3|m4a)$/.test(name)) : undefined;
-const soundInputs = [...voices.flatMap((file) => ["-i", file]), ...(bed ? ["-stream_loop", "-1", "-i", path.join(local, "music", bed)] : [])];
+// The theme: intro, the body looped in whole bars until the outro would end past the film (so it never breaks off
+// mid-phrase), outro, then cut to the film's length under the fade.
+const music = path.join(local, "music");
+const theme = (part: "intro" | "body" | "outro") => path.join(music, `theme-${part}.wav`);
+for (const part of ["intro", "body", "outro"] as const) if (!existsSync(theme(part))) throw new Error(`no ${theme(part)}: copy hubnx's theme (local/demo/music/ORIGIN.txt)`);
+const seconds = (file: string) => Number(execFileSync(prober, ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file]).toString());
+const BAR = seconds(theme("body")) / 16;
+const bodyBars = Math.max(0, Math.ceil((total - seconds(theme("intro")) - seconds(theme("outro"))) / BAR));
+const soundInputs = [...voices.flatMap((file) => ["-i", file]), "-i", theme("intro"), "-stream_loop", "-1", "-i", theme("body"), "-i", theme("outro")];
+// The music steps back while the voice speaks: 0.45 between lines, 0.08 under one, a quarter second's ramp each way.
+const RAMP = 0.25;
+const spoken = starts.map(({ at, start }) => ({ from: start, to: start + lineOf(at).length }));
+const under = spoken.map(({ from, to }) => `clip((t-${(from - RAMP).toFixed(3)})/${RAMP},0,1)*clip((${(to + RAMP).toFixed(3)}-t)/${RAMP},0,1)`)
+  .reduce((all, one) => `max(${all},${one})`);
+const firstTheme = firstSound + starts.length;
 const graph = [
   "[1:v]fps=30,format=yuv420p,setsar=1[title]",
   "[2:v]fps=30,format=yuv420p,setsar=1[end]",
@@ -149,13 +163,19 @@ const graph = [
   // The sound: each line at its start, then the bed under it, quiet, fading in and out, when there is one.
   ...starts.map((_, index) => `[${firstSound + index}:a]aresample=48000,aformat=channel_layouts=stereo,adelay=${Math.round(starts[index]!.start * 1000)}:all=1[n${index}]`),
   `${starts.map((_, index) => `[n${index}]`).join("")}amix=inputs=${starts.length}:normalize=0:duration=longest,apad,atrim=0:${total.toFixed(2)}[voice]`,
-  bed
-    ? `[${firstSound + starts.length}:a]aresample=48000,aformat=channel_layouts=stereo,atrim=0:${total.toFixed(2)},volume=-24dB,afade=t=in:d=1.5,afade=t=out:st=${(total - 2).toFixed(2)}:d=2[bed];[voice][bed]amix=inputs=2:normalize=0:duration=first,loudnorm=I=-14:TP=-1.5:LRA=11[sound]`
-    : "[voice]loudnorm=I=-14:TP=-1.5:LRA=11[sound]",
+  `[${firstTheme}:a]aresample=48000,aformat=channel_layouts=stereo[intro];[${firstTheme + 1}:a]aresample=48000,aformat=channel_layouts=stereo,atrim=0:${(bodyBars * BAR).toFixed(4)}[body];`
+    + `[${firstTheme + 2}:a]aresample=48000,aformat=channel_layouts=stereo[outro];[intro][body][outro]concat=n=3:v=0:a=1,apad,atrim=0:${total.toFixed(2)},`
+    + `volume='0.45-0.37*${under}':eval=frame,afade=t=in:d=1.5,afade=t=out:st=${(total - 2.5).toFixed(2)}:d=2.5[theme]`,
+  "[voice][theme]amix=inputs=2:normalize=0:duration=first[sound]",
 ].join(";");
+const mixed = path.join(out, "demo-mixed.mp4");
 execFileSync(maker, ["-hide_banner", "-loglevel", "error", "-y", ...pictureInputs, ...soundInputs, "-filter_complex", graph,
   "-map", "[demo]", "-map", "[sound]", "-c:v", "libx264", "-crf", "18", "-preset", "slow", "-pix_fmt", "yuv420p",
-  "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-movflags", "+faststart", "-t", total.toFixed(2), path.join(out, "demo.mp4")]);
+  "-c:a", "pcm_s16le", "-ar", "48000", "-t", total.toFixed(2), mixed.replace(/\.mp4$/, ".mov")]);
+// hubnx's own normaliser, as the channel's every film: two passes to -16 LUFS / -1.5 dBTP, the picture copied.
+execFileSync("python3", [path.join(os.homedir(), "Workspace/repo/hubnx/local/brand/remotion/tools/loudnorm.py"), mixed.replace(/\.mp4$/, ".mov"), path.join(out, "demo.mp4")],
+  { env: { ...process.env, PATH: `${path.dirname(maker)}:${process.env.PATH ?? ""}` } });
+rmSync(mixed.replace(/\.mp4$/, ".mov"));
 
 // The narration's captions, a cue a line, timed as it's said.
 const srtTime = (seconds: number) => {
@@ -168,4 +188,4 @@ writeFileSync(path.join(out, "demo.en.srt"), starts.map(({ at, start }, index) =
   return `${index + 1}\n${srtTime(start)} --> ${srtTime(start + length)}\n${text}\n`;
 }).join("\n"));
 const length = Number(execFileSync(prober, ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", path.join(out, "demo.mp4")]).toString());
-console.log(`demo.mp4: ${length.toFixed(1)} s, ${planned.length} steps, narrated${bed ? `, over ${bed}` : ", no music bed yet (local/demo/music/bed.*)"}; demo.en.srt; thumbnail.jpg`);
+console.log(`demo.mp4: ${length.toFixed(1)} s, ${planned.length} steps, narrated over hubnx's theme (${bodyBars} bars of its body); demo.en.srt; thumbnail.jpg`);
