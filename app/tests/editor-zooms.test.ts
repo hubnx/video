@@ -1,11 +1,11 @@
 /**
- * Smooth jump cuts through the editor (src/edit/clip-editor.ts): punch-ins are made at Clean up once the speaker is
- * known, made again at a new spacing, gone when switched off or every silence is put back, shortened only inside
- * themselves, and every change one step of undo.
+ * Smooth jump cuts through the editor (src/edit/clip-editor.ts): the punch-ins follow the cuts as they are (Clean up,
+ * a new spacing, a cut put back), the switch and the faces, whenever each arrives; the person's own changes (taken away,
+ * shortened) are kept by the cut each follows and undone like any edit (the 1.1 review, 2026-11-26).
  */
 import { describe, expect, it } from "vitest";
 import { ClipEditor } from "../src/edit/clip-editor.ts";
-import { FACE_DETECTOR, FACE_STEP_SECONDS, type FaceBox } from "../src/shared/faces.ts";
+import { FACE_DETECTOR, FACE_STEP_SECONDS, type ClipFaces, type FaceBox } from "../src/shared/faces.ts";
 import { flicksOf, type Flicks } from "../src/shared/time.ts";
 import type { SoundMap } from "../src/shared/transcript.ts";
 
@@ -25,11 +25,13 @@ function sound(): SoundMap {
   return { levels, voice };
 }
 
-function editor(): ClipEditor {
+const FACES: ClipFaces = { detector: FACE_DETECTOR,
+  samples: Array.from({ length: SECONDS / FACE_STEP_SECONDS + 1 }, (): FaceBox[] => [{ x: 0.55, y: 0.25, width: 0.1, height: 0.15 }]) };
+
+function editor({ faces = true } = {}): ClipEditor {
   const made = new ClipEditor("c", flicksOf(SECONDS), null);
   made.setHeard([], sound());
-  const face: FaceBox = { x: 0.55, y: 0.25, width: 0.1, height: 0.15 };
-  made.setFaces({ detector: FACE_DETECTOR, samples: Array.from({ length: SECONDS / FACE_STEP_SECONDS + 1 }, () => [face]) });
+  if (faces) made.setFaces(FACES);
   return made;
 }
 
@@ -37,64 +39,85 @@ describe("smooth jump cuts in the editor", () => {
   it("makes no punch-in while the switch is off", () => {
     const made = editor();
     made.cutSilences();
-    expect(made.edit.zooms).toEqual([]);
+    expect(made.zooms).toEqual([]);
   });
 
-  it("punches in on every second stretch after a cut, at Clean up and when switched on after it", () => {
+  it("punches in on every second stretch after a cut, about the face, whether switched on before Clean up or after", () => {
     const before = editor();
     before.setSmoothCuts(true);
     before.cutSilences();
-    expect(before.edit.zooms).toHaveLength(2);
-    expect(before.edit.zooms[0]!.centre.x).toBeCloseTo(0.6);
-    expect(before.edit.zooms[0]!.centre.y).toBeCloseTo(0.325);
+    expect(before.zooms).toHaveLength(2);
+    expect(before.zooms[0]!.centre.x).toBeCloseTo(0.6);
+    expect(before.zooms[0]!.centre.y).toBeCloseTo(0.325);
     const after = editor();
     after.cutSilences();
     after.setSmoothCuts(true);
-    expect(after.edit.zooms).toEqual(before.edit.zooms);
+    expect(after.zooms).toEqual(before.zooms);
   });
 
-  it("takes every punch-in away when switched off, or when every silence is put back", () => {
+  it("makes them once the faces arrive, though Clean up came first", () => {
+    const made = editor({ faces: false });
+    made.setSmoothCuts(true);
+    made.cutSilences();
+    expect(made.zooms).toEqual([]);
+    made.setFaces(FACES);
+    expect(made.zooms).toHaveLength(2);
+  });
+
+  it("starts and ends every punch-in at a cut: putting one cut back joins two stretches, and the alternation follows", () => {
+    const made = editor();
+    made.setSmoothCuts(true);
+    made.cutSilences();
+    made.toggle(made.silences[1]!); // the cut that ended the first punch-in, put back
+    const parts = made.segments;
+    for (const zoom of made.zooms) {
+      expect(parts.some((part) => part.from === zoom.start)).toBe(true);
+      expect(parts.some((part) => part.to === zoom.end)).toBe(true);
+    }
+  });
+
+  it("follows the switch whatever is undone", () => {
     const made = editor();
     made.setSmoothCuts(true);
     made.cutSilences();
     made.setSmoothCuts(false);
-    expect(made.edit.zooms).toEqual([]);
-    made.setSmoothCuts(true);
-    made.restoreSilences();
-    expect(made.edit.zooms).toEqual([]);
+    expect(made.zooms).toEqual([]);
+    made.undo(); // undoes Clean up, not the switch
+    expect(made.smoothCuts).toBe(false);
+    expect(made.zooms).toEqual([]);
   });
 
   it("makes them again at a new spacing, as the cuts move", () => {
     const made = editor();
     made.setSmoothCuts(true);
     made.cutSilences();
-    const natural = made.edit.zooms[0]!.start;
+    const natural = made.zooms[0]!.start;
     made.setSpacing("relaxed");
-    expect(made.edit.zooms).toHaveLength(2);
-    expect(made.edit.zooms[0]!.start).toBeLessThan(natural); // a relaxed cut leaves more pause, so the stretch starts sooner
+    expect(made.zooms).toHaveLength(2);
+    expect(made.zooms[0]!.start).toBeLessThan(natural); // a relaxed cut leaves more pause, so the stretch starts sooner
   });
 
-  it("shortens a punch-in only inside itself, deletes one, and undoes each as one step", () => {
+  it("shortens a punch-in only inside itself, takes one away, keeps both through a cut put back elsewhere, and undoes each", () => {
     const made = editor();
     made.setSmoothCuts(true);
     made.cutSilences();
-    const zoom = made.edit.zooms[0]!;
-    made.shortenZoom(0, (zoom.start - flicksOf(5)) as Flicks, (zoom.end - flicksOf(2)) as Flicks);
-    expect(made.edit.zooms[0]).toMatchObject({ start: zoom.start, end: zoom.end - flicksOf(2) });
-    made.deleteZoom(1);
-    expect(made.edit.zooms).toHaveLength(1);
+    const [first, second] = made.zooms;
+    made.shortenZoom(first!.at, (first!.start - flicksOf(5)) as Flicks, (first!.end - flicksOf(2)) as Flicks);
+    expect(made.zooms[0]).toMatchObject({ start: first!.start, end: first!.end - flicksOf(2) });
+    made.deleteZoom(second!.at);
+    expect(made.zooms.map((zoom) => zoom.at)).toEqual([first!.at]);
     made.undo();
-    expect(made.edit.zooms).toHaveLength(2);
+    expect(made.zooms).toHaveLength(2);
     made.undo();
-    expect(made.edit.zooms[0]).toEqual(zoom);
+    expect(made.zooms[0]).toEqual(first);
   });
 
-  it("keeps the person's own changes through a single cut put back", () => {
+  it("takes a punch-in away when it's shortened to nothing", () => {
     const made = editor();
     made.setSmoothCuts(true);
     made.cutSilences();
-    made.deleteZoom(0);
-    made.toggle(made.silences[0]!);
-    expect(made.edit.zooms).toHaveLength(1);
+    const first = made.zooms[0]!;
+    made.shortenZoom(first.at, first.end, first.end);
+    expect(made.zooms.map((zoom) => zoom.at)).not.toContain(first.at);
   });
 });

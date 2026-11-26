@@ -93,8 +93,9 @@ Dependencies point one way: window → preload → main process → FFmpeg.
   describes its own errors (`src/problems.ts`) and the bridge carries only text.
 - **MediaPipe's web build posts usage numbers to Google every minute** (`odml.pa.googleapis.com/v1/log`: the system,
   the task, its version and timings; found in its bundle 2026-11-25) and has no switch for it. The window may not reach
-  the web at all: its CSP allows connections to its own files and `media:` only, and the main process refuses and logs
-  any web request from it (`window_request_blocked`); `scripts/check-shorts.ts` proves none got through. A new library in
+  the web at all: its CSP allows connections to `media:` only (the detector's WebAssembly and model come through
+  `media://app/<name>`, so the window needs no file access either), and the main process refuses and logs any web
+  request from it (`window_request_blocked`); `scripts/check-shorts.ts` proves none got through. A new library in
   the window gets the same scrutiny before it ships.
 - **A package that ships no licence file stops the build** (the notices collector): its repository's notice goes in
   `build-resources/notices/npm/` and in `atSource` (MediaPipe's in `vite.config.ts`, others in `scripts/app-notices.ts`),

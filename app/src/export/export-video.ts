@@ -65,7 +65,12 @@ export async function exportPicture(plan: ExportPicture, write: (position: numbe
       const frames: number[] = [];
       while (frame + frames.length < totalFrames && (frame + frames.length) * frameSeconds < segmentStart + length - 1e-9) frames.push(frame + frames.length);
       const sourceTimes = frames.map((index) => from + (index * frameSeconds - segmentStart) + 1e-6);
+      let shownAt = 0; // which of sourceTimes this sample is for
       for await (const sample of sink.samplesAtTimestamps(sourceTimes)) {
+        // The view at the moment of the clip this output frame shows, never its decoded frame's middle: a cut lands
+        // between frames, and the frame after it often began before the cut, so its middle would take the stretch
+        // before's view (the 1.1 review: one unzoomed frame at the start of every punch-in).
+        const moment = sourceTimes[shownAt++]!;
         if (signal.aborted) {
           if (sample !== last) sample?.close();
           throw new Error("EXPORT_CANCELLED");
@@ -79,7 +84,7 @@ export async function exportPicture(plan: ExportPicture, write: (position: numbe
           const picture = last.toVideoFrame();
           try {
             compositor.draw(picture, last.squarePixelWidth, last.squarePixelHeight, (last.rotation / 90) as QuarterTurns,
-              plan.view?.(last.timestamp + last.duration / 2) ?? undefined);
+              plan.view?.(moment) ?? undefined);
           } finally {
             picture.close();
           }

@@ -67,7 +67,7 @@ export function cleanupPanel(editor: ClipEditor, search: () => SearchState): { e
     smoothCutsWaiting.textContent = found.state === "finding" ? words.cleanup.smoothCutsWaiting(Math.round(found.fraction * 100))
       : found.state === "failed" || (found.state === "found" && !found.anyFace) ? words.cleanup.smoothCutsNoFace : "";
     punchIns.textContent = editor.smoothCuts && found.state === "found" && found.anyFace
-      ? words.cleanup.punchIns(editor.edit.zooms.length, editor.edit.removed.length > 0) : "";
+      ? words.cleanup.punchIns(editor.zooms.length, editor.edit.removed.length > 0) : "";
   };
   render();
   return { element: panel, render, voice: (status) => (voiceStatus.textContent = status ?? ""),

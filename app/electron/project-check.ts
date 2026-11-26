@@ -15,13 +15,8 @@ export function isEdit(value: unknown): value is Edit {
   return typeof edit === "object" && edit !== null && Array.isArray(edit.removed) && Array.isArray(edit.splits)
     && edit.removed.every((stretch) => isTime(stretch?.start) && isTime(stretch?.end) && stretch.start < stretch.end && REASONS.has(stretch.reason))
     && edit.splits.every(isTime)
-    && Array.isArray(edit.zooms) && edit.zooms.every((zoom) => isTime(zoom?.start) && isTime(zoom?.end) && zoom.start < zoom.end
-      && Number.isFinite(zoom.scale) && zoom.scale >= 1 && zoom.scale <= 2 && isPoint(zoom.centre));
-}
-
-function isPoint(value: unknown): boolean {
-  const point = value as { x?: unknown; y?: unknown } | null;
-  return typeof point === "object" && point !== null && Number.isFinite(point.x) && Number.isFinite(point.y);
+    && Array.isArray(edit.zoomChanges) && edit.zoomChanges.every((change) => isTime(change?.at)
+      && (change.kind === "removed" || (change.kind === "shortened" && isTime(change.start) && isTime(change.end) && change.start < change.end)));
 }
 
 export function isChoices(value: unknown): value is Choices {

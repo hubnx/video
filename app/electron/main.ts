@@ -3,7 +3,7 @@
  */
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme, protocol, shell } from "electron";
 import { accessSync, constants, existsSync } from "node:fs";
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { APP_NAME, CHANNELS, draftRefusal, releaseNotesUrl, WEBSITE_PAGES, type AboutFacts, type ExportDestination, type ExportSound, type FeedbackDraft, type MenuCommand, type OpenResult, type WebsitePage } from "../src/shared/app-api.ts";
 import { facesFrom } from "../src/shared/faces.ts";
@@ -180,8 +180,20 @@ async function start(): Promise<void> {
   });
 
   protocol.handle("media", async (request) => {
+    const url = new URL(request.url);
+    // media://app/<file>: the face detector's WebAssembly and model from the window's own build, by name only, so the
+    // window's CSP lets it connect to media: alone and never to a file (src/shorts/face-finder.ts; the 1.1 review).
+    if (url.host === "app") {
+      const name = url.pathname.slice(1);
+      if (!/^[A-Za-z0-9_-]+\.(wasm|tflite)$/.test(name)) return new Response(null, { status: 404 });
+      try {
+        return await mediaResponse(path.join(app.getAppPath(), "dist", "renderer", "assets", name), request.headers.get("range"));
+      } catch {
+        return new Response(null, { status: 404 });
+      }
+    }
     // media://clip/<id>/<original|proxy|editCopy>: only the files of clips opened in this run.
-    const [, id = "", file = ""] = new URL(request.url).pathname.split("/");
+    const [, id = "", file = ""] = url.pathname.split("/");
     const served = clips.served(id, file);
     if (!served) return new Response(null, { status: 404 });
     try {
@@ -252,7 +264,10 @@ async function start(): Promise<void> {
   ipcMain.handle(CHANNELS.saveFaces, async (_event, id: unknown, faces: unknown) => {
     const found = facesFrom(faces);
     if (typeof id !== "string" || !facts.has(id) || !found) throw new Error("not faces of a clip opened in this run");
-    await writeFile(clips.stored(id, "faces.json"), JSON.stringify(found));
+    const file = clips.stored(id, "faces.json");
+    // A clip with no jobs (a screen recording with no sound, decoded as it is) has no folder yet.
+    await mkdir(path.dirname(file), { recursive: true });
+    await writeFile(file, JSON.stringify(found));
   });
   ipcMain.handle(CHANNELS.cleanVoice, (_event, id: unknown) => {
     if (typeof id !== "string" || !facts.has(id)) throw new Error("not a clip opened in this run");

@@ -34,16 +34,18 @@ export function timelineView(editor: ClipEditor, seek: (seconds: number) => void
   deleteSelectedZoom: () => boolean } {
   const canvas = element("canvas", { className: "timeline-canvas", attributes: { role: "slider", "aria-label": words.timeline.label, tabindex: "0" } });
   let playhead: Flicks = 0 as Flicks;
-  let selected: number | null = null;
+  // A punch-in is known by its cut (`at`), never by its place in the list, which changes as the cuts do.
+  let selected: Flicks | null = null;
   // A drag in progress: which punch-in, which end, and where that end is now (clip time), drawn before it's kept.
-  let dragging: { index: number; end: "start" | "end"; at: Flicks } | null = null;
+  let dragging: { at: Flicks; end: "start" | "end"; to: Flicks } | null = null;
+  const zoomAt = (at: Flicks | null) => editor.zooms.find((zoom) => zoom.at === at) ?? null;
 
   /** Where each punch-in shows on the strip, in canvas pixels: the part of it that plays. */
   const zoomBoxes = (scale: number) => {
     const parts = editor.segments;
-    return editor.edit.zooms.map((zoom, index) => {
-      const start = dragging?.index === index && dragging.end === "start" ? dragging.at : zoom.start;
-      const end = dragging?.index === index && dragging.end === "end" ? dragging.at : zoom.end;
+    return editor.zooms.map((zoom) => {
+      const start = dragging?.at === zoom.at && dragging.end === "start" ? dragging.to : zoom.start;
+      const end = dragging?.at === zoom.at && dragging.end === "end" ? dragging.to : zoom.end;
       let from: number | null = null;
       let to = 0;
       let position = 0;
@@ -55,7 +57,7 @@ export function timelineView(editor: ClipEditor, seek: (seconds: number) => void
         }
         position += part.to - part.from;
       }
-      return from === null ? null : { index, left: from * scale, right: to * scale };
+      return from === null ? null : { at: zoom.at, left: from * scale, right: to * scale };
     });
   };
 
@@ -72,7 +74,7 @@ export function timelineView(editor: ClipEditor, seek: (seconds: number) => void
     const total = timelineLength(parts) || 1;
     const scale = width / total; // pixels a flick
     // With punch-ins, the sound takes the height under their strip.
-    const strip = editor.edit.zooms.length ? ZOOM_STRIP * devicePixelRatio : 0;
+    const strip = editor.zooms.length ? ZOOM_STRIP * devicePixelRatio : 0;
     const middle = strip + (height - strip) / 2;
     const levels = editor.sound?.levels;
     // The sound across what plays, a bar a pixel: each column's loudest 20 ms, -60 dB at the middle line to 0 dB at the
@@ -122,13 +124,13 @@ export function timelineView(editor: ClipEditor, seek: (seconds: number) => void
       context.globalAlpha = 0.45;
       context.fillRect(box.left, devicePixelRatio, Math.max(2, box.right - box.left), strip - 2 * devicePixelRatio);
       context.globalAlpha = 1;
-      if (box.index === selected) {
+      if (box.at === selected) {
         context.strokeStyle = colour("--text");
         context.lineWidth = devicePixelRatio * 1.5;
         context.strokeRect(box.left, devicePixelRatio, Math.max(2, box.right - box.left), strip - 2 * devicePixelRatio);
       }
     }
-    canvas.title = editor.edit.zooms.length ? words.timeline.zooms : "";
+    canvas.title = editor.zooms.length ? words.timeline.zooms : "";
     const at = timelineAt(parts, playhead);
     if (at !== null) {
       context.fillStyle = colour("--text");
@@ -138,7 +140,7 @@ export function timelineView(editor: ClipEditor, seek: (seconds: number) => void
   };
 
   // A press on the strip selects or drags a punch-in; anywhere else it moves the playhead.
-  const onStrip = (event: PointerEvent) => editor.edit.zooms.length > 0 && event.clientY - canvas.getBoundingClientRect().top < ZOOM_STRIP;
+  const onStrip = (event: PointerEvent) => editor.zooms.length > 0 && event.clientY - canvas.getBoundingClientRect().top < ZOOM_STRIP;
   const clipTimeAt = (clientX: number): Flicks | null => {
     const parts = editor.segments;
     const box = canvas.getBoundingClientRect();
@@ -158,11 +160,11 @@ export function timelineView(editor: ClipEditor, seek: (seconds: number) => void
     const scale = canvas.width / (timelineLength(editor.segments) || 1);
     const grab = GRAB * devicePixelRatio;
     const hit = zoomBoxes(scale).find((each) => each && x >= each.left - grab && x <= each.right + grab) ?? null;
-    selected = hit?.index ?? null;
-    if (hit) {
-      const zoom = editor.edit.zooms[hit.index]!;
-      if (Math.abs(x - hit.left) <= grab) dragging = { index: hit.index, end: "start", at: zoom.start };
-      else if (Math.abs(x - hit.right) <= grab) dragging = { index: hit.index, end: "end", at: zoom.end };
+    selected = hit?.at ?? null;
+    const zoom = zoomAt(selected);
+    if (hit && zoom) {
+      if (Math.abs(x - hit.left) <= grab) dragging = { at: zoom.at, end: "start", to: zoom.start };
+      else if (Math.abs(x - hit.right) <= grab) dragging = { at: zoom.at, end: "end", to: zoom.end };
       if (dragging) canvas.setPointerCapture(event.pointerId);
     }
     canvas.focus();
@@ -171,34 +173,40 @@ export function timelineView(editor: ClipEditor, seek: (seconds: number) => void
   canvas.addEventListener("pointermove", (event) => {
     if (!dragging) return;
     const at = clipTimeAt(event.clientX);
-    if (at === null) return;
-    const zoom = editor.edit.zooms[dragging.index]!;
-    // Shorter only: a punch-in never reaches past the cut it was made for.
-    dragging.at = (dragging.end === "start" ? Math.min(Math.max(at, zoom.start), zoom.end) : Math.max(Math.min(at, zoom.end), zoom.start)) as Flicks;
+    const zoom = zoomAt(dragging.at);
+    if (at === null || !zoom) return;
+    // Shorter only: a punch-in never reaches past its own stretch.
+    dragging.to = (dragging.end === "start" ? Math.min(Math.max(at, zoom.start), zoom.end) : Math.max(Math.min(at, zoom.end), zoom.start)) as Flicks;
     draw();
   });
   canvas.addEventListener("pointerup", () => {
     if (!dragging) return;
-    const { index, end, at } = dragging;
+    const { at, end, to } = dragging;
     dragging = null;
-    const zoom = editor.edit.zooms[index]!;
-    // One step of undo for the whole drag; a drag down to nothing deletes it.
-    if (end === "start" ? at >= zoom.end : at <= zoom.start) editor.deleteZoom(index);
-    else editor.shortenZoom(index, end === "start" ? at : zoom.start, end === "end" ? at : zoom.end);
+    const zoom = zoomAt(at);
+    if (!zoom) return draw(); // gone mid-drag (an undo): nothing to keep
+    // One step of undo for the whole drag; shortened to nothing, it's taken away (the editor's rule).
+    editor.shortenZoom(at, end === "start" ? to : zoom.start, end === "end" ? to : zoom.end);
+  });
+  canvas.addEventListener("pointercancel", () => {
+    dragging = null;
+    draw();
   });
   new ResizeObserver(draw).observe(canvas);
 
   return {
     element: element("div", { className: "timeline" }, canvas),
     render: () => {
-      if (selected !== null && selected >= editor.edit.zooms.length) selected = null; // undone or remade
+      // A punch-in taken away, undone or moved with its cut is no longer selected or dragged.
+      if (!zoomAt(selected)) selected = null;
+      if (dragging && !zoomAt(dragging.at)) dragging = null;
       draw();
     },
     deleteSelectedZoom: () => {
-      if (selected === null || !editor.edit.zooms[selected]) return false;
-      const index = selected;
+      const zoom = zoomAt(selected);
+      if (!zoom) return false;
       selected = null;
-      editor.deleteZoom(index);
+      editor.deleteZoom(zoom.at);
       return true;
     },
     at: (seconds) => {

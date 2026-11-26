@@ -31,7 +31,8 @@ export interface Removed extends Stretch {
 }
 
 /** A punch-in on a stretch of the clip (smooth jump cuts, docs/design/1.1-shorts.md): the picture `scale` times larger
- * about `centre`, the speaker's face, as fractions of the upright picture. */
+ * about `centre`, the speaker's face, as fractions of the upright picture. Worked out from the cuts and the speaker
+ * (shorts/smooth-cuts.ts), never stored, so it always matches the cuts as they are. */
 export interface Zoom {
   start: Flicks;
   end: Flicks;
@@ -39,11 +40,17 @@ export interface Zoom {
   centre: { x: number; y: number };
 }
 
-/** The edit (src/edit/timeline.ts): what's taken out of the clip, where it was split, and its punch-ins (version 2). */
+/** The person's own change to the punch-in after the cut at `at` (the start of the stretch it's on): taken away, or
+ * shortened to `start`–`end`. Only these are kept, and undone; a change whose cut has moved (a new spacing) no longer
+ * applies. */
+export type ZoomChange = { at: Flicks; kind: "removed" } | { at: Flicks; kind: "shortened"; start: Flicks; end: Flicks };
+
+/** The edit (src/edit/timeline.ts): what's taken out of the clip, where it was split, and the person's changes to the
+ * punch-ins (version 2). */
 export interface Edit {
   removed: Removed[];
   splits: Flicks[];
-  zooms: Zoom[];
+  zoomChanges: ZoomChange[];
 }
 
 /** The person's choices for the clip, kept with the edit so a reopened project looks as they left it. */
@@ -73,11 +80,11 @@ export interface Project {
 
 /** Each step from one version to the next, by the version it starts from. */
 const STEPS: Record<number, (project: Record<string, unknown>) => Record<string, unknown>> = {
-  // 1.1: punch-ins on the edit, and the short and smooth-cut choices, all off as release 1 had them.
+  // 1.1: changes to punch-ins on the edit (none), and the short and smooth-cut choices, off as release 1 had them.
   1: (project) => ({
     ...project,
     version: 2,
-    edit: { ...(project.edit as object), zooms: [] },
+    edit: { ...(project.edit as object), zoomChanges: [] },
     choices: { ...(project.choices as object), shorts: false, smoothCuts: false },
   }),
 };

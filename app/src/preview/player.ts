@@ -195,7 +195,10 @@ export class Player {
   private draw(sample: VideoSample): void {
     const frame = sample.toVideoFrame();
     try {
-      this.drawnView = this.viewAt?.(sample.timestamp + sample.duration / 2) ?? null;
+      // The view at the clock's moment, kept within this frame: after a cut the clock is already in the new stretch while
+      // the frame showing began before it, and the export takes the same moment (export-video.ts).
+      const moment = Math.min(Math.max(this.clock.now(), sample.timestamp), sample.timestamp + sample.duration - 1e-6);
+      this.drawnView = this.viewAt?.(moment) ?? null;
       this.compositor.draw(frame, sample.squarePixelWidth, sample.squarePixelHeight, (sample.rotation / 90) as QuarterTurns, this.drawnView ?? undefined);
       const over = this.overlay?.({ start: sample.timestamp, end: sample.timestamp + sample.duration }, this.compositor.pictureSize);
       if (over) this.compositor.drawOverlay(over);

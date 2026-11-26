@@ -63,7 +63,8 @@ export class SpeakerSearch {
       const address = await this.address;
       this.set({ state: "finding", fraction: 0 });
       const faces = await findFaces(address, this.durationSeconds, (fraction) => this.set({ state: "finding", fraction }), new AbortController().signal);
-      await window.video.saveFaces(this.clipId, faces);
+      // Kept for next time if it can be; used now either way: a failed save costs a second search, not this one.
+      await window.video.saveFaces(this.clipId, faces).catch((error: unknown) => logProblem("faces_unsaved", error));
       this.take(faces);
     } catch (error) {
       logProblem("faces_failed", error);

@@ -7,7 +7,7 @@ import { FACE_STEP_SECONDS, facesFrom, FACE_DETECTOR, type FaceBox } from "../sr
 import { migrate, PROJECT_FORMAT, type Segment } from "../src/shared/project.ts";
 import { flicksOf } from "../src/shared/time.ts";
 import { cameraAt, cameraPath, CAMERA_STEP_SECONDS } from "../src/shorts/camera.ts";
-import { PUNCH_IN, smoothCutZooms } from "../src/shorts/smooth-cuts.ts";
+import { PUNCH_IN, punchIns } from "../src/shorts/smooth-cuts.ts";
 import { HOLD_SECONDS, speakerTrack, type SpeakerPoint } from "../src/shorts/track.ts";
 import { WHOLE } from "../src/preview/compositor.ts";
 import { shortsView, shortsWidth, zoomedView } from "../src/shorts/view.ts";
@@ -109,7 +109,7 @@ describe("smooth jump cuts", () => {
 
   it("punches in on every second stretch after a cut, about the face", () => {
     const parts = [seconds(0, 4), seconds(5, 9), seconds(10, 14), seconds(15, 19)];
-    const zooms = smoothCutZooms(parts, seen(0.6, samplesFor(20)));
+    const zooms = punchIns(parts, seen(0.6, samplesFor(20)), []);
     expect(zooms.map((zoom) => [zoom.start, zoom.end])).toEqual([[parts[1]!.from, parts[1]!.to], [parts[3]!.from, parts[3]!.to]]);
     expect(zooms[0]).toMatchObject({ scale: PUNCH_IN, centre: { x: 0.6, y: 0.35 } });
   });
@@ -117,11 +117,20 @@ describe("smooth jump cuts", () => {
   it("leaves a stretch without a face as it is, and keeps the rhythm after it", () => {
     const track = [...seen(0.6, samplesFor(5)), ...Array.from({ length: samplesFor(5) }, () => null), ...seen(0.6, samplesFor(10))];
     const parts = [seconds(0, 4), seconds(5, 9), seconds(10, 14), seconds(15, 19)];
-    expect(smoothCutZooms(parts, track).map((zoom) => zoom.start)).toEqual([parts[3]!.from]);
+    expect(punchIns(parts, track, []).map((zoom) => zoom.start)).toEqual([parts[3]!.from]);
   });
 
   it("makes none without a cut", () => {
-    expect(smoothCutZooms([seconds(0, 30)], seen(0.5, samplesFor(30)))).toEqual([]);
+    expect(punchIns([seconds(0, 30)], seen(0.5, samplesFor(30)), [])).toEqual([]);
+  });
+
+  it("lays the person's changes over them by the cut each follows, and forgets one whose cut has gone", () => {
+    const parts = [seconds(0, 4), seconds(5, 9), seconds(10, 14), seconds(15, 19)];
+    const track = seen(0.6, samplesFor(20));
+    const shortened = punchIns(parts, track, [{ at: parts[1]!.from, kind: "shortened", start: parts[1]!.from, end: flicksOf(7) }]);
+    expect(shortened[0]).toMatchObject({ at: parts[1]!.from, start: parts[1]!.from, end: flicksOf(7) });
+    expect(punchIns(parts, track, [{ at: parts[3]!.from, kind: "removed" }]).map((zoom) => zoom.at)).toEqual([parts[1]!.from]);
+    expect(punchIns(parts, track, [{ at: flicksOf(5.5), kind: "removed" }])).toHaveLength(2); // its cut moved: no longer applies
   });
 });
 
@@ -137,7 +146,7 @@ describe("stored faces and older projects", () => {
       choices: { spacing: "tight", captionStyle: "subtitles", hideFillersInCaptions: false, cleanVoice: true } };
     const opened = migrate(old);
     expect(opened.version).toBe(2);
-    expect(opened.edit.zooms).toEqual([]);
+    expect(opened.edit.zoomChanges).toEqual([]);
     expect(opened.choices).toMatchObject({ spacing: "tight", cleanVoice: true, shorts: false, smoothCuts: false });
   });
 });

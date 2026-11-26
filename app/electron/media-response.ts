@@ -9,7 +9,9 @@ import { stat } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 
-const TYPES: Record<string, string> = { ".mp4": "video/mp4", ".m4v": "video/mp4", ".mov": "video/quicktime", ".webm": "video/webm", ".mkv": "video/x-matroska", ".wav": "audio/wav" };
+const TYPES: Record<string, string> = { ".mp4": "video/mp4", ".m4v": "video/mp4", ".mov": "video/quicktime", ".webm": "video/webm", ".mkv": "video/x-matroska", ".wav": "audio/wav",
+  // The face detector's (media://app, electron/main.ts): WebAssembly must be served as such to compile as it streams.
+  ".wasm": "application/wasm", ".tflite": "application/octet-stream" };
 
 export async function mediaResponse(file: string, range: string | null): Promise<Response> {
   const answer = await mediaAnswer(file, range);

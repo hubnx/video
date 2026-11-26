@@ -56,6 +56,7 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
   // The speaker's face through the clip (shorts/speaker-search.ts): whatever asks for a short (the switch here, the
   // export's *For* row, a project saved as one) starts the search at once.
   const previewAddress = Promise.withResolvers<string>();
+  previewAddress.promise.catch(() => undefined); // the search hears it from its own await; nobody else may be waiting
   const search = new SpeakerSearch(clip.id, clip.facts.durationSeconds, previewAddress.promise, (faces) => editor.setFaces(faces));
   editor.onChange(() => {
     if (editor.shorts) void search.start();
@@ -100,7 +101,7 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
     showSearch();
     const look: CaptionLook = editor.shorts ? "shorts" : "video";
     preview?.setCaptions(captionLines(editor.captionWords, captionShape(look)), editor.captionStyle, look);
-    preview?.setView(framing({ picture, shorts: editor.shorts, speaker: editor.speaker, parts: joinedSegments(editor.segments), zooms: editor.edit.zooms }));
+    preview?.setView(framing({ picture, shorts: editor.shorts, speaker: editor.speaker, parts: joinedSegments(editor.segments), zooms: editor.zooms }));
     preview?.setSkips(editor.edit.removed.map((stretch) => ({ start: secondsOf(stretch.start), end: secondsOf(stretch.end) })));
   };
   editor.onChange(showEdit);
@@ -184,6 +185,8 @@ export function clipView(clip: Clip, saved: { edit: Edit; choices: Choices } | n
     }
     row.replaceChildren(element("span", { textContent: words.clip.jobs[progress.kind] }), element("span", { className: "job-state", textContent: stateWords(progress) }));
     if (progress.kind === "proxy" && progress.state === "done") proxyDone();
+    // No proxy, no picture to find faces in: the speaker search ends, and a short waiting on it exports centred.
+    if (progress.kind === "proxy" && (progress.state === "failed" || progress.state === "cancelled")) previewAddress.reject(new Error(`PROXY_${progress.state.toUpperCase()}`));
     if (progress.kind === "editCopy" && progress.state === "running") editCopyWatcher?.(progress.fraction, progress.secondsLeft);
     if (progress.kind === "editCopy" && progress.state === "done") editCopy.resolve();
     if (progress.kind === "editCopy" && (progress.state === "failed" || progress.state === "cancelled")) editCopy.reject(new Error(`EDIT_COPY_${progress.state.toUpperCase()}`));

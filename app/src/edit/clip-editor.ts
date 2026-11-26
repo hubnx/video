@@ -3,7 +3,6 @@
  * spacing. The transcript, the captions, the preview's playing and the timeline all read what they show from here, and
  * every change goes through here, so each is one step of undo and every view hears of it.
  */
-import type { Draft } from "immer";
 import type { Cut, Stretch } from "../shared/cuts.ts";
 import type { ClipFaces } from "../shared/faces.ts";
 import { DEFAULT_CHOICES, type Choices, type Edit, type Segment } from "../shared/project.ts";
@@ -11,7 +10,7 @@ import type { CaptionStyle } from "../preview/captions.ts";
 import type { Flicks } from "../shared/time.ts";
 import type { SoundMap, Word } from "../shared/transcript.ts";
 import { fillerCuts, isEnglish, isFiller, silenceProposals, type FillerCut, type Spacing } from "./cleanup.ts";
-import { smoothCutZooms } from "../shorts/smooth-cuts.ts";
+import { punchIns, type PunchIn } from "../shorts/smooth-cuts.ts";
 import { speakerTrack, type SpeakerPoint } from "../shorts/track.ts";
 import { History } from "./history.ts";
 import { deleteSegment, emptyEdit, joinedSegments, remove, restore, segments, split } from "./timeline.ts";
@@ -36,8 +35,10 @@ export class ClipEditor {
   cleanVoice: boolean;
   /** The preview and the export as a 9:16 short following the speaker. */
   shorts: boolean;
-  /** Smooth jump cuts: punch-ins made at Clean up, once the speaker's been found. */
+  /** Smooth jump cuts: a punch-in at every second cut where the speaker's face is in frame, once it's been found. */
   smoothCuts: boolean;
+  /** The punch-ins as the cuts, the speaker and the person's changes make them now; worked out once per change. */
+  zooms: PunchIn[] = [];
   /** The speaker through the clip, a point a sample (shorts/track.ts), once its faces are found; null until then. */
   speaker: (SpeakerPoint | null)[] | null = null;
 
@@ -116,12 +117,11 @@ export class ClipEditor {
     this.changed();
   }
 
-  /** "Clean up": every proposed silence cut, as one step, with its punch-ins when smooth cuts are on. */
+  /** "Clean up": every proposed silence cut, as one step. */
   cutSilences(): void {
     const proposals = this.silences;
     this.history.change((edit) => {
       for (const cut of proposals) remove(edit, { start: cut.start, end: cut.end, reason: "silence" });
-      this.remakeZooms(edit);
     });
     this.changed();
   }
@@ -130,17 +130,8 @@ export class ClipEditor {
   restoreSilences(): void {
     this.history.change((edit) => {
       edit.removed = edit.removed.filter((each) => each.reason !== "silence");
-      this.remakeZooms(edit);
     });
     this.changed();
-  }
-
-  /** The punch-ins made again from the cuts as they now are, when smooth cuts are on: at Clean up, putting every silence
-   * back, a new spacing and the switch turned on. A single cut, delete or split leaves them as they are, so a zoom the
-   * person shortened or deleted stays that way. */
-  private remakeZooms(edit: Draft<Edit>): void {
-    if (!this.smoothCuts || !this.speaker) return;
-    edit.zooms = smoothCutZooms(joinedSegments(segments(edit as Edit, this.clipId, this.duration)), this.speaker);
   }
 
   /** The faces found in the clip: the speaker's track, which shorts follow and smooth cuts punch in on. */
@@ -154,33 +145,34 @@ export class ClipEditor {
     this.changed();
   }
 
-  /** Smooth jump cuts on (punch-ins at the cuts already made, as one step) or off (every punch-in gone, as one step). */
+  /** Smooth jump cuts on or off: a choice, like the caption style, so its punch-ins follow it whatever is undone. */
   setSmoothCuts(on: boolean): void {
     this.smoothCuts = on;
+    this.changed();
+  }
+
+  /** Takes away the punch-in after the cut at `at`, as one step. */
+  deleteZoom(at: Flicks): void {
     this.history.change((edit) => {
-      if (on) this.remakeZooms(edit);
-      else edit.zooms = [];
+      edit.zoomChanges = edit.zoomChanges.filter((change) => change.at !== at);
+      edit.zoomChanges.push({ at, kind: "removed" });
     });
     this.changed();
   }
 
-  /** Takes one punch-in away. */
-  deleteZoom(index: number): void {
+  /** The punch-in after the cut at `at` shortened to `start`–`end`, as one step: shorter only, so a zoom never reaches
+   * past its own stretch; shortened to nothing, it's taken away. */
+  shortenZoom(at: Flicks, start: Flicks, end: Flicks): void {
+    const zoom = this.zooms.find((each) => each.at === at);
+    if (!zoom) return;
+    const [from, to] = [Math.max(zoom.start, start), Math.min(zoom.end, end)];
+    if (to <= from) {
+      this.deleteZoom(at);
+      return;
+    }
     this.history.change((edit) => {
-      edit.zooms.splice(index, 1);
-    });
-    this.changed();
-  }
-
-  /** A punch-in shortened to `start`–`end`, within where it was: a zoom never reaches past the cut it was made for. */
-  shortenZoom(index: number, start: Flicks, end: Flicks): void {
-    this.history.change((edit) => {
-      const zoom = edit.zooms[index];
-      if (!zoom) return;
-      const [from, to] = [Math.max(zoom.start, start), Math.min(zoom.end, end)];
-      if (to - from <= 0) return;
-      zoom.start = from as Flicks;
-      zoom.end = to as Flicks;
+      edit.zoomChanges = edit.zoomChanges.filter((change) => change.at !== at);
+      edit.zoomChanges.push({ at, kind: "shortened", start: from as Flicks, end: to as Flicks });
     });
     this.changed();
   }
@@ -202,7 +194,6 @@ export class ClipEditor {
       this.history.change((edit) => {
         edit.removed = edit.removed.filter((each) => each.reason !== "silence");
         for (const cut of proposals) remove(edit, { start: cut.start, end: cut.end, reason: "silence" });
-        this.remakeZooms(edit);
       });
     }
     this.changed();
@@ -248,6 +239,7 @@ export class ClipEditor {
   }
 
   private changed(): void {
+    this.zooms = this.smoothCuts && this.speaker ? punchIns(joinedSegments(this.segments), this.speaker, this.edit.zoomChanges) : [];
     for (const listener of this.listeners) listener();
   }
 }

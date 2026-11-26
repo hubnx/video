@@ -18,7 +18,8 @@ export async function findFaces(address: string, durationSeconds: number, progre
     const track = await input.getPrimaryVideoTrack();
     if (!track) throw new Error("FACES_NO_PICTURE");
     const height = Math.max(2, Math.round((WIDTH * track.displayHeight) / track.displayWidth));
-    const sink = new CanvasSink(track, { width: WIDTH, height, fit: "fill" });
+    // Unflipped, as the compositor draws it (it turns a frame but never mirrors it), so a face is found where it's shown.
+    const sink = new CanvasSink(track, { width: WIDTH, height, fit: "fill", flip: false });
     finder = await FaceFinder.open();
     const count = Math.floor(durationSeconds / FACE_STEP_SECONDS) + 1;
     // A hair past each moment, as frames.ts › at: a frame's own start never lands on the frame before it.

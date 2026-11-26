@@ -36,6 +36,8 @@ export function exportView(clip: Clip, editor: ClipEditor,
   let size: ExportSize = sizes.at(-1)!; // the clip's own size, up to 4K
   let captions: CaptionOutput = "burnedIn";
   const frameRate = steadyRate(video.frameRate).value;
+  // Each choice row's highlight, redrawn when the dialog opens: a choice can change while it's closed (the Short switch).
+  const refreshers: (() => void)[] = [];
   // Every row puts its label the same way: beside its control, or above it in a narrow window (styles.css).
   const row = (label: string, control: HTMLElement) => element("div", { className: "dialog-row" }, element("span", { className: "label", textContent: label }), control);
   const choice = <Value extends string>(label: string, options: readonly Value[], names: Record<Value, string>, get: () => Value, set: (value: Value) => void) => {
@@ -50,6 +52,7 @@ export function exportView(clip: Clip, editor: ClipEditor,
       for (const button of group.querySelectorAll<HTMLElement>("button")) button.setAttribute("aria-checked", String(button.dataset.value === get()));
     };
     refresh();
+    refreshers.push(refresh);
     return row(label, group);
   };
   // A clip with one size to give says what it is, rather than offering a choice of one (and a smaller clip isn't 720p).
@@ -181,7 +184,7 @@ export function exportView(clip: Clip, editor: ClipEditor,
       const cleanVoice = editor.cleanVoice;
       const style = editor.captionStyle;
       const { bitrate, ...dimensions } = output();
-      const view = framing({ picture: upright, shorts: editor.shorts, speaker: editor.speaker, parts: segments, zooms: editor.edit.zooms });
+      const view = framing({ picture: upright, shorts: editor.shorts, speaker: editor.speaker, parts: segments, zooms: editor.zooms });
       exportId = await window.video.beginExport(target.path);
       if (signal.aborted) throw new Error("EXPORT_CANCELLED"); // stopped while it began: its listener had no number yet
       const id = exportId;
@@ -235,6 +238,7 @@ export function exportView(clip: Clip, editor: ClipEditor,
     element: dialog,
     open: () => {
       showChoices();
+      for (const refresh of refreshers) refresh();
       showDetails();
       // Asked afresh each time: the last export now holds its name, so this one gets the next.
       showDestination(null);
