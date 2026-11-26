@@ -7,9 +7,10 @@ and online models on the user's own key. Its public name is *hubnx Video* (`docs
 2026-11-17). Shared rules: [../CLAUDE.md](../CLAUDE.md); this app's row and next check:
 [../docs/registry.md](../docs/registry.md). Ports 4160–4169.
 
-**Two chats** (hubnx-apps `CLAUDE.md` › *Who speaks for whom*, 2026-11-20): `video` builds, tests and releases, and
-owns these files; `video assistant` is the product manager and the app's contact with every other chat, so `video`
-reaches other chats through it.
+**One chat, `video`** (the owner, 2026-11-25, as music and agent the same day): it builds, tests and releases; it is
+the product manager (`docs/product.md`: the rhythm, gates, scoreboard, gap register, retro); and it is the app's
+contact with the owner and every other chat (hubnx-apps `CLAUDE.md` › *Who speaks for whom*). `video assistant` held
+the product manager's and contact's part from 2026-11-17 and is closed. Status: `hubnx-apps/local/sessions/video.md`.
 
 ## Commands
 
@@ -97,8 +98,8 @@ Dependencies point one way: window → preload → main process → FFmpeg.
 | File | Contains |
 |---|---|
 | [docs/plan.md](docs/plan.md) | **The build plan**: the promise, the rivals compared, each release, the user's flow, the model switcher, the stack, the build order with proofs, shipping, keep-or-stop numbers, risks and what's been measured |
-| [docs/product.md](docs/product.md) | **The product manager's** (`video assistant`): who it's for, the scoreboard of rivals, the gap register, what we lead with, the last retro |
+| [docs/product.md](docs/product.md) | **The product manager's file**: who it's for, the rhythm and its timers' prompts, the four gates, the scoreboard of rivals, the gap register, what we lead with, the last retro |
 | [docs/design/](docs/design/) | Each release's design, decided before it's built: what the person does, the parts chosen and why, its proof (`1.1-shorts.md`) |
 | [docs/research/](docs/research/) | Competitors' workflows, features, prices and users' complaints; the AI models and online services; the engine's building blocks (2026-11-17) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | For contributors: the contributor agreement, build and test |
-| `local/` (not in git) | Outputs kept for later or for an audit, one folder per tool: `probe/`, `edit-copy-timing/` (the clip and the times), `filler-check/` (the measured set, its source and licence, every detector's output), `import-check/`, `preview-check/`, `export-check/` (the exports and their times), `site-screens/`, `voice-speed/`, `screens/`, `release/`, `release-logs/`, `ffmpeg-build/` (sources, logs, builds), `ffmpeg-for-app/`, `icon-options/` (the icon decision's sheet), `research/`, `seo/` (`keywords.csv`, kept by `video assistant`: the searches we target, their positions with date and source, the next step) |
+| `local/` (not in git) | Outputs kept for later or for an audit, one folder per tool: `probe/`, `edit-copy-timing/` (the clip and the times), `filler-check/` (the measured set, its source and licence, every detector's output), `import-check/`, `preview-check/`, `export-check/` (the exports and their times), `site-screens/`, `voice-speed/`, `screens/`, `release/`, `release-logs/`, `ffmpeg-build/` (sources, logs, builds), `ffmpeg-for-app/`, `icon-options/` (the icon decision's sheet), `research/`, `seo/` (`keywords.csv`: the searches we target, their positions with date and source, the next step), `pm/` (`rivals.sh`, the daily scan's script: prints only what changed in rivals' repos, its memory in `rivals.state`), `launch/` (the launch posts' drafts) |

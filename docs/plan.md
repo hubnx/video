@@ -1,6 +1,6 @@
 # Plan: hubnx Video (`video`)
 
-Draft 2026-11-17: reviewed by `video assistant` (gate 1, approved with changes, folded in). **OK'd by the owner 2026-11-21** ("ok as planned"); *In one minute* is frozen, and a change to it goes through `video assistant`. Day 0 = 11-21: day 1 = 11-22, release 1 ≈ 11-29, 1.1 ≈ 11-30. Who it's for, the jobs and the
+Draft 2026-11-17: reviewed by `video assistant` (gate 1, approved with changes, folded in). **OK'd by the owner 2026-11-21** ("ok as planned"); *In one minute* is frozen, and a change to it goes back to the owner (told by `video`, which holds every role since 2026-11-25). Day 0 = 11-21: day 1 = 11-22, release 1 ≈ 11-29, 1.1 ≈ 11-30. Who it's for, the jobs and the
 gaps are the product manager's: [product.md](product.md) › *Who it's for* and *Gap register*. The
 research behind every choice: [research/](research/).
 
@@ -201,7 +201,8 @@ hubnx-apps registry › *Community accounts* (r/macapps rule 6, for example: a m
 200+ karma and a 60-day-old account, else a comment in the month's *App Pile* thread; hubnx Write's
 post was removed for it, 2026-11-20).
 
-**Check-ins with `video assistant`** (agreed 2026-11-17): day 1's filler numbers; screenshots at phone, tablet and desktop width in both themes when each screen first
+**Check-ins** (agreed 2026-11-17 with `video assistant`; since 2026-11-25 `video` holds them, each gate reviewed by a
+fresh reviewer agent given the screens and the code, not the builder's conclusions: `product.md` › *Four gates*): day 1's filler numbers; screenshots at phone, tablet and desktop width in both themes when each screen first
 works, before polish (day 4 transcript and caption styles, day 5 cleanup review, day 7 export dialog
 and presets, day 8 download page with the SmartScreen picture); release 1 passes its gate 3 review
 before it goes out. **Gate 3 approved 2026-11-25** with six fixes, all made the same day; public no earlier than
@@ -244,7 +245,7 @@ before it goes out. **Gate 3 approved 2026-11-25** with six fixes, all made the 
   (agent `hubnx-video-live-check`), and `ops/site/infra/count-downloads.ts`, set from hubnx-apps'
   `local/downloads-proof/video-use.md`; the installer patterns are pinned by a test with release 1's
   real file names, since a name matching none is never counted (decided 2026-11-21, as music's
-  split). `video assistant` runs it from 12-06, at least every 13 days. The site provides what it
+  split). `video` runs it from 12-06, at least every 13 days. The site provides what it
   reads, as `music/site/infra/site.yaml` does: CloudFront standard logs as JSON (timestamp, path,
   status, bytes, browser name; no address field), a log bucket that deletes after 14 days, and
   pages that load their own styles and scripts.
@@ -297,7 +298,7 @@ before it goes out. **Gate 3 approved 2026-11-25** with six fixes, all made the 
   `electron/feedback.ts`, proved by `scripts/check-feedback.ts`) through the shared parts' `feedback-report.ts`, which holds
   hubnx.com's `/api/feedback` contract: hubnx registered `video` for both, the site at
   exactly `https://video.hubnx.com` (hubnx's Assistant, 2026-11-20)
-- [ ] For `hubnx.com/apps` at 1.1: the app's icon as an SVG on the site; `video assistant` sends
+- [ ] For `hubnx.com/apps` at 1.1: the app's icon as an SVG on the site; `video` sends
   hubnx the link, the icon's address, one English line, where it runs and that it's free
 - [ ] No Stripe product: nothing is sold
 
@@ -348,7 +349,7 @@ Proposed by `video assistant` (2026-11-17).
 | 4K won't play or export on some computers | **Measured 2026-11-21** (day 1's probe, `local/probe/`): H.264 4K encodes and decodes through WebCodecs on all four, in software at least: GitHub's Apple-chip Mac 27 fps, Windows 18, Ubuntu 23 (2 to 5 cores, no graphics card); this Intel Mac by hardware. HEVC (iPhones) decodes only with a hardware decoder (this Mac yes; GitHub's Windows and Ubuntu no), so there it gets a proxy and an edit copy, captions starting from the sound at once. Ubuntu's WebCodecs has no AAC encoder: FFmpeg's, as planned. The package opened, unseen, on all four with FFmpeg 9.0.2 running inside (x264; AudioToolbox's AAC on the Macs, Media Foundation's on Windows). **Export measured 2026-11-24** (`scripts/check-export.ts`, `local/export-check/timings.json`), this Intel Mac at background priority: a minute of a phone's 4K HEVC exported at 4K in 103 s, a minute of 720p talk with captions in the picture in 41–48 s. GitHub's machines are measured with the fresh-install check on day 8 |
 | An iPhone's 4K HEVC waits a long time to prepare | **Measured 2026-11-21**, a minute of 4K HEVC Main 10 at 24 Mb/s (`local/edit-copy-timing/`). This Intel Mac (32 threads, other work running): proxy 27 s SDR, 84 s HDR (tone-mapped); edit copy 107 s SDR, 113 s HDR, and after sizing before tone-mapping and x264's superfast for edit copies: proxy 26 s SDR, 29 s HDR; edit copy 43 s SDR, 90 s HDR. GitHub's 2-core machines, no graphics card: Windows proxy 68 s SDR, 87 s HDR, edit copy 191 s and 382 s; Ubuntu proxy 65 s and 77 s, edit copy 174 s and 306 s. So a 10-minute iPhone HDR clip plays smoothly after about 13–15 min on such a machine; captions never wait for it. **Day 7 (2026-11-24):** export waits for the edit copy, which starts when the clip opens, and shows its progress; reading the original instead is in *Build order › Debt*, since FFmpeg would also have to draw the captions |
 | Two weeks is an estimate (Songbrew: 2 weeks from plan to 0.1.35, still before launch) | The release order puts the four jobs first, so whatever ships is useful |
-| A rival closes the gap (FilmCraft's easy mode, Shotcut's silences, OpenCut's rewrite) | `video assistant`'s daily scan; our edge is the four jobs done end to end and minutes to first export |
+| A rival closes the gap (FilmCraft's easy mode, Shotcut's silences, OpenCut's rewrite) | the daily scan (`product.md` › *Rhythm*); our edge is the four jobs done end to end and minutes to first export |
 | Patents on H.264 and AAC | The systems' own encoders; revisit before 100,000 downloads a year or any revenue |
 | Promotion takes the owner's time, already spent on desk and Songbrew | Drafts ready to post; launch where the first user is (*Where and when the launch posts go*), plus GitHub and AlternativeTo as "CapCut alternative" |
 
