@@ -101,6 +101,8 @@ export default defineConfig({
         home: page("./index.html"),
         download: page("./download/index.html"),
         about: page("./about/index.html"),
+        // For Premiere Rush's users, after Adobe ended it (docs/research/premiere-rush-switching.md).
+        premiereRush: page("./premiere-rush-alternative/index.html"),
         feedback: page("./feedback/index.html"),
         privacy: page("./privacy/index.html"),
         terms: page("./terms/index.html"),

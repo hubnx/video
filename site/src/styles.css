@@ -410,6 +410,46 @@ main {
   font-size: 0.9rem;
 }
 
+/* A comparison on a page of reading: two columns, ruled rows, scrolling sideways in its own box on a phone rather than
+   pushing the page wider. */
+.table-wrap {
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+.compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.compare th,
+.compare td {
+  text-align: left;
+  vertical-align: top;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.compare th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.compare td:first-child,
+.compare th:first-child {
+  width: 45%;
+}
+
+.document .actions {
+  justify-content: flex-start;
+  margin-top: 28px;
+}
+
+.small {
+  font-size: 0.85rem;
+}
+
 /* Pages of reading: one column at a reading width, centred. */
 .document {
   max-width: var(--reading);
@@ -425,4 +465,14 @@ main {
 .document h2 {
   font-size: 1.2rem;
   margin: 28px 0 6px;
+}
+
+/* Under a section's heading, smaller than it, so a list of questions reads as that section's. */
+.document h3 {
+  font-size: 1rem;
+  margin: 18px 0 4px;
+}
+
+.document h3 + p {
+  margin-top: 0;
 }

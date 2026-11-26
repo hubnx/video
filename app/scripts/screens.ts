@@ -17,6 +17,8 @@ const local = path.resolve(appFolder, "..", "local");
 const folder = path.join(local, "screens");
 // A clip the import check makes (scripts/check-import.ts): a phone video, whose jobs show on the clip screen.
 const CLIP = path.join(local, "import-check", "clips", "iphone-hlg.mov");
+// 1.1's talk with a face, which the shorts check makes (scripts/check-shorts.ts): a short, its captions and punch-ins.
+const TALK = path.join(local, "shorts-check", "clips", "talk.mp4");
 
 const SIZES = [
   { name: "small", width: 400, height: 640 }, // the smallest the window allows (electron/main.ts)
@@ -89,6 +91,42 @@ try {
   failure = error;
 } finally {
   await running.close();
+}
+
+// 1.1: the talk as a short, its captions in the shorts look, smooth jump cuts on with a punch-in on the timeline; then
+// the export with Shorts chosen.
+if (!failure) {
+  const talking = await electron.launch({ executablePath: electronProgram(), args: [appFolder], env: electronEnvironment() as Record<string, string> });
+  try {
+    const page = await talking.firstWindow();
+    await talking.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1280, 800));
+    await page.getByRole("heading", { name: "Drop a video here" }).waitFor();
+    await talking.evaluate(({ dialog }, file) => {
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });
+    }, TALK);
+    await page.getByRole("button", { name: "Choose a video" }).click();
+    const cleanUp = page.getByRole("button", { name: /^Clean up: \d+ silences?$/ });
+    await cleanUp.waitFor({ timeout: 10 * 60_000 });
+    await page.getByLabel("Short (9:16)").check();
+    await page.locator('.shorts-status[data-search="found"]').waitFor({ state: "attached", timeout: 5 * 60_000 });
+    await page.getByLabel("Smooth jump cuts").check();
+    await cleanUp.click();
+    // Paused on a word, so a caption shows.
+    await page.locator(".preview-bar").evaluate((bar: HTMLInputElement) => {
+      bar.value = "5.5";
+      bar.dispatchEvent(new Event("input"));
+    });
+    await page.waitForTimeout(500);
+    await shoot(talking, page, "9-short");
+    await page.getByRole("button", { name: "Export", exact: true }).click();
+    await page.locator("dialog.export[open]").waitFor();
+    await page.getByRole("radio", { name: "Shorts" }).click();
+    await shoot(talking, page, "9-short-export");
+  } catch (error) {
+    failure = error;
+  } finally {
+    await talking.close();
+  }
 }
 const taken = stillBehind();
 if (taken) throw new Error(`SCREEN_TAKEN: ${taken}`);

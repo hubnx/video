@@ -389,13 +389,24 @@ button:disabled {
   accent-color: var(--accent);
 }
 
-/* The Short switch closes the captions row, at its right end, and wraps under it in a narrow window. */
+/* The Short switch closes the captions row at its right end. Where the row can't hold it all (about 620 px with "Hide
+   ums" showing), it starts at the left, as every line under it does: one alignment per group. */
+.caption-controls {
+  container-type: inline-size;
+}
+
 .shorts-control {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 8px;
   margin-left: auto;
+}
+
+@container (max-width: 620px) {
+  .shorts-control {
+    margin-left: 0;
+  }
 }
 
 .shorts-status {

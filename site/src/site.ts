@@ -9,7 +9,7 @@ export const SITE_URL = "https://video.hubnx.com";
  */
 export const INDEXED = true;
 
-const INDEXED_PAGES = ["/", "/download/", "/about/"];
+const INDEXED_PAGES = ["/", "/download/", "/premiere-rush-alternative/", "/about/"];
 
 export function robotsMeta(): string {
   return INDEXED ? "" : `<meta name="robots" content="noindex" />`;

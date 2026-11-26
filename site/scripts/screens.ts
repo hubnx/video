@@ -16,7 +16,7 @@ const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"; /
 const PORT = 4163;
 const site = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const folder = path.resolve(site, "..", "local", "site-screens");
-const PAGES = [["home", "/"], ["download", "/download/"], ["about", "/about/"], ["privacy", "/privacy/"], ["feedback", "/feedback/"], ["licenses", "/licenses/"]] as const;
+const PAGES = [["home", "/"], ["download", "/download/"], ["premiere-rush", "/premiere-rush-alternative/"], ["about", "/about/"], ["privacy", "/privacy/"], ["feedback", "/feedback/"], ["licenses", "/licenses/"]] as const;
 // The phone at the height Safari shows inside its bars (brand.md › Every screen size).
 const SIZES = [["phone", 390, 664], ["tablet", 768, 1024], ["laptop", 1280, 800], ["wide", 1920, 1080]] as const;
 
