@@ -7,7 +7,7 @@ export const SITE_URL = "https://video.hubnx.com";
  * quietly; the launch is 1.1). Pages stay crawlable, so search engines can read the noindex. Turned on the day the
  * release check passes.
  */
-export const INDEXED = false;
+export const INDEXED = true;
 
 const INDEXED_PAGES = ["/", "/download/", "/about/"];
 

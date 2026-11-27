@@ -205,8 +205,9 @@ post was removed for it, 2026-11-20).
 fresh reviewer agent given the screens and the code, not the builder's conclusions: `product.md` › *Four gates*): day 1's filler numbers; screenshots at phone, tablet and desktop width in both themes when each screen first
 works, before polish (day 4 transcript and caption styles, day 5 cleanup review, day 7 export dialog
 and presets, day 8 download page with the SmartScreen picture); release 1 passes its gate 3 review
-before it goes out. **Gate 3 approved 2026-11-25** with six fixes, all made the same day; public no earlier than
-11-27 08:00 PT, after the history is rewritten to the owner's name only (as Songbrew and Agent).
+before it goes out. **Gate 3 approved 2026-11-25** with six fixes, all made the same day; **Public 2026-11-27**, the
+history first rewritten to the owner's name only (as Songbrew and Agent); the Apple-chip Mac's and Ubuntu's fresh
+installs passed again that morning on the public repo (0.7 and 0.5 minutes to first export).
 
 ### Debt: shortcuts taken on purpose
 
@@ -269,15 +270,15 @@ before it goes out. **Gate 3 approved 2026-11-25** with six fixes, all made the 
 
 **Launch checklist, day 8** (hubnx-apps `CLAUDE.md` › Phase 2):
 - [ ] The registry row updated
-- [ ] Repo `hubnx/video` public
+- [x] Repo `hubnx/video` public (2026-11-27)
 - [x] `video.hubnx.com` with its zone ($0.50 a month, approved): stack `video-site` live 2026-11-25 (pages only, out of
   search; packages at release 1), in the private `hubnx/video-ops`
 - [ ] Shared parts from the public `hubnx/web-parts` repo pinned by commit, never a path into
   hubnx-apps' private `shared/`, since this repo goes public (*Apps HQ* splits it out by day 8)
 - [x] The contributor agreement check: the repo calls `hubnx/.github`'s reusable workflow, never a
   copied one (wired 2026-11-21, its key set by `cla/add-repo.sh`)
-- [ ] At going public: a ruleset on `main` making the **CLA** status required for merging (GitHub enforces
-  rulesets on a private repo only on paid plans)
+- [x] A ruleset on `main` making the **CLA** status required for merging (2026-11-27; repository admins may bypass
+  it, so the release's own commits still go straight to `main`)
 - [ ] Privacy, terms and `/about/` pages; the footer's *About Hub Nexus* (no "by Hub Nexus" line
   beside the name, which wears `hubnx` already); *More from Hub Nexus*; the feedback form; outbound
   and file links in a new tab, set once at build time (`docs/brand.md`)
