@@ -41,7 +41,7 @@ Decided 2026-11-17, agreed with `video`.
 **Four gates for every feature:**
 1. **Before building**: a brief (the problem and its evidence, the best rival's way, options with trade-offs, a recommendation, how we'll know it worked), written into the feature's design file (`design/`) and read back critically before code starts; a fresh reviewer agent replies with critical feedback before code starts.
 2. **Mid-build**: a review of the flow and screens against the brief (the clarity check in `../../docs/brand.md`, the edge cases).
-3. **Before release**: the result against the brief, in screenshots at phone, tablet and desktop width and both themes, walked as a user beside the best rival's flow.
+3. **Before release**: the result against the brief, in screenshots at phone, tablet and desktop width and both themes, walked as a user beside the best rival's flow; and the demo filmed from the release's own build (`app/scripts/demo/`), a real talk edited end to end (2026-11-26: it found two bugs the other checks missed).
 4. **One to two weeks after**: did the number move? Keep, change or cut, written in the feature's own file.
 
 **How it runs:** session crons, which die with the session; a recurring one expires (7 days before Claude Code's update of
@@ -56,16 +56,38 @@ word for word from the prompts below (the job list shows only a prompt's first l
 | Market and plan | `37 9 <next Monday> *`, one-shot | VIDEO WEEKLY PASS: do the *Market and plan* row of video/docs/product.md › Rhythm (every rival re-checked, reviews on every source, each current and just-launched feature against the best rival, gaps given a call, new feature ideas, new launches in the last 30 days, Search Console and the download count once live, notes cleaned, the build's order re-ranked in plan.md); commit product.md by path; the Monday housekeeping (cleanup of my own files and memory, token review, schedule check) in hubnx-apps/local/sessions/video.md's Weekly line; one short pulse to the owner; then schedule the next Monday (37 9) and Friday (23 16) one-shots and re-create the daily scan (51 8 * * 2-5) per product.md's prompts table, deleting duplicates found by CronList. |
 | Retro | `23 16 <next Friday> *`, one-shot | VIDEO RETRO: do the *Retro* row of video/docs/product.md › Rhythm (what shipped, what moved, what we got wrong, what to change, next week's plan); update product.md and commit by path; tell the owner each decision that needs them, in plain words; then schedule the next Friday's retro (23 16 <date> *, one-shot). |
 
-## Last retro: week of 2026-11-17
+## Last retro: week of 2026-11-23
 
-Agreed with `video`, 2026-11-20. Each retro replaces this one; what lasts moves into the rules above.
+By `video`, 2026-11-27, its first as product manager. Each retro replaces this one; what lasts moves into the rules above.
 
-- **Shipped:** no code, by design until the owner's OK. Research: five files, 5,944 App Store reviews, six open projects' trackers. The plan passed gate 1 with ten changes, plus about twenty follow-ups from rules shared across the apps (name, licences, bring your own model, writing, the check-in, downloads, the contributor agreement, screen checks, Reddit).
-- **Moved (the market; no users yet):** Meta Edits on Mac gives free captions and 4K; FilmCraft shipped captions and has *Remove Silence* open (#5027), 18,719 stars.
-- **Got wrong:** (1) Meta Edits for Mac was missed for 15 days (launched 11-05, found 11-20): the rival list and the research searched known names, not new launches. (2) The plan kept changing while it waited for the owner's OK. (3) The owner had said they'd hear hubnx Video from its assistant (11-18), yet was sent to `video`'s chat for the OK. (4) A line break inside a plan table cell broke its layout once, fixed at once.
-- **Changed:** the Monday pass sweeps new launches (*Rhythm*); the owner OKs one screen (`plan.md` › *In one minute*), told by this chat, and once OK'd it's frozen, so only a change to that screen goes back to the owner; launch places and dates fixed (*Who it's for*).
-- **Risk for next week:** Modal's free November credit is spent (registry › Modal) and its workspace is disabled until about 12-01. Release 1 shows model times measured on this Mac and GitHub's machines only; NVIDIA timings wait for December's $30, shared with Music (a slice asked of music assistant).
-- **Next week:** if the OK comes, build days 1–5, with my gates on day 1 (filler numbers, the 4K probe), day 4 (transcript panel) and day 5 (the clean-up review compared click by click with FilmCraft and Edits); the same day, tell `hubnx apps` and `hubnx assistant`. The Monday pass on 11-23: the jump-cut zoom (G17); whether Edits needs an account, runs on Intel Macs or cuts silences; the new-launch sweep.
+- **Shipped:** release 1 (1.0.0), built days 1–8 to the plan, gate 3 approved 11-25, **public 11-27**: the app for Mac
+  (Apple chip and Intel), Windows and Linux at video.hubnx.com, the repo public (AGPL-3.0, the contributor agreement
+  required on `main`), the site in search. Fresh installs reach a first export in 0.5–0.7 minutes on GitHub's machines.
+  Built behind it on branch `1.1`: shorts that follow the speaker, shorts captions, smooth jump cuts, the Premiere
+  Rush switching page, a fresh review's 10 findings fixed, the 1.1 gate green; the narrated demo, approved by hubnx
+  media; the public history in the owner's name only.
+- **Moved:** no posts yet, by design (the launch is 1.1). On 11-27 at 16:30: 0 stars, 0 issues; the site's log, 20
+  browser visitors since 11-25 and 0 complete downloads; GitHub's 26 release downloads are our checks and bots. The
+  market: FilmCraft at 19,070 stars, its *Remove Silence* (#5027) still unmerged, its new work on voice-over; Premiere
+  Rush ended 09-30; Clipchamp left the iPhone in June.
+- **Got wrong:** (1) Two release-1 bugs (a spoken number glued to the word before it; every AAC MP4 made to wait for
+  copies it didn't need) passed gate 3 and were found the next day by the demo's film, the first run on a real talk
+  with numbers in it: they ship in 1.0.1, since release 1's tag was already approved. (2) The live check's release
+  half ran for the first time on release day and failed on its own lookup (the files served were right): fixed in
+  minutes, no one saw it. (3) The org's free GitHub minutes ran out on 11-25, so the last fresh installs waited for
+  the repo to go public. (4) Status-file times were guessed once instead of read from the clock.
+- **Changed:** the demo is filmed from each release's own build before gate 3's walk-through, as a check (*Four
+  gates* 3); the live check's lookup reads the release's own file list (ops 408e07f); times come from `date`; checks
+  that need GitHub's Windows or Ubuntu now run free on the public repo. Release 1's gate 4 is read two weeks after
+  the launch posts, not after the quiet release, since no one is sent to it before then.
+- **Risk for next week:** 1.1 must be out by 12-07 for its posts to go before Music's launch week (12-08 to 12-14);
+  if it slips, the posts wait until after 12-14 and release 1 stays quiet a week longer. Modal's credit returns about
+  12-01, Music's runs first.
+- **Next week:** 1.0.1 on 11-28/29 (both fixes, all four packages, fresh installs on all three, the Windows and Linux
+  update from 1.0.0); the Monday pass on 11-30, with video.hubnx.com's first Search Console numbers; 1.1's demo
+  re-filmed from its final build, then gate 3's screens and walk-through, the Rush page's prices re-read; 1.1 out
+  about 12-02/03 with the demo on YouTube and hubnx.com/apps' five items to hubnx assistant; the owner posts the
+  launch drafts from their accounts (roadmap step 8.3); from 12-04, NVIDIA timings on Modal if Music's runs are done.
 
 ## Where the reviews come from
 
